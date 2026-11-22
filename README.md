@@ -1,8 +1,34 @@
+<p align="center">
+  <img src="docs/brand/banner.svg" width="100%" alt="CurWork: AWS cost report workbooks, from Amazon S3 to your Excel macros and back. Nothing is left on the laptop when you're done.">
+</p>
+
+<!-- These badges are fixed images. Update the numbers here when they change. -->
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.011-0B2545?style=flat-square">
+  <img alt="Status" src="https://img.shields.io/badge/status-draft%2C%20internal%20use-B54708?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/license-proprietary%20(FPT)-5F6B7A?style=flat-square">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.12-1F4E89?logo=python&logoColor=white&style=flat-square">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2011%20%7C%20macOS-1F4E89?style=flat-square">
+  <img alt="AWS" src="https://img.shields.io/badge/AWS-S3%20%2B%20IAM%20Identity%20Center-0F8B80?style=flat-square">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-71%20passing-1B7F3B?style=flat-square">
+  <img alt="NIST" src="https://img.shields.io/badge/NIST%20SP%20800--53-Rev.%205%20mapped-0F8B80?style=flat-square">
+  <img alt="AWS details check" src="https://img.shields.io/badge/AWS%20details-blocked%20by%20Git%20checks-1B7F3B?style=flat-square">
+  <img alt="Windows tests" src="https://img.shields.io/badge/Windows%20tests-pending%20approval-B54708?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="#watch-the-demo"><b>Watch the demo</b></a> &nbsp;·&nbsp;
+  <a href="WINDOWS.md"><b>Windows 11 guide</b></a> &nbsp;·&nbsp;
+  <a href="CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md"><b>Admin and security guide</b></a> &nbsp;·&nbsp;
+  <a href="SECURITY.md"><b>Report a security problem</b></a> &nbsp;·&nbsp;
+  <a href="LICENSE"><b>License</b></a>
+</p>
+
 # CurWork
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 20:40 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:02 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -11,9 +37,26 @@ CurWork is a small desktop app for the billing team. It does four things:
 3. It sends the results back to S3.
 4. It deletes the files from the laptop when the biller is done.
 
-It's built for Windows. It also runs on a Mac, which is how we test it. To set it up, test it and run it on Windows 11, follow [WINDOWS.md](WINDOWS.md).
+| At a glance | |
+|---|---|
+| **Who it's for** | Billers. Admins and IT set it up. |
+| **Runs on** | Windows 11 (the target). It also runs on a Mac, which is how we test it. |
+| **Sign-in** | Your normal company sign-in with MFA, through AWS IAM Identity Center. No passwords or keys are saved. |
+| **What billers can touch** | Only CurWork's folders in one S3 bucket. They can't delete anything. |
+| **Left on the laptop afterwards** | Nothing. **Finish and clean up** empties the work folders. |
+| **Tested** | 71 automated tests, plus permission checks against real AWS. Windows testing is waiting for approval. |
 
-To see a whole biller session in under two minutes, watch the [animated demo](docs/demo/curwork-demo.html). GitHub shows the page's code instead of playing it, so download the file and open it in a web browser.
+**Contents:** [Watch the demo](#watch-the-demo) · [How it works](#how-it-works) · [Security came first](#security-came-first) · [What's in this repository](#whats-in-this-repository) · [For billers](#for-billers) · [For admins](#for-admins) · [Testing on a Mac](#testing-on-a-mac) · [Testing on Windows 11](#testing-on-windows-11) · [Keeping AWS details out of GitHub](#keeping-aws-details-out-of-github) · [License and disclaimers](#license-and-disclaimers) · [Where things stand](#where-things-stand)
+
+## Watch the demo
+
+<a href="docs/demo/curwork-demo.html"><img src="docs/demo/curwork-demo.gif" width="800" alt="Animated demo: a biller signs in, downloads a month of files, runs the macros, uploads the result and cleans up the laptop."></a>
+
+This loop plays a whole biller session at 2.5 times normal speed. The full demo, with captions, chapters and pause buttons, is [docs/demo/curwork-demo.html](docs/demo/curwork-demo.html). GitHub shows that page's code instead of playing it, so download the file and open it in a web browser. The demo uses made-up sample data.
+
+## How it works
+
+To set CurWork up, test it and run it on Windows 11, follow [WINDOWS.md](WINDOWS.md).
 
 ![Exhibit 1: How CurWork moves files. Files go from the converted folder in S3 to the In folder on the laptop, the biller's Excel macros save results to the Out folder, CurWork uploads them to the results folders in S3, and Finish and clean up uploads the log and empties both folders.](docs/diagrams/exhibit1-workflow.svg)
 
@@ -33,7 +76,7 @@ Here's what that means in practice. The last column lists the matching controls 
 | **Lock down the storage** | Public access to the bucket is blocked. It keeps old copies when a file is replaced, and deletes those old copies after 30 days. | AC-3, CM-6, CP-9 |
 | **Don't leave data on laptops** | Files are only on the laptop between download and "Finish and clean up", which empties the work folders. CurWork also warns you if the work folder is inside OneDrive, Box, Dropbox, Google Drive or iCloud Drive, because those would copy the files off the laptop. | MP-6, SC-28, AC-3 |
 | **Never change files by surprise** | Every upload is checked with a SHA-256 fingerprint and its size. Downloads only replace a file once they've fully arrived. CurWork asks before replacing a file in S3, or a downloaded file you've edited. | SI-7, SI-10 |
-| **Keep risky settings with the admin** | The bucket, folders, encryption and sign-in settings sit in an admin file that users can't change. Users can only change a few harmless preferences, like their pinned folders. | CM-5, CM-6, CM-7 |
+| **Keep risky settings with the admin** | The bucket, folders, encryption and sign-in settings sit in an admin file that users can't change. Users can only change a few harmless preferences, like their pinned folders. The built app only reads the admin file installed next to it, so nobody can point it at a different one. | CM-5, CM-6, CM-7 |
 | **Check every file name and path** | CurWork refuses any file name or folder path that could write outside its own folders, and only uploads to the folders the admin allows. | SI-10, AC-3 |
 | **Keep a record** | Each session writes a log of who did what and where, without any secrets. The log goes to S3 when the biller finishes. When AWS refuses something, the message says exactly what was refused. | AU-2, AU-3, AU-9, AU-12 |
 | **Show a warning banner if needed** | Admins can turn on a "system use" notice that users must accept when CurWork starts. | AC-8 |
@@ -65,7 +108,8 @@ sample-data/                   Made-up cost report workbooks (no real customer d
 curwork_test.env.example       Template for your private test settings
 .githooks/                     The checks that stop AWS details being uploaded
 docs/diagrams/                 The diagrams in this README
-docs/demo/curwork-demo.html    The animated demo of a biller's session
+docs/demo/                     The animated demo (web page and a short loop)
+docs/brand/                    The banner and the GitHub social preview image
 ```
 
 Some files are never uploaded to GitHub. The `.gitignore` file keeps them out:
@@ -148,4 +192,4 @@ Your account number, sign-in address and profile names are only stored in `curwo
 This is Beta 0.011, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 20:40 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:02 UTC · Modified by: mbitar*
