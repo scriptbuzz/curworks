@@ -7,6 +7,7 @@ the way the window does, and reports PASS/FAIL for each step. No mocks.
 What it changes in AWS: uploads two small test files (one result, one log) under _autotest-<time> names,
 tries one upload that must be refused, then removes every version of what it made using the admin
 profile (CURWORK_ADMIN_PROFILE) (the biller sign-in can't delete, by design) and checks they're gone.
+It checks the admin profile is signed in before uploading anything, so it never leaves test files behind.
 
 Run from the CurWorks folder with CurWork's .venv:  CurWork-Beta-0.011/.venv/bin/python tools/real_aws_tests.py
 Exit code 0 = everything passed.
@@ -80,6 +81,27 @@ def main() -> int:
         print(f"  {Y}Stopping here: every other test would only show this same problem.{N}")
         return 1
 
+    # The admin profile removes this run's test files at the end. Check it works before uploading anything,
+    # so an expired admin sign-in can't leave test files behind in the bucket.
+    admin_profile = os.environ["CURWORK_ADMIN_PROFILE"]
+
+    def admin_account() -> str:
+        return boto3.Session(profile_name=admin_profile, region_name=settings.region).client("sts").get_caller_identity()["Account"]
+
+    try:
+        admin_account()
+    except Exception as e:  # noqa: BLE001
+        print(f"  The admin profile isn't signed in ({type(e).__name__}). Opening the browser to sign in...")
+        core.run_sso_login(admin_profile, on_line=lambda line: print("   ", line), cli_path=settings.aws_cli_path)
+    try:
+        admin_account()
+        admin_ok, admin_detail = True, "it removes this run's test files at the end"
+    except Exception as e:  # noqa: BLE001
+        admin_ok, admin_detail = False, err(e)
+    if not check("Admin profile is signed in", admin_ok, admin_detail):
+        print(f"  {Y}Stopping before any upload, so no test files are left in the bucket.{N}")
+        return 1
+
     step("Browse")
     try:
         folders, _ = svc.list_level("converted/")
@@ -150,7 +172,7 @@ def main() -> int:
             check("Upload the log to logs/", False, err(e))
 
     step("Remove what this test made (admin profile) and check it's gone")
-    admin = boto3.Session(profile_name=os.environ["CURWORK_ADMIN_PROFILE"], region_name=settings.region).client("s3")
+    admin = boto3.Session(profile_name=admin_profile, region_name=settings.region).client("s3")
     for key in made:
         try:
             versions = admin.list_object_versions(Bucket=settings.bucket, Prefix=key)

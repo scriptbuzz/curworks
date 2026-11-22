@@ -207,6 +207,27 @@ def test_upload_with_kms(s3env, tmp_path):
     assert head["ServerSideEncryption"] == "aws:kms"
 
 
+def test_upload_sends_a_sha256_checksum(s3env):
+    """S3 checks the SHA-256 checksum on arrival, so a file damaged on the way is refused."""
+    import base64
+    import hashlib
+    s3, _, svc, work = s3env
+    body = b"checksum me" * 100
+    f = work.out_dir / "c.xlsx"
+    f.write_bytes(body)
+    svc.upload([(f, "c.xlsx")], "reports/")
+    head = s3.head_object(Bucket=BUCKET, Key="reports/c.xlsx", ChecksumMode="ENABLED")
+    assert head.get("ChecksumSHA256") == base64.b64encode(hashlib.sha256(body).digest()).decode()
+
+
+def test_expired_sign_in_errors_say_to_sign_in_again():
+    from botocore.exceptions import TokenRetrievalError, UnauthorizedSSOTokenError
+    for exc in (TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed"),
+                UnauthorizedSSOTokenError()):
+        kind, msg = core.classify_error(exc)
+        assert kind == "auth" and "Sign in" in msg
+
+
 def test_upload_log(s3env):
     s3, _, svc, work = s3env
     lf = work.log_dir / "curwork-2026-11-22.log"

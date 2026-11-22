@@ -228,6 +228,43 @@ def test_refusal_message_names_the_call(world, monkeypatch):
     assert "needs s3:GetObject" in log_text, "the log should say which call was refused"
 
 
+def test_expired_sign_in_during_download_asks_to_sign_in_again(world, monkeypatch):
+    """The error AWS gives when the saved sign-in has run out (the one seen in a real test run)."""
+    from botocore.exceptions import TokenRetrievalError
+    a = world.app
+
+    def expired(*_a, **_k):
+        raise TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed")
+
+    monkeypatch.setattr(a.svc.client, "download_file", expired)
+    world.open_folder("converted/agency-a/")
+    world.open_folder("converted/agency-a/2026-10/")
+    a.tree.selection_set("converted/agency-a/2026-10/agency-a-cur-2026-10.xlsx")
+    a.download_selected()
+    world.idle()
+    errs = world.dialogs.errors()
+    assert errs and "sign-in has expired" in errs[-1] and "Sign in" in errs[-1]
+    assert a.signed_in is False and a.sign_btn.cget("text") == "Sign in"
+
+
+def test_use_notice_at_start_up(world, monkeypatch):
+    """An admin's use notice must be accepted. Declining it closes CurWork; both answers are logged."""
+    import dataclasses
+    a = world.app
+    a.s = dataclasses.replace(a.s, login_banner="Authorized use only.")
+    shown, closed = [], []
+    monkeypatch.setattr(a, "_destroy", lambda: closed.append(True))
+    for answer in (False, True):
+        monkeypatch.setattr(curwork.messagebox, "askokcancel",
+                            lambda *args, _ans=answer, **k: (shown.append(args[1]), _ans)[1])
+        a._startup_checks()
+        world.pump(0.2)
+    assert shown == ["Authorized use only.", "Authorized use only."]
+    assert closed == [True], "only the declined notice should close CurWork"
+    log_text = a.log_file.read_text(encoding="utf-8")
+    assert "Use notice declined" in log_text and "Use notice accepted" in log_text
+
+
 def test_about_and_settings_windows(world):
     a = world.app
     dlg = curwork.AboutDialog(world.root, a)
