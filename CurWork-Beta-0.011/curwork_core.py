@@ -68,6 +68,7 @@ DEFAULT_CONFIG: dict = {
     "aws_cli_path": "",
     "login_banner": "",
     "user_settings_location": "tool_folder",  # "tool_folder" (falls back to the work folder if not writable) or "work_folder"
+    "settings_parameter": "",  # e.g. /curwork/admin-settings: read the managed settings from AWS Parameter Store
     "sso": {
         "session_name": "",
         "start_url": "",
@@ -129,6 +130,14 @@ class Settings:
     ignored_config_overrides: list[str] = field(default_factory=list)
     user_settings_location: str = "tool_folder"
     admin_version: str = ""
+    settings_parameter: str = ""
+    managed_loaded: bool = False          # True once the managed settings were read from Parameter Store
+    local_data: dict = field(default_factory=dict, repr=False)
+
+    @property
+    def needs_managed_settings(self) -> bool:
+        """True while CurWork still has to read its managed settings from Parameter Store (after sign-in)."""
+        return bool(self.settings_parameter) and not self.managed_loaded
 
     @property
     def allowed_upload_prefixes(self) -> list[str]:
@@ -217,6 +226,10 @@ def load_settings(explicit: str | None = None) -> Settings:
     try:
         settings = settings_from_dict(data, source_path=path)
         settings.ignored_config_overrides = ignored_config_overrides(explicit)
+        local_managed = [k for k in data if k in MANAGED_KEYS]
+        if settings.settings_parameter and local_managed:
+            log.warning("Ignored %s in %s: these settings come from Parameter Store (%s).",
+                        ", ".join(local_managed), path.name, settings.settings_parameter)
         return settings
     except CurWorkError:
         raise
@@ -224,7 +237,84 @@ def load_settings(explicit: str | None = None) -> Settings:
         raise CurWorkError(f"A setting in {path} has the wrong type: {e}") from e
 
 
-def settings_from_dict(data: dict, source_path: Path | None = None) -> Settings:
+# Managed settings (NIST SP 800-53 CM-5, CM-6, AU-12). When the local admin settings file names a
+# "settings_parameter", the settings below come only from that AWS Systems Manager Parameter Store
+# parameter. Billers' AWS permissions can read it but not change it, so only the AWS admin role can change
+# where data goes or how it is protected, and AWS keeps every version and records who changed it.
+# The local file keeps only what CurWork needs before sign-in (LOCAL_KEYS).
+LOCAL_KEYS = ("aws_profile", "region", "use_fips_endpoint", "aws_cli_path", "login_banner",
+              "user_settings_location", "settings_parameter", "work_dir", "sso")
+MANAGED_KEYS = tuple(k for k in DEFAULT_CONFIG if k not in LOCAL_KEYS)
+_PARAMETER_NAME = re.compile(r"^/[A-Za-z0-9_.\-/]{1,1000}$")
+MAX_PARAMETER_BYTES = 4096   # the Standard tier's limit for one parameter value
+
+
+def validate_managed(managed: dict) -> dict:
+    """Check a managed settings object before it's saved to Parameter Store. Returns it unchanged."""
+    if not isinstance(managed, dict):
+        raise CurWorkError("The managed settings must be a JSON object ({ ... }).")
+    unknown = sorted(k for k in managed if not k.startswith("_") and k not in MANAGED_KEYS)
+    if unknown:
+        raise CurWorkError(f"These settings can't be managed in Parameter Store: {', '.join(unknown)}. "
+                           f"They stay in {CONFIG_FILE_NAME} on each laptop.")
+    if len(json.dumps(managed, indent=2).encode("utf-8")) > MAX_PARAMETER_BYTES:
+        raise CurWorkError("The managed settings are too large for one Parameter Store parameter (4 KB).")
+    try:
+        settings_from_dict({}, managed=managed)
+    except (TypeError, ValueError, AttributeError) as e:
+        raise CurWorkError(f"A managed setting has the wrong type: {e}") from e
+    return managed
+
+
+def parse_managed(value: str) -> dict:
+    if len(value.encode("utf-8")) > MAX_PARAMETER_BYTES:
+        raise CurWorkError("The admin settings in Parameter Store are too large to be CurWork settings.")
+    try:
+        managed = json.loads(value)
+    except json.JSONDecodeError as e:
+        raise CurWorkError(f"The admin settings in Parameter Store aren't valid JSON (line {e.lineno}): {e.msg}. "
+                           "Ask your admin to fix them with the CurWork admin settings app.") from e
+    if not isinstance(managed, dict):
+        raise CurWorkError("The admin settings in Parameter Store must be a JSON object ({ ... }).")
+    return managed
+
+
+def read_managed_settings(local: Settings, ssm) -> Settings:
+    """Combine the local settings with the managed settings read from Parameter Store through ssm."""
+    try:
+        param = ssm.get_parameter(Name=local.settings_parameter)["Parameter"]
+    except bexc.ClientError as e:
+        if e.response.get("Error", {}).get("Code") == "ParameterNotFound":
+            raise CurWorkError(f"CurWork's admin settings aren't in AWS Parameter Store yet "
+                               f"({local.settings_parameter}). Ask your admin.") from None
+        raise
+    managed = parse_managed(param["Value"])
+    extra = sorted(k for k in managed if not k.startswith("_") and k not in MANAGED_KEYS)
+    if extra:
+        log.warning("Ignored %s in Parameter Store: these settings stay in each laptop's %s.",
+                    ", ".join(extra), CONFIG_FILE_NAME)
+    try:
+        s = settings_from_dict(local.local_data, source_path=local.source_path, managed=managed)
+    except (TypeError, ValueError, AttributeError) as e:
+        raise CurWorkError(f"A setting in Parameter Store has the wrong type: {e}") from e
+    s.ignored_config_overrides = list(local.ignored_config_overrides)
+    label = str(managed.get("_version") or "").strip()
+    s.admin_version = f"{label} (Parameter Store version {param.get('Version', '?')})".strip()
+    log.info("Admin settings read from Parameter Store: %s, version %s.", local.settings_parameter, param.get("Version"))
+    return s
+
+
+def settings_from_dict(data: dict, source_path: Path | None = None, managed: dict | None = None) -> Settings:
+    """Build Settings from the local admin settings (data) and, once read, the managed settings."""
+    local = data
+    parameter = str(data.get("settings_parameter") or "").strip()
+    if parameter and not _PARAMETER_NAME.match(parameter):
+        raise CurWorkError('"settings_parameter" must be a Parameter Store name such as /curwork/admin-settings.')
+    if managed is not None:
+        data = {**{k: v for k, v in data.items() if k in LOCAL_KEYS},
+                **{k: v for k, v in managed.items() if k in MANAGED_KEYS or k == "_version"}}
+    elif parameter:
+        data = {k: v for k, v in data.items() if k in LOCAL_KEYS}   # managed keys come from AWS only
     merged = json.loads(json.dumps(DEFAULT_CONFIG))
     for k, v in data.items():
         if k.startswith("_"):
@@ -235,8 +325,10 @@ def settings_from_dict(data: dict, source_path: Path | None = None) -> Settings:
             merged[k] = v
 
     bucket = str(merged["bucket"]).strip()
-    if not bucket or bucket.upper().startswith("CHANGE"):
-        raise CurWorkError(f"The admin settings file doesn't name an S3 bucket yet. Set \"bucket\" in {CONFIG_FILE_NAME}.")
+    waiting_for_managed = bool(parameter) and managed is None
+    if (not bucket or bucket.upper().startswith("CHANGE")) and not waiting_for_managed:
+        where = "the managed settings in Parameter Store" if managed is not None else CONFIG_FILE_NAME
+        raise CurWorkError(f"The admin settings don't name an S3 bucket yet. Set \"bucket\" in {where}.")
 
     stages = {str(k): _norm_prefix(v) for k, v in dict(merged["output_stages"]).items() if _norm_prefix(v)}
     if not stages:
@@ -280,6 +372,9 @@ def settings_from_dict(data: dict, source_path: Path | None = None) -> Settings:
         source_path=source_path,
         user_settings_location=location,
         admin_version=str(data.get("_version") or "").strip(),
+        settings_parameter=parameter,
+        managed_loaded=managed is not None,
+        local_data=dict(local),
     )
 
 
@@ -503,6 +598,8 @@ _OPERATION_LABELS = {
     "UploadPart": "uploading part of a large file to S3 (needs s3:PutObject)",
     "CompleteMultipartUpload": "finishing a large upload to S3 (needs s3:PutObject)",
     "GetCallerIdentity": "checking who you're signed in as (sts:GetCallerIdentity)",
+    "GetParameter": "reading CurWork's admin settings from Parameter Store (ssm:GetParameter)",
+    "PutParameter": "saving CurWork's admin settings to Parameter Store (ssm:PutParameter)",
 }
 
 
@@ -1047,6 +1144,8 @@ class S3Service:
 
     @property
     def client(self):
+        if self.s.needs_managed_settings:   # never use S3 with settings that didn't come from Parameter Store
+            raise CurWorkError("CurWork hasn't read its admin settings from AWS yet. Click 'Sign in' and try again.")
         if self._client is None:
             self._client = self.session().client("s3", config=self._boto_config())
         return self._client
@@ -1055,6 +1154,11 @@ class S3Service:
         if self._sts is None:
             self._sts = self.session().client("sts", config=self._boto_config())
         return friendly_identity(self._sts.get_caller_identity()["Arn"])
+
+    def load_managed_settings(self) -> Settings:
+        """Read the managed admin settings from Parameter Store (after sign-in) and return the full Settings.
+        Fails closed: if the parameter can't be read, CurWork doesn't fall back to anything else."""
+        return read_managed_settings(self.s, self.session().client("ssm", config=self._boto_config()))
 
     def _transfer_config(self) -> TransferConfig:
         return TransferConfig(

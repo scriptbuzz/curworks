@@ -57,11 +57,9 @@ def main() -> int:
     step("Settings CurWork will use")
     settings = core.load_settings(str(TOOL / core.CONFIG_FILE_NAME))
     expected_role = (settings.sso or {}).get("role_name", "")
-    print(f"  Bucket {settings.bucket} ({settings.region}), profile {settings.aws_profile}, role {expected_role}")
+    where = f"Parameter Store {settings.settings_parameter}" if settings.settings_parameter else f"bucket {settings.bucket}"
+    print(f"  Managed settings from {where} ({settings.region}), profile {settings.aws_profile}, role {expected_role}")
     note = HERE / "test_bucket.txt"
-    if note.exists():
-        check("Admin settings use the current test bucket", note.read_text().split()[0] == settings.bucket,
-              f"test_bucket.txt says {note.read_text().split()[0]}")
     check("Admin settings name the biller test role", expected_role == os.environ.get("CURWORK_ROLE", "CurWorkBillerTest"),
           f"role_name is {expected_role or '(none)'}. Run menu option 4 (Set up biller test access).")
 
@@ -80,6 +78,33 @@ def main() -> int:
     if not check("Signed in with the role in the admin settings", role == expected_role, f"signed in as {who}"):
         print(f"  {Y}Stopping here: every other test would only show this same problem.{N}")
         return 1
+
+    if settings.settings_parameter:
+        step("Admin settings in Parameter Store (billers can read them, never change them)")
+        try:
+            settings = svc.load_managed_settings()
+            svc.s = settings
+            check("Read the admin settings from Parameter Store", True, settings.admin_version)
+        except Exception as e:  # noqa: BLE001
+            check("Read the admin settings from Parameter Store", False, core.classify_error(e)[1])
+            print(f"  {Y}Stopping here: CurWork can't work without its admin settings.{N}")
+            return 1
+        ssm = svc.session().client("ssm", region_name=settings.region)
+        for label, call in (
+                ("AWS refuses a biller changing the admin settings",
+                 lambda: ssm.put_parameter(Name=settings.settings_parameter, Value="{}", Type="String", Overwrite=True)),
+                ("AWS refuses a biller deleting the admin settings",
+                 lambda: ssm.delete_parameter(Name=settings.settings_parameter)),
+                ("AWS refuses a biller reading other parameters",
+                 lambda: ssm.get_parameter(Name="/not-curwork/autotest"))):
+            try:
+                call()
+                check(label, False, "AWS allowed it")
+            except ClientError as e:
+                check(label, e.response.get("Error", {}).get("Code") in ("AccessDeniedException", "AccessDenied"), err(e))
+    if note.exists():
+        check("Admin settings use the current test bucket", note.read_text().split()[0] == settings.bucket,
+              f"test_bucket.txt says {note.read_text().split()[0]}")
 
     # The admin profile removes this run's test files at the end. Check it works before uploading anything,
     # so an expired admin sign-in can't leave test files behind in the bucket.

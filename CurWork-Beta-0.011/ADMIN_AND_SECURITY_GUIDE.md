@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:50 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 22:44 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -127,10 +127,34 @@ How the app protects the split:
 | `login_banner` | empty | System-use notice shown at start-up (NIST AC-8). The biller must click OK to continue. |
 | `user_settings_location` | `tool_folder` | `tool_folder` (next to the app; work folder if users can't write there) or `work_folder` (each user's own work folder) |
 | `sso` | empty | Identity Center session name, start URL (the AWS access portal URL, not an Entra URL), SSO Region, account ID and role name. When filled in, the app sets up the AWS profile at first sign-in. |
+| `settings_parameter` | empty | The AWS Parameter Store name that holds the managed settings, for example `/curwork/admin-settings`. When it's empty, every setting comes from this file. See "Managed settings in AWS Parameter Store" below. |
 
 Keys that start with `_` are notes and are ignored. Keep `_version` up to date with the version and date/time of each change; the Settings window shows it to users.
 
 **How the app finds the admin settings file:** the built app (`CurWork.exe`, or `CurWork.app` on a Mac) only reads the file installed next to it. It ignores `--config`, the `CURWORK_CONFIG` environment variable and `%APPDATA%\CurWork\`, so a biller can't point it at a settings file of their own. If someone tries, the app writes a warning to the log naming what it ignored. If the installed file is missing, the app won't start and names the one place the file must go. When CurWork runs from source (`python curwork.py`), it still accepts `--config` and `CURWORK_CONFIG`, then looks next to `curwork.py`, then in `%APPDATA%\CurWork\`. If the file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error instead of quietly using a different file. Anyone who can run the source can also change it, so a lock there would add nothing, and the tests need these options.
+
+**Managed settings in AWS Parameter Store (optional)**
+
+Set `settings_parameter` in the local file, for example `/curwork/admin-settings`, to keep the settings that decide where data goes and how it's protected in AWS Systems Manager Parameter Store instead of on each laptop. AWS then enforces who can change them, not the laptop (NIST SP 800-53 AC-3, AC-6, CM-5):
+- **Managed in Parameter Store:** `bucket`, `kms_key_id`, `browse_roots`, `output_stages`, `default_stage`, `log_prefix`, `upload_extensions`, `large_download_warning_mb`, `max_concurrency` and `_version`.
+- **Kept in the local file,** because CurWork needs them before sign-in: the AWS profile and sign-in (`aws_profile`, `sso`), `region`, `use_fips_endpoint`, `aws_cli_path`, `work_dir`, `user_settings_location`, the use notice (`login_banner`, which must show before sign-in) and `settings_parameter` itself.
+- CurWork reads the parameter right after each sign-in. It ignores managed settings found in the local file and local-only settings found in the parameter, and writes a warning to the log when it does.
+- If CurWork can't read the parameter, it stops and says so. It never falls back to other settings, and it won't use S3 until the parameter has been read.
+- The biller permission set may only read parameters under `/curwork/` (`ssm:GetParameter`). It can't change or delete them. Give `ssm:PutParameter` on the parameter only to the AWS admin role.
+- Parameter Store keeps every saved version, and CloudTrail records who saved each one (AU-2, AU-12). The parameter is a Standard-tier `String` with no secrets in it, so it costs nothing and needs no KMS key.
+
+**The CurWork Admin Settings app** (`curwork_admin.py`) is how admins view and change the managed settings. Run it with the AWS admin profile:
+
+```
+python curwork_admin.py --profile <admin profile>
+```
+
+- **Sign in** opens the browser for the admin sign-in. **Load** reads the current version.
+- The form checks every value with the same rules CurWork uses before anything is saved. **Save to AWS** lists each change and asks you to confirm it.
+- If another admin saved a newer version after you clicked Load, nothing is saved. Load their version first, then make your change again.
+- **Fill in from the local settings file** copies the managed settings from `curwork_admin_settings.json`. Use it once to create the parameter.
+- **History** lists every saved version, when it was saved and who saved it.
+- A sign-in without permission to change the parameter, such as a biller's, gets a message saying that only the AWS admin role can change the settings. The app doesn't decide this itself; AWS refuses the save.
 
 **User preferences reference**
 
@@ -146,7 +170,7 @@ Keys that start with `_` are notes and are ignored. Keep `_version` up to date w
 
 ## 7. Day-to-day admin tasks
 
-- **Change an admin setting:** edit the file, update `_version`, redeploy it, and ask billers to restart CurWork.
+- **Change an admin setting:** with Parameter Store, change it in the CurWork Admin Settings app; billers get it the next time they sign in. Without it, edit the file, update `_version`, redeploy it, and ask billers to restart CurWork.
 - **Add a result type:** add it to `output_stages` and add the same folder to the permission set (the `ListBucket` prefixes and the write resources). Keep it separate from the browse folders.
 - **Add a customer:** nothing to do in CurWork. New customer folders appear in the S3 browser once the converted files are in S3.
 - **Release a new version:** build, sign, deploy. The admin and user settings files stay as they are.
@@ -241,6 +265,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-22 22:44 | Beta 0.011 | Managed settings (NIST SP 800-53 AC-3, CM-5, AU-12): the settings that decide where data goes can live in AWS Parameter Store. Billers can only read them, only the AWS admin role can change them, and the new CurWork Admin Settings app is how admins change them. | mbitar |
 | 2026-11-22 21:50 | Beta 0.011 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error. Before, it quietly used the settings file next to `curwork.py` instead (NIST SP 800-53 CM-6). | mbitar |
 | 2026-11-22 20:56 | Beta 0.011 | Config lock (NIST SP 800-53 CM-5, CM-6): the built app only reads the admin settings installed next to it. `--config`, `CURWORK_CONFIG` and `%APPDATA%` are ignored there and logged; the self-test checks the lock. Running from source is unchanged. 3 new tests; 71 pass. | mbitar |
 | 2026-11-22 18:13 | Beta 0.011 | Source control: AWS account numbers, sign-in URLs and profile names are kept in a private, Git-ignored `curwork_test.env`; commit and push checks block them (NIST SP 800-53 AC-22 Publicly Accessible Content, SA-11 developer testing). AWS doesn't class account IDs as secret, but keeping them, sign-in URLs and profile names out of a shared repository limits what an outsider can learn about the environment. The admin settings file is not stored in Git. | mbitar |
@@ -251,4 +276,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:50 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 22:44 UTC · Modified by: mbitar*

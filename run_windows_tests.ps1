@@ -79,7 +79,7 @@ try {
     # ---- 1 and 2. Unit and window tests ----
     Write-Host "`n== 1 of 4. Unit tests"
     Push-Location $Tool
-    & $Py -m pytest -q -p no:cacheprovider tests\test_core.py | Out-Host   # Out-Host: keeps the output in the report
+    & $Py -m pytest -q -p no:cacheprovider tests\test_core.py tests\test_admin.py | Out-Host   # Out-Host: keeps the output in the report
     $ok = ($LASTEXITCODE -eq 0); if ($ok) { Pass "Unit tests" } else { Fail "Unit tests (see above)" }
     Part "1 (unit tests)" $ok
 

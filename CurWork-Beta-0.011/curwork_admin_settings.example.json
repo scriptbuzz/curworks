@@ -33,6 +33,9 @@
   "_login_banner_help": "Optional system-use notice (NIST 800-53 AC-8) shown at start-up. Billers must click OK to continue.",
   "login_banner": "",
 
+  "_settings_parameter_help": "Optional AWS Parameter Store name, such as /curwork/admin-settings. When set, the bucket, folders, KMS key and upload rules come only from that parameter, which only the AWS admin role can change (use curwork_admin.py). Empty = everything comes from this file.",
+  "settings_parameter": "",
+
   "_user_settings_location_help": "Where each user's preferences file goes: tool_folder (next to CurWork.exe; if users can't write there, it falls back to the work folder) or work_folder.",
   "user_settings_location": "tool_folder",
 

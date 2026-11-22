@@ -802,9 +802,8 @@ class CurWorkApp:
         head = ttk.Frame(outer)
         head.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
         ttk.Label(head, text="CurWork", style="Title.TLabel").pack(side="left")
-        tip(ttk.Label(head, text=f"   bucket: {self.s.bucket}   |   region: {self.s.region}"
-                                 f"{'   |   FIPS' if self.s.use_fips_endpoint else ''}",
-                      style="Hint.TLabel"), "where").pack(side="left")
+        self.where_lbl = tip(ttk.Label(head, text=self._where_text(), style="Hint.TLabel"), "where")
+        self.where_lbl.pack(side="left")
         self.sign_btn = tip(ttk.Button(head, text="Sign in", style="Big.TButton", command=self.sign_in), "sign_in")
         self.sign_btn.pack(side="right")
         tip(ttk.Button(head, text="Settings", command=self.open_settings), "settings").pack(side="right", padx=(0, 6))
@@ -908,6 +907,7 @@ class CurWorkApp:
         stage_box = tip(ttk.Combobox(dest, textvariable=self.stage_var, values=list(self.s.output_stages),
                                      state="readonly", width=18), "stage")
         stage_box.grid(row=0, column=1, padx=(4, 12))
+        self.stage_box = stage_box
         ttk.Label(dest, text="Customer / month folder:").grid(row=0, column=2, sticky="w")
         self.folder_var = tk.StringVar(value=self.work.load_state().get("context", ""))
         self.folder_box = tip(ttk.Combobox(dest, textvariable=self.folder_var, values=self.prefs.recent_folders), "folder")
@@ -1188,16 +1188,38 @@ class CurWorkApp:
         self.who_lbl.configure(text=text, style="Bad.TLabel")
         self.sign_btn.configure(text="Sign in")
 
+    def _where_text(self) -> str:
+        bucket = self.s.bucket or "(read from AWS after you sign in)"
+        return f"   bucket: {bucket}   |   region: {self.s.region}{'   |   FIPS' if self.s.use_fips_endpoint else ''}"
+
+    def _read_managed_settings(self):
+        """After sign-in: the managed settings from Parameter Store, or None when this install doesn't use them."""
+        return self.svc.load_managed_settings() if self.s.settings_parameter else None
+
+    def _apply_settings(self, new) -> None:
+        """Use the settings just read from Parameter Store everywhere in the window."""
+        if new is None:
+            return
+        self.s = new
+        self.svc.s = new
+        self.where_lbl.configure(text=self._where_text())
+        self.stage_box.configure(values=list(new.output_stages))
+        if self.stage_var.get() not in new.output_stages:
+            self.stage_var.set(new.default_stage)
+        self._update_dest_preview()
+
+    def _signed_in(self, result) -> None:
+        who, new = result
+        self._apply_settings(new)
+        self._set_signed_in(who)
+        log.info("Signed in as %s", who)
+        self.load_roots()
+
     def check_sign_in(self) -> None:
         def work():
             core.ensure_sso_profile(self.s)
             self.svc.reset()
             return self.svc.whoami()
-
-        def done(who):
-            self._set_signed_in(who)
-            log.info("Signed in as %s", who)
-            self.load_roots()
 
         if self.busy:
             return
@@ -1206,12 +1228,22 @@ class CurWorkApp:
         def runner():
             try:
                 who = work()
-                self.ui(lambda: (self._set_busy(False, "Ready."), done(who)))
             except BaseException as e:  # noqa: BLE001
                 kind, msg = core.classify_error(e)
                 log.info("Not signed in yet (%s).", kind)
                 self.ui(lambda: (self._set_busy(False, "Click 'Sign in' to start."),
                                  self._set_signed_out("Not signed in - click Sign in")))
+                return
+            try:
+                result = (who, self._read_managed_settings())
+            except BaseException as e:  # noqa: BLE001 - signed in, but the admin settings can't be read
+                kind, msg = core.classify_error(e)
+                log.error("Couldn't read the admin settings from Parameter Store: %s", msg)
+                self.ui(lambda: (self._set_busy(False, "Something went wrong. See the message."),
+                                 self._set_signed_out("Signed in, but the admin settings can't be read"),
+                                 messagebox.showerror(APP_TITLE, msg, parent=self.root)))
+                return
+            self.ui(lambda: (self._set_busy(False, "Ready."), self._signed_in(result)))
 
         threading.Thread(target=runner, daemon=True).start()
 
@@ -1231,14 +1263,10 @@ class CurWorkApp:
             core.run_sso_login(self.s.aws_profile, on_line=lambda line: log.info("  %s", line),
                                cli_path=self.s.aws_cli_path)
             self.svc.reset()
-            return self.svc.whoami()
+            who = self.svc.whoami()
+            return who, self._read_managed_settings()
 
-        def done(who):
-            self._set_signed_in(who)
-            log.info("Signed in as %s", who)
-            self.load_roots()
-
-        self.run_task("Signing in (check your browser)...", work, done)
+        self.run_task("Signing in (check your browser)...", work, self._signed_in)
 
     # ------------------------------------------------------------ browsing
     def load_roots(self) -> None:

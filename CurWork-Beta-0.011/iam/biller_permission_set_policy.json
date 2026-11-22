@@ -51,6 +51,14 @@
         "kms:GenerateDataKey"
       ],
       "Resource": "arn:aws:kms:REGION:ACCOUNT_ID:key/KMS_KEY_ID"
+    },
+    {
+      "Sid": "ReadCurWorkAdminSettings",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter"
+      ],
+      "Resource": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/curwork/*"
     }
   ]
 }

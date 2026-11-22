@@ -56,7 +56,7 @@ echo; echo "${B}== 2 of 5. Code tests (unit and window tests, mocked S3)${N}"
 echo "   Full output: code_tests_output.txt. Each window test runs in its own process, so one crash can't hide the rest."
 before=$FAILS; OUT="$HERE/code_tests_output.txt"; ONE="$(mktemp "${TMPDIR:-/tmp}/curwork-test.XXXXXX")"
 : > "$OUT"
-(cd "$TOOL" && limit 600 "$PY" -m pytest -q -p no:cacheprovider tests/test_core.py > "$ONE" 2>&1); rc=$?
+(cd "$TOOL" && limit 600 "$PY" -m pytest -q -p no:cacheprovider tests/test_core.py tests/test_admin.py > "$ONE" 2>&1); rc=$?
 cat "$ONE" >> "$OUT"
 [ $rc -eq 0 ] && pass "Unit tests: $(tail -1 "$ONE")" || { fail "Unit tests (exit $rc)"; tail -20 "$ONE" | sed 's/^/          /'; }
 TESTS=$(cd "$TOOL" && "$PY" -m pytest --collect-only -q -p no:cacheprovider tests/test_gui.py 2>/dev/null | grep '::')

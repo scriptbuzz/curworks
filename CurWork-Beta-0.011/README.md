@@ -1,6 +1,6 @@
 # CurWork
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:50 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 22:44 UTC · Modified by: mbitar
 
 CurWork is a small Windows app for the billing team. It copies converted CUR workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then sends the results back to S3 and cleans up the laptop. **The VBA code doesn't change.**
 
@@ -48,6 +48,7 @@ Built-in safety:
 | `curwork_test.env.example` | Template for the private test settings (`curwork_test.env`, never committed) |
 | `tools/check_no_aws_details.sh`, `.githooks/` | Blocks commits and pushes that contain AWS account numbers, sign-in URLs, emails, keys or private values |
 | `.gitignore` | Keeps secrets, personal settings, test output, build output and local working files out of Git. Also skips the 116 MB test workbook (over GitHub's 100 MB limit). |
+| `curwork_admin.py` | The CurWork Admin Settings app: AWS admins use it to view and change the managed settings in AWS Parameter Store. Only the AWS admin role can save. |
 | `curwork_help.py` | All help text in one place: the tips shown when you point at a control, and the Help window topics |
 | `curwork_core.py` | S3, sign-in, settings and work-folder logic (no window code, fully tested) |
 | `curwork_admin_settings.json` | **Protected** admin settings (bucket, folders, encryption, sign-in). The admin fills this in once. Not stored in Git (it's in `.gitignore`); the admin hands it out. |
@@ -114,6 +115,7 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 
 | Version | Date (UTC) | Changes | Modified by |
 |---|---|---|---|
+| Beta 0.011 | 2026-11-22 22:44 | Managed settings: the settings that decide where data goes can live in AWS Parameter Store. CurWork reads them after each sign-in, billers can only read them, and only the AWS admin role can change them with the new CurWork Admin Settings app (`curwork_admin.py`). 91 tests pass. | mbitar |
 | Beta 0.011 | 2026-11-22 21:50 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error instead of quietly using the settings file next to `curwork.py`. | mbitar |
 | Beta 0.011 | 2026-11-22 20:56 | Config lock: the built app only reads the admin settings file installed next to it. It ignores `--config` and `CURWORK_CONFIG` and logs a warning if either is used. Running from source still accepts them. | mbitar |
 | Beta 0.011 | 2026-11-22 18:13 | AWS details out of Git: the test scripts read the account number, admin profile and sign-in URL from a private `curwork_test.env` (ignored by Git; template `curwork_test.env.example`). New commit and push checks block AWS account numbers, sign-in URLs, emails, keys and private values, and the automated tests run the same check. The admin settings file is ignored too. Docs no longer name the test account or profile. | mbitar |
@@ -143,4 +145,4 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 | 1.0.0 (code) | 2026-11-22 11:33 | First release | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:50 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 22:44 UTC · Modified by: mbitar*

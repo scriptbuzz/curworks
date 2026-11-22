@@ -265,6 +265,72 @@ def test_use_notice_at_start_up(world, monkeypatch):
     assert "Use notice declined" in log_text and "Use notice accepted" in log_text
 
 
+def _use_parameter(world, value=None):
+    """Point the window at a managed settings parameter (and create it in the mock if value is given)."""
+    a = world.app
+    if value is not None:
+        boto3.client("ssm", region_name="us-east-1").put_parameter(
+            Name="/curwork/admin-settings", Value=json.dumps(value), Type="String")
+    a.s = core.settings_from_dict({"aws_profile": "", "work_dir": str(world.tmp / "CurWork"),
+                                   "settings_parameter": "/curwork/admin-settings"})
+    a.svc.s = a.s
+    return a
+
+
+def test_sign_in_reads_managed_settings_from_parameter_store(world):
+    a = _use_parameter(world, {"bucket": BUCKET, "output_stages": {"Priced": "priced/", "Special": "special/"},
+                               "default_stage": "Special"})
+    a.check_sign_in()
+    world.idle()
+    assert a.signed_in and a.s.bucket == BUCKET and not a.s.needs_managed_settings
+    assert BUCKET in a.where_lbl.cget("text")
+    assert list(a.stage_box.cget("values")) == ["Priced", "Special"]
+    world.open_folder("converted/agency-a/")
+    assert a.tree.exists("converted/agency-a/2026-10/"), "browsing works with the managed settings"
+
+
+def test_sign_in_without_the_managed_settings_stops_with_a_message(world):
+    a = _use_parameter(world)        # the parameter doesn't exist
+    a.check_sign_in()
+    world.idle()
+    errs = world.dialogs.errors()
+    assert errs and "aren't in AWS Parameter Store yet" in errs[-1]
+    assert not a.signed_in and a.s.needs_managed_settings
+
+
+def test_admin_settings_window_loads_edits_and_saves(world, monkeypatch):
+    import curwork_admin
+    ssm = boto3.client("ssm", region_name="us-east-1")
+    ssm.put_parameter(Name="/curwork/admin-settings", Type="String",
+                      Value=json.dumps({"bucket": BUCKET, "output_stages": {"Priced": "priced/"}}))
+    asked = []
+    monkeypatch.setattr(curwork_admin.messagebox, "askyesno", lambda *a, **k: (asked.append(a[1]), True)[1])
+    monkeypatch.setattr(curwork_admin.messagebox, "showerror", lambda *a, **k: asked.append("ERROR " + a[1]))
+    store = curwork_admin.AdminStore("/curwork/admin-settings", "us-east-1", session=boto3.Session(region_name="us-east-1"))
+    win = tk.Toplevel(world.root)
+    app = curwork_admin.AdminApp(win, store)
+
+    def wait():
+        end = time.time() + 20
+        world.pump(0.2)
+        while app.busy and time.time() < end:
+            world.pump(0.1)
+        world.pump(0.2)
+
+    assert str(app.save_btn.cget("state")) == "disabled", "nothing can be saved before Load"
+    app.load()
+    wait()
+    assert app.version == 1 and app.inputs["bucket"].get() == BUCKET
+    app.inputs["bucket"].delete(0, "end")
+    app.inputs["bucket"].insert(0, "new-bucket")
+    app.save()
+    wait()
+    assert asked and "new-bucket" in asked[0] and not any(m.startswith("ERROR") for m in asked)
+    p = ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]
+    assert p["Version"] == 2 and json.loads(p["Value"])["bucket"] == "new-bucket"
+    win.destroy()
+
+
 def test_about_and_settings_windows(world):
     a = world.app
     dlg = curwork.AboutDialog(world.root, a)

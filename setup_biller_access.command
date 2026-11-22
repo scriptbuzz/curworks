@@ -71,6 +71,7 @@ try:
 except ClientError:
     stop("The S3 encryption key (alias/aws/s3) isn't there yet. Run 'Create the test bucket' first.")
 text = text.replace("arn:aws:kms:REGION:ACCOUNT_ID:key/KMS_KEY_ID", key_arn)
+text = text.replace("arn:aws:ssm:REGION:ACCOUNT_ID:parameter", f"arn:aws:ssm:{SSO_REGION}:{ACCOUNT}:parameter")
 policy = json.loads(text)
 print(f"  Buckets: {BUCKETS}\n  KMS key: {key_arn}")
 
