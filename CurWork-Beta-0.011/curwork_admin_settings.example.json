@@ -1,0 +1,47 @@
+{
+  "_version": "Admin settings for CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 13:42 UTC - modified by: mbitar",
+  "_help": "PROTECTED admin settings. Keys that start with _ are notes and are ignored. Put this file next to CurWork.exe. Each user's own preferences go in curwork_user_settings.json, which can never change these settings.",
+
+  "bucket": "CHANGE-ME-cur-bucket",
+  "region": "us-east-1",
+  "aws_profile": "fpt-biller",
+  "use_fips_endpoint": false,
+  "kms_key_id": "",
+
+  "_browse_roots_help": "S3 folders billers can download from. Must not overlap output_stages.",
+  "browse_roots": ["converted/"],
+
+  "_output_stages_help": "Result types shown in the drop-down and the S3 folder each one uploads to.",
+  "output_stages": {
+    "Priced": "priced/",
+    "Allocated": "allocated/",
+    "Mapped": "mapped/",
+    "Split by account": "split/",
+    "Reports": "reports/"
+  },
+  "default_stage": "Priced",
+  "log_prefix": "logs/",
+
+  "work_dir": "%LOCALAPPDATA%\\CurWork",
+  "upload_extensions": [".xlsx", ".xlsm", ".xlsb", ".xls", ".csv", ".txt", ".zip"],
+  "large_download_warning_mb": 2048,
+  "max_concurrency": 8,
+
+  "_aws_cli_path_help": "Optional full path to aws.exe. Empty = look in Program Files, then PATH (never the current folder).",
+  "aws_cli_path": "",
+
+  "_login_banner_help": "Optional system-use notice (NIST 800-53 AC-8) shown at start-up. Billers must click OK to continue.",
+  "login_banner": "",
+
+  "_user_settings_location_help": "Where each user's preferences file goes: tool_folder (next to CurWork.exe; if users can't write there, it falls back to the work folder) or work_folder.",
+  "user_settings_location": "tool_folder",
+
+  "_sso_help": "Optional. If filled in, CurWork adds the AWS profile to the laptop the first time a biller clicks Sign in.",
+  "sso": {
+    "session_name": "fpt",
+    "start_url": "",
+    "sso_region": "us-east-1",
+    "account_id": "",
+    "role_name": ""
+  }
+}

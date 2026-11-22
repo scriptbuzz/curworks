@@ -1,0 +1,82 @@
+# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 18:07 UTC - modified by: mbitar
+# Keeps secrets, personal settings, test output and build output out of the repository.
+
+# ---- Secrets and credentials (never commit these) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+*.ovpn
+id_rsa*
+id_ed25519*
+*.ppk
+credentials
+credentials.*
+.aws/
+.netrc
+.pypirc
+*secret*
+*secrets*
+*token*.json
+config.curwork-backup-*
+
+# ---- Settings files: environment-specific or personal, kept out of Git ----
+# The admin settings file holds account, sign-in and bucket details. Get it from your admin.
+curwork_admin_settings.json
+curwork_user_settings.json
+.curwork-*.tmp
+.curwork-write-test-*
+
+# ---- Local working files (not part of the project) ----
+RESUME_HERE.md
+
+# ---- Test runs: results, logs and helper files ----
+*_results.txt
+code_tests_output.txt
+curwork_run_output.txt
+test_bucket.txt
+.bucket_policy_test.json
+CurWork-crash.log
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---- Large generated sample (over GitHub's 100 MB file limit) ----
+# Make it again with: python3 tools/make_large_sample.py sample-data/agency-b-cur-2026-10.xlsx
+sample-data/agency-b-cur-2026-10.xlsx
+
+# ---- Build output ----
+build/
+dist/
+*.spec
+CurWork.app/
+*.exe
+sbom-runtime.cdx.json
+*.zip
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# ---- Operating system and editor files ----
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+~$*
+*.swp
+.idea/
+.vscode/
+
+# ---- Private test settings (AWS account, profiles, sign-in URL) ----
+curwork_test.env

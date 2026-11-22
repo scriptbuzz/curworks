@@ -1,0 +1,140 @@
+CurWork - Proprietary Software License
+DRAFT - For Internal Use (FPT) · Version Beta 0.011 · Updated 2026-11-22 18:38 UTC · Modified by: mbitar
+
+Copyright (c) 2026 FPT. All rights reserved.
+
+PLEASE READ THIS LICENSE CAREFULLY. BY COPYING, INSTALLING, BUILDING, RUNNING OR OTHERWISE USING THIS
+SOFTWARE, YOU AGREE TO THESE TERMS. IF YOU DO NOT AGREE, DO NOT USE THE SOFTWARE AND DELETE ALL COPIES.
+
+1. DEFINITIONS
+   "Software" means CurWork, including its source code, object code, executables, scripts, test kits,
+   sample data, documentation, icons and any updates or derivatives. "FPT" means the copyright owner named
+   above. "Authorized User" means an employee or contractor of FPT whom FPT has expressly authorized to use
+   the Software in the course of performing work for FPT.
+
+2. OWNERSHIP
+   The Software is proprietary to FPT and is protected by copyright, trade secret and other laws. FPT
+   retains all right, title and interest in and to the Software. No ownership rights are transferred.
+   All rights not expressly granted in this License are reserved by FPT.
+
+3. LIMITED LICENSE
+   Subject to these terms, FPT grants Authorized Users a limited, revocable, non-exclusive,
+   non-transferable, non-sublicensable license to use the Software solely for FPT's internal business
+   purposes and only while authorized by FPT. No other license, express or implied, by estoppel or
+   otherwise, is granted.
+
+4. RESTRICTIONS
+   Except as FPT expressly permits in writing, you must not:
+   (a) copy, modify, translate or create derivative works of the Software, except as needed for
+       authorized internal development and testing;
+   (b) distribute, publish, sell, rent, lease, lend, sublicense, host or otherwise make the Software
+       available to any third party, including customers, partners or the public;
+   (c) reverse engineer, decompile or disassemble any part of the Software, except to the extent such a
+       restriction is prohibited by applicable law;
+   (d) remove, alter or obscure any copyright, proprietary, DRAFT or confidentiality notice;
+   (e) use the Software to build a competing product or service;
+   (f) use the Software in violation of any law, regulation, contract, customer agreement or FPT policy.
+
+5. CONFIDENTIALITY
+   The Software, including its design, source code and documentation, is FPT confidential information.
+   You must protect it with at least the care you use for your own confidential information, and no less
+   than reasonable care, and disclose it only to Authorized Users who need to know it. Placing the
+   Software in a location accessible to the public (for example a public code repository) does not make
+   it public, waive FPT's rights, or grant any license to anyone.
+
+6. DRAFT AND BETA STATUS
+   The Software is a DRAFT, BETA release for internal evaluation and testing. It may contain errors,
+   defects and incomplete features, may change or be withdrawn at any time without notice, and has not
+   been approved for production use. Do not rely on it for billing, invoicing, financial reporting or any
+   other business-critical or customer-facing purpose unless FPT has formally approved it for that use.
+
+7. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND WITHOUT WARRANTY OF ANY KIND.
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, FPT DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS, IMPLIED,
+   STATUTORY OR OTHERWISE, INCLUDING ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+   TITLE, NON-INFRINGEMENT, ACCURACY, COMPLETENESS, AVAILABILITY, SECURITY, AND ANY WARRANTIES ARISING FROM
+   COURSE OF DEALING OR USAGE OF TRADE. FPT DOES NOT WARRANT THAT THE SOFTWARE WILL MEET YOUR NEEDS, BE
+   ERROR-FREE OR UNINTERRUPTED, BE FREE OF VULNERABILITIES OR HARMFUL COMPONENTS, OR THAT ANY RESULTS,
+   CALCULATIONS, FILES OR DATA IT PRODUCES WILL BE CORRECT. YOU USE THE SOFTWARE AT YOUR OWN RISK.
+
+8. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL FPT OR ITS AFFILIATES, OFFICERS, EMPLOYEES,
+   CONTRACTORS OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR
+   PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL OR BUSINESS, COSTS OF COVER, OR
+   BILLING OR CALCULATION ERRORS, ARISING OUT OF OR RELATED TO THE SOFTWARE OR THIS LICENSE, HOWEVER
+   CAUSED AND UNDER ANY THEORY OF LIABILITY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. FPT'S
+   TOTAL LIABILITY FOR ALL CLAIMS RELATED TO THE SOFTWARE WILL NOT EXCEED ZERO U.S. DOLLARS (US$0), OR, IF
+   THAT IS NOT PERMITTED BY LAW, THE LOWEST AMOUNT PERMITTED BY LAW.
+
+9. DATA, CLOUD SERVICES AND COMPLIANCE
+   (a) You are solely responsible for the data you process with the Software, including customer and
+       cost data, and for keeping it accurate, backed up and protected.
+   (b) The Software works with Amazon Web Services and other third-party services that you configure and
+       pay for. FPT is not responsible for those services, their availability, charges, security or data
+       handling, or for any AWS usage costs the Software causes.
+   (c) You are solely responsible for complying with all laws, regulations, contracts and policies that
+       apply to your use, including data protection, records retention, export control and any U.S.
+       federal or customer security requirements (for example NIST SP 800-53, FedRAMP, FISMA or agency
+       rules). References in the Software or its documentation to security frameworks or controls describe
+       design intent only. They are not a certification, authorization, attestation or guarantee of
+       compliance, and the Software has not been assessed or authorized under any such program.
+   (d) You must not use the Software to process classified information, or any data your contracts or
+       policies do not allow on the systems where you run it.
+
+10. NOT AN AWS, MICROSOFT OR APPLE PRODUCT; TRADEMARKS
+    The Software is not made, endorsed, sponsored or supported by Amazon Web Services, Microsoft or
+    Apple. Amazon Web Services, AWS, Amazon S3 and IAM Identity Center are trademarks of Amazon.com, Inc.
+    or its affiliates. Microsoft, Windows and Excel are trademarks of Microsoft Corporation. Apple, Mac and
+    macOS are trademarks of Apple Inc. Other names may be trademarks of their owners. Use of these names
+    is only to identify compatibility and does not imply any affiliation.
+
+11. THIRD-PARTY COMPONENTS
+    The Software uses or may be built with third-party open source components (listed in
+    THIRD_PARTY_NOTICES.md). Each is licensed under its own terms, which govern your use of that
+    component, and nothing in this License limits rights you have under those terms. Those components are
+    provided by their authors, not FPT, and the warranty disclaimer and limitation of liability above also
+    apply to them as far as the law allows.
+
+12. NO SUPPORT OR MAINTENANCE
+    FPT has no obligation to provide support, maintenance, updates, fixes, security patches or new
+    versions. Any support FPT chooses to provide is at its sole discretion and may stop at any time.
+
+13. FEEDBACK
+    If you give FPT suggestions or feedback about the Software, FPT may use them for any purpose without
+    obligation to you.
+
+14. INDEMNITY
+    To the extent permitted by law, you will defend, indemnify and hold harmless FPT from any claims,
+    losses, damages and costs (including reasonable legal fees) arising from your use of the Software in
+    violation of this License or of any law.
+
+15. EXPORT CONTROL
+    The Software may be subject to U.S. export control and sanctions laws, including the Export
+    Administration Regulations. You must not export, re-export or transfer it in violation of those laws.
+
+16. U.S. GOVERNMENT RIGHTS
+    The Software is "commercial computer software" and "commercial computer software documentation"
+    developed exclusively at private expense. If acquired by or for the U.S. Government, the Government's
+    rights are only those in this License, consistent with FAR 12.212 and DFARS 227.7202, as applicable.
+
+17. TERMINATION
+    This License ends automatically if you breach it, when your authorization from FPT ends, or when FPT
+    tells you it has ended. When it ends, you must stop using the Software and delete or return all
+    copies, including copies on laptops, removable media, repositories and cloud storage. Sections 2, 4, 5
+    and 7 to 20 survive termination.
+
+18. GOVERNING LAW
+    This License is governed by the laws of the State in which FPT has its principal place of business and
+    applicable U.S. federal law, without regard to conflict-of-law rules. The United Nations Convention on
+    Contracts for the International Sale of Goods does not apply.
+
+19. SEVERABILITY; NO WAIVER; ASSIGNMENT
+    If any part of this License is held unenforceable, it will be enforced to the maximum extent possible
+    and the rest stays in effect. FPT's failure to enforce any provision is not a waiver. You may not
+    assign or transfer this License; FPT may assign it.
+
+20. ENTIRE AGREEMENT
+    This License is the entire agreement about the Software and supersedes any other statement about it,
+    unless FPT and you have signed a separate written agreement that expressly overrides it.
+
+Questions about this License: contact FPT through your manager or FPT's legal department.

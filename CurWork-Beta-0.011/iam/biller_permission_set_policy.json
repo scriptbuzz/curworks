@@ -1,0 +1,56 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListOnlyCurWorkFolders",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::BUCKET_NAME",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "converted/*",
+            "priced/*",
+            "allocated/*",
+            "mapped/*",
+            "split/*",
+            "reports/*",
+            "logs/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ReadConvertedInputs",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::BUCKET_NAME/converted/*"
+    },
+    {
+      "Sid": "WriteAndCheckResults",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": [
+        "arn:aws:s3:::BUCKET_NAME/priced/*",
+        "arn:aws:s3:::BUCKET_NAME/allocated/*",
+        "arn:aws:s3:::BUCKET_NAME/mapped/*",
+        "arn:aws:s3:::BUCKET_NAME/split/*",
+        "arn:aws:s3:::BUCKET_NAME/reports/*",
+        "arn:aws:s3:::BUCKET_NAME/logs/*"
+      ]
+    },
+    {
+      "Sid": "UseTheBucketKmsKey",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:REGION:ACCOUNT_ID:key/KMS_KEY_ID"
+    }
+  ]
+}

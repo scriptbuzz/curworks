@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CurWork Biller Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* VOICE work: a training exhibit for billers, calm and exact
+   IDEA a screen recording of a real CurWork session, chaptered like a training video
+   PICTURE the CurWork window itself, playing the session, with the cursor doing each step
+   COLOUR white ground, deep ink #051c2c, one working blue #2251ff, Windows-light mock inside
+   TYPE Inter Tight 700 for titles, Inter for text, Segoe UI inside the mock
+   LAYOUT laptop: player left, chapter list right; phone: title, player (zooms to each action), captions, chapters */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#08131d);--ink:light-dark(#051c2c,#e6edf5);--mut:light-dark(#4a5a68,#a9b7c4);--rule:light-dark(#d9e0e6,#22313f);--acc:light-dark(#2251ff,#7d97ff);--pan:light-dark(#f4f6f9,#0f1e2b);--on:light-dark(#ffffff,#08131d)}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.band{padding-block:clamp(20px,3vw,40px);padding-left:max(4vw,16px);padding-right:max(4vw,16px);max-width:1320px;margin:0 auto}
+.stamp{margin:0 0 10px;font-size:13px;color:var(--mut)}
+.stamp b{color:var(--ink);font-weight:600}
+h1{font:700 clamp(30px,4vw,46px)/1.05 "Inter Tight",Inter,sans-serif;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+h2{font:700 clamp(22px,2.4vw,28px)/1.15 "Inter Tight",Inter,sans-serif;letter-spacing:-.01em;margin:0 0 14px}
+.lede{margin:0;max-width:68ch;font-size:17px;color:var(--mut)}
+header.band{padding-bottom:12px}
+.player{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px;align-items:start;padding-top:8px}
+.vp{position:relative;aspect-ratio:3/2;overflow:hidden;border-radius:10px;border:1px solid var(--rule);background:#1d3d6e}
+.sf{position:absolute;left:0;top:0;width:1200px;height:800px;transform-origin:0 0}
+.cap{display:grid;gap:4px;padding:14px 2px 6px;min-height:96px}
+.cap .lab{font-size:14px;font-weight:600;color:var(--acc)}
+.cap p{margin:0;font-size:18px;line-height:1.45;max-width:72ch}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 0 0}
+.ctl button,.chs button{font:600 15px Inter,sans-serif;color:var(--ink);background:var(--pan);border:1px solid var(--rule);border-radius:8px;min-height:44px;padding:0 16px;cursor:pointer}
+.ctl button:hover,.chs button:hover{border-color:var(--acc)}
+button:focus-visible,.bar:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.ctl #play{background:var(--acc);color:var(--on);border-color:var(--acc);min-width:96px}
+.bar{flex:1 1 180px;height:44px;display:flex;align-items:center;cursor:pointer}
+.bar i{display:block;height:6px;width:100%;border-radius:3px;background:var(--rule);position:relative;overflow:hidden}
+.bar i b{position:absolute;inset:0 auto 0 0;width:0;background:var(--acc)}
+.time{font-size:14px;color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chs{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.chs button{width:100%;text-align:left;display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;padding:10px 12px;font-weight:500;line-height:1.35}
+.chs button span{font-weight:700;color:var(--mut)}
+.chs button small{display:block;font-size:13px;color:var(--mut);font-weight:400;margin-top:2px}
+.chs .now button{background:var(--acc);border-color:var(--acc);color:var(--on)}
+.chs .now button span,.chs .now button small{color:var(--on)}
+.chs .done button span{color:var(--acc)}
+.side h3{margin:0 0 10px;font-size:15px}
+.note{font-size:13px;color:var(--mut);margin:12px 0 0}
+.recap{border-top:1px solid var(--rule);margin-top:12px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--ink)}
+.steps div{padding:14px 18px 14px 0;border-right:1px solid var(--rule);margin-right:18px}
+.steps div:last-child{border-right:0;margin-right:0}
+.steps h3{margin:0 0 6px;font-size:16px}
+.steps p{margin:0;font-size:15px;color:var(--mut)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;margin-top:28px}
+.two ul{margin:0;padding-left:18px}
+.two li{margin:0 0 8px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:14px;color:var(--mut);font-weight:600}
+td:last-child{white-space:nowrap}
+.src{font-size:13px;color:var(--mut);margin-top:22px}
+/* ---- the CurWork mock (fixed 1200x800 surface, Windows 11 light) ---- */
+.sf{font:12px/1.35 "Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;color:#1b1b1b}
+.desk{position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 110%,#4b8fd6 0,#2a5ea8 35%,#173a6e 70%,#0f2a52 100%)}
+.win{position:absolute;left:20px;top:14px;width:1160px;height:772px;background:#f3f3f3;border:1px solid #9aa4ad;border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column}
+.tb{height:32px;display:flex;align-items:center;gap:8px;padding-left:10px;background:#fff;font-size:12px;flex:none}
+.tb img{width:16px;height:16px}
+.tb .wc{margin-left:auto;display:flex}
+.tb .wc i{width:46px;text-align:center;font-style:normal;color:#333;font-size:13px}
+.mb{height:22px;padding:2px 10px;background:#fff;border-bottom:1px solid #e3e3e3;flex:none}
+.app{flex:1;display:flex;flex-direction:column;padding:10px;gap:8px}
+.hd{display:flex;align-items:center;gap:6px;height:34px;flex:none}
+.ttl{font-size:17px;font-weight:700;margin-right:10px}
+.hint{color:#6b6b6b}
+.sp{flex:1}
+.sf button{font:inherit;color:#1b1b1b;background:#fdfdfd;border:1px solid #c9c9c9;border-bottom-color:#b5b5b5;border-radius:4px;padding:3px 10px;height:24px;white-space:nowrap}
+.sf button.big{height:30px;padding:4px 14px}
+.sf button.down{background:#dcdcdc;transform:translateY(1px)}
+.busy .act{color:#a0a0a0;background:#f5f5f5}
+.good{color:#1b7f3b}
+.bad{color:#b42318}
+.cols{flex:1;display:grid;grid-template-columns:5fr 6fr;gap:8px;min-height:0}
+.right{display:flex;flex-direction:column;gap:8px;min-height:0}
+fieldset{margin:0;border:1px solid #cfcfcf;border-radius:4px;padding:6px 8px 8px;display:flex;flex-direction:column;gap:6px;min-height:0}
+legend{font-weight:700;font-size:13px;padding:0 4px}
+legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid #c9c9c9;border-radius:3px;padding:0 5px;margin-left:4px;background:#fdfdfd;font-size:11px}
+.s1,.s3{flex:1}
+.row{display:flex;align-items:center;gap:6px}
+.tv{flex:1;background:#fff;border:1px solid #c6c6c6;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.th,.tr{display:grid;grid-template-columns:minmax(0,1fr) 80px 130px;align-items:center;height:22px;padding-right:4px}
+.out .th,.out .tr{grid-template-columns:minmax(0,1fr) 80px 150px}
+.th{background:#f7f7f7;border-bottom:1px solid #dcdcdc}
+.th span{padding-left:6px;border-right:1px solid #e2e2e2}
+.tr .nm{padding-left:calc(6px + var(--d,0)*18px);white-space:nowrap;overflow:hidden}
+.tr .r{text-align:right;padding-right:8px}
+.tr.fo .nm{font-weight:700}
+.tg{display:inline-block;width:14px;color:#555}
+.tr.sel{background:#0078d4;color:#fff}
+.tr.sel .tg{color:#fff}
+.pending{color:#9a6700}
+.done{color:#1b7f3b}
+.open{color:#b42318}
+.grid2{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:4px 6px;align-items:center}
+.ent{height:24px;border:1px solid #c9c9c9;border-radius:4px;background:#f6f6f6;padding:3px 6px;white-space:nowrap;overflow:hidden;color:#444}
+.combo{height:24px;border:1px solid #c9c9c9;border-radius:4px;background:#fff;padding:3px 22px 3px 6px;position:relative;white-space:nowrap;overflow:hidden}
+.combo::after{content:"\25BE";position:absolute;right:6px;top:3px;color:#555}
+.grow{flex:1}
+.hl{background:#fff4c2;outline:2px solid #e8b400;border-radius:3px}
+.bt{flex:none;display:flex;flex-direction:column;gap:6px}
+.st{width:340px;white-space:nowrap;overflow:hidden}
+.pb{flex:1;height:14px;border:1px solid #bcbcbc;background:#e6e6e6;border-radius:2px;overflow:hidden;position:relative}
+.pb i{position:absolute;inset:0 auto 0 0;width:0;background:#06b025}
+.pb.ind i{width:22%;animation:ind 1.1s linear infinite}
+@keyframes ind{from{left:-22%}to{left:100%}}
+.log{height:112px;background:#fff;border:1px solid #c6c6c6;font:11.5px/16px Consolas,"Cascadia Mono",ui-monospace,monospace;padding:3px 6px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.log div{white-space:nowrap;overflow:hidden}
+.ov{position:absolute;background:#fff;border:1px solid #8e98a2;border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.4);overflow:hidden}
+.ov[hidden],.dd[hidden],.tip[hidden]{display:none}
+.otb{height:32px;display:flex;align-items:center;padding:0 0 0 12px;gap:8px;background:#f3f3f3;border-bottom:1px solid #ddd}
+.otb .wc{margin-left:auto;display:flex}
+.otb .wc i{width:42px;text-align:center;font-style:normal}
+#browser{left:300px;top:120px;width:600px;height:430px}
+.addr{margin:8px 12px;height:28px;border-radius:14px;background:#f1f3f4;padding:5px 14px;color:#333}
+.bp{padding:26px 60px;display:flex;flex-direction:column;gap:12px}
+.bp h4{margin:0;font-size:20px;font-weight:600}
+.bp p{margin:0;color:#555}
+.fld{height:32px;border:1px solid #8a8a8a;border-radius:4px;padding:6px 8px;font-size:13px}
+.bp button{height:32px;background:#2251ff;color:#fff;border-color:#2251ff;align-self:flex-start;padding:0 20px}
+.ok{width:46px;height:46px;border-radius:50%;background:#1b7f3b;color:#fff;font-size:26px;display:grid;place-items:center}
+#excel{left:26px;top:150px;width:508px;height:440px}
+#excel .otb{background:#1e6b41;color:#fff;border:0}
+.rib{height:44px;background:#f3f3f3;border-bottom:1px solid #ddd}
+.cells{position:absolute;inset:108px 0 0 0;background:#fff linear-gradient(#e3e3e3 1px,transparent 1px) 0 0/100% 20px,linear-gradient(90deg,#e3e3e3 1px,transparent 1px) 0 0/72px 100%}
+.mac{position:absolute;left:30px;top:110px;width:448px;background:#f3f3f3;border:1px solid #8e98a2;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.25);padding:0 0 12px}
+.mac .otb{background:#fff;color:#1b1b1b;border-bottom:1px solid #ddd}
+.mg{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:center;padding:12px 14px 4px}
+.mg .ent{background:#fff}
+.mst{padding:6px 14px 0;display:flex;gap:10px;align-items:center}
+.mst .pb{max-width:180px}
+.dlg{left:410px;top:300px;width:380px}
+.dlg .body{display:flex;gap:12px;padding:18px 16px;font-size:13px}
+.dlg .ic{width:28px;height:28px;border-radius:50%;background:#0067c0;color:#fff;font-weight:700;display:grid;place-items:center;flex:none}
+.dlg .foot{background:#f3f3f3;padding:10px 12px;text-align:right;border-top:1px solid #e3e3e3}
+.dlg .foot button{width:80px}
+.dd{position:absolute;background:#fff;border:1px solid #9a9a9a;box-shadow:0 4px 12px rgba(0,0,0,.2);width:150px}
+.dd div{padding:3px 8px}
+.dd .on{background:#0078d4;color:#fff}
+.tip{position:absolute;max-width:330px;background:#ffffe1;border:1px solid #767676;padding:5px 8px;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.2);z-index:5}
+.cur{position:absolute;left:900px;top:700px;width:22px;height:30px;z-index:9;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))}
+.rip{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid #2251ff;z-index:8;pointer-events:none;animation:rip .5s ease-out forwards}
+@keyframes rip{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
+@media (max-width:999px){.player{grid-template-columns:minmax(0,1fr)}.chs{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+@media (max-width:760px){.steps{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.steps div:nth-child(2){border-right:0;margin-right:0}.two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.steps{grid-template-columns:minmax(0,1fr)}.steps div{border-right:0;margin-right:0;border-bottom:1px solid var(--rule)}.cap p{font-size:17px}.ctl button{padding:0 12px}.chs{grid-template-columns:minmax(0,1fr)}td:last-child{white-space:normal}}
+@media (prefers-reduced-motion:reduce){.pb.ind i{animation:none;width:100%;opacity:.5}.rip{display:none}}
+</style>
+</head>
+<body>
+<header class="band">
+  <p class="stamp"><b>DRAFT - For Internal Use (FPT)</b> · Demo version 1.0 for CurWork Beta 0.011 · Updated 2026-11-22 20:26 UTC · Modified by: mbitar</p>
+  <h1>A biller's CurWork session, start to finish</h1>
+  <p class="lede">One customer's month goes from S3, through your usual macros, and back to S3, and nothing is left on the laptop at the end. It takes under two minutes to watch.</p>
+</header>
+
+<main class="band player">
+  <div>
+    <div class="vp" id="vp" aria-label="Animated CurWork window playing the session"><div class="sf" id="sf"></div></div>
+    <div class="cap" aria-live="polite"><span class="lab" id="lab"></span><p id="capText"></p></div>
+    <div class="ctl">
+      <button id="play" type="button">Pause</button>
+      <button id="back" type="button">Back</button>
+      <button id="next" type="button">Next</button>
+      <button id="again" type="button">Start over</button>
+      <div class="bar" id="bar" tabindex="0" role="slider" aria-label="Demo progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i><b id="fill"></b></i></div>
+      <span class="time" id="time">0:00</span>
+    </div>
+    <p class="note">Space plays or pauses. The arrow keys go back or forward a step. Sample data only: the bucket, user, customers, files, sizes and macro names are made up.</p>
+  </div>
+  <aside class="side">
+    <h3>Chapters</h3>
+    <ol class="chs" id="chs"></ol>
+  </aside>
+</main>
+
+<section class="band recap">
+  <h2>The four steps in the CurWork window</h2>
+  <div class="steps">
+    <div><h3>1. Get files from S3</h3><p>Open the customer folder and the month, select it, then click <b>Download selected</b>. The files go into the In folder.</p></div>
+    <div><h3>2. Run your macros as usual</h3><p>Use <b>Copy path</b> to paste the In folder into the macro's file box. Save results to the Out folder.</p></div>
+    <div><h3>3. Send results to S3</h3><p>Check the result type and the folder line under it, then click <b>Upload all new or changed</b>. Green means uploaded.</p></div>
+    <div><h3>4. When you're done</h3><p>Click <b>Finish and clean up</b>. CurWork saves today's log to S3 and empties In and Out.</p></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>When something goes wrong</h3>
+      <ul>
+        <li>Press <b>F1</b>, or click the small <b>?</b> next to any step, for help on that step.</li>
+        <li>Point at any button or box to see a short tip about what it does.</li>
+        <li>If CurWork says a file is open in Excel, save and close it, then try again.</li>
+        <li>If a file with the same name is already in S3, CurWork asks before replacing it.</li>
+        <li>If you forget to finish, CurWork reminds you about the leftover files the next time it starts.</li>
+        <li>To ask for help, open <b>About</b>, click <b>Copy details</b>, and paste them into your message to your admin.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Why it works this way</h3>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>What you see</th><th>NIST SP 800-53 Rev. 5</th></tr></thead>
+        <tbody>
+          <tr><td>Sign-in with MFA in your browser. CurWork never sees your password.</td><td>IA-2(1)</td></tr>
+          <tr><td>Files stay on the laptop only until you finish, then In and Out are emptied.</td><td>MP-6, SC-28</td></tr>
+          <tr><td>Each upload is checked after it lands, and you're asked before anything in S3 is replaced.</td><td>SI-7</td></tr>
+          <tr><td>Today's log goes to S3 when you finish, so support can see what happened.</td><td>AU-2, AU-9</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <p class="src">Source: CurWork Beta 0.011 window layout, messages and tips (curwork.py, curwork_help.py). Some screens are simplified. The browser and Excel windows are generic examples. Windows testing hasn't been done yet. It's waiting for approval.</p>
+</section>
+
+<template id="tpl">
+<div class="desk"></div>
+<div class="win">
+  <div class="tb"><img alt="" src="ICON_DATA"><span>CurWork – Beta 0.011 (DRAFT - For Internal Use)</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
+  <div class="mb">Help</div>
+  <div class="app" id="app">
+    <div class="hd"><span class="ttl">CurWork</span><span class="hint">bucket: example-cur-bucket &nbsp; | &nbsp; region: us-east-1</span><span class="sp"></span><span id="who" class="hint">Checking sign-in...</span><span style="width:4px"></span><button>Help</button><button>About</button><button>Settings</button><button id="signBtn" class="big">Sign in</button></div>
+    <div class="cols">
+      <fieldset class="s1"><legend>1. Get files from S3<i>?</i></legend>
+        <span class="hint">Open a customer folder, select files or a whole month, then click Download.</span>
+        <div class="tv" id="treeBox"><div class="th"><span>Name</span><span>Size</span><span>Last changed</span></div><div id="tree"></div></div>
+        <div class="row"><button class="act">Refresh</button><span class="sp"></span><button id="dlBtn" class="big act">Download selected &#8594;</button></div>
+        <div class="row"><span>Pinned:</span><span class="combo grow">&nbsp;</span><button class="act">Go</button><button>Pin selected folder</button></div>
+      </fieldset>
+      <div class="right">
+        <fieldset><legend>2. Run your macros as usual<i>?</i></legend>
+          <span class="hint">In the macro menu, pick files from the In folder and save results to the Out folder.</span>
+          <div class="grid2">
+            <span>In (files from S3):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\In</span><button>Open</button><button id="inCopy">Copy path</button>
+            <span>Out (your results):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\Out</span><button>Open</button><button>Copy path</button>
+          </div>
+          <span class="hint" id="counts">In: 0 file(s) &nbsp; | &nbsp; Out: 0 file(s), 0 not uploaded yet</span>
+        </fieldset>
+        <fieldset class="s3"><legend>3. Send results to S3<i>?</i></legend>
+          <div class="tv out" id="outBox"><div class="th"><span>File in Out folder</span><span>Size</span><span>Status</span></div><div id="outTree"></div></div>
+          <div class="row"><span>Result type:</span><span class="combo" id="stageBox" style="width:150px">Priced</span><span style="width:6px"></span><span>Customer / month folder:</span><span class="combo grow" id="folderBox">&nbsp;</span></div>
+          <span class="hint" id="dest">Results will go to:&nbsp; s3://example-cur-bucket/priced/</span>
+          <div class="row"><button class="act">Refresh list</button><button class="act">Upload selected</button><span class="sp"></span><button id="upAll" class="big act">Upload all new or changed &#8593;</button></div>
+        </fieldset>
+        <fieldset><legend>4. When you're done<i>?</i></legend>
+          <div class="row"><span class="hint grow">Checks that nothing is still open or waiting to upload, uploads today's log, then empties In and Out on this laptop.</span><button id="finBtn" class="big act">Finish and clean up</button></div>
+        </fieldset>
+      </div>
+    </div>
+    <div class="bt">
+      <div class="row"><span class="st" id="status">Ready.</span><div class="pb" id="pb"><i id="pbar"></i></div><button id="stop" disabled style="color:#a0a0a0">Stop</button></div>
+      <div class="log" id="log"></div>
+      <div class="row"><span class="hint">Tip: point at any button or box to see what it does. Press F1 for Help.</span><span class="sp"></span><button>Open log folder</button></div>
+    </div>
+  </div>
+</div>
+<div class="ov" id="browser" hidden>
+  <div class="otb"><span>Sign in – Web browser</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i id="bClose">&#10005;</i></span></div>
+  <div class="addr">https://sign-in.example.com</div>
+  <div class="bp" id="bp"></div>
+</div>
+<div class="ov" id="excel" hidden>
+  <div class="otb"><span>cur-macros.xlsm – Excel</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i id="xClose">&#10005;</i></span></div>
+  <div class="rib"></div>
+  <div class="cells"></div>
+  <div class="mac">
+    <div class="otb"><span>CUR macro menu</span></div>
+    <div class="mg">
+      <span>Macro:</span><span class="combo">Price CUR file</span>
+      <span>Input file:</span><span class="ent" id="xin">&nbsp;</span>
+      <span>Save result to:</span><span class="ent" id="xout">&nbsp;</span>
+    </div>
+    <div class="mst"><button id="xrun" style="width:80px">Run</button><div class="pb"><i id="xbar"></i></div><span id="xst"></span></div>
+  </div>
+</div>
+<div class="dd" id="dd" hidden><div class="on" id="ddP">Priced</div><div>Allocated</div><div>Mapped</div><div>Split by account</div><div>Reports</div></div>
+<div class="ov dlg" id="msg" hidden>
+  <div class="otb"><span>CurWork</span></div>
+  <div class="body"><span class="ic">i</span><span>Done. The In and Out folders on this laptop are empty.</span></div>
+  <div class="foot"><button id="msgOk">OK</button></div>
+</div>
+<div class="tip" id="tip" hidden></div>
+<svg class="cur" id="cur" viewBox="0 0 22 30" aria-hidden="true"><path d="M2 2 L2 24 L7.5 18.5 L11.5 27.5 L15 26 L11 17.2 L18.5 17.2 Z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/></svg>
+</template>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const sf = $('sf'), vp = $('vp'), tpl = $('tpl').innerHTML;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const W = 1200, H = 800;
+const IN = 'C:\\Users\\biller\\AppData\\Local\\CurWork\\In';
+const OUT = 'C:\\Users\\biller\\AppData\\Local\\CurWork\\Out';
+const BKT = 'example-cur-bucket';
+const TIP = {
+  who: "Who you're signed in as, and the role you're using. Green means you're signed in.",
+  sign: 'Opens your browser to sign in with your company account. Use it when you start, or when your sign-in has expired.',
+  dl: 'Copy the selected files (or every file in the selected folders) from S3 into your In folder.',
+  copy: "Copy this folder's path, to paste into the macro's file dialog.",
+  dest: 'Exactly where in S3 your results will be saved. Check it before you upload.',
+  fin: 'Use at the end of your work. It checks nothing is still open or waiting to upload, uploads today\'s log for support, then empties In and Out on this computer.'
+};
+let token = 0, playing = false, instant = false, ended = false, idx = 0, clock = 0, beatStart = 0, waits = [], last = performance.now(), lt = 0;
+let cam = {x: W / 2, y: H / 2, z: 1};
+
+const hang = () => new Promise(() => {});
+function wait(ms) {
+  if (instant) return Promise.resolve();
+  const my = token;
+  return new Promise(r => waits.push({end: clock + ms, res: () => { if (my === token) r(); }}));
+}
+function tween(el, props, ms, ease) {
+  if (instant || ms <= 0) { Object.assign(el.style, props); return Promise.resolve(); }
+  const my = token;
+  const a = el.animate([props], {duration: ms, easing: ease || 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards'});
+  if (!playing) a.pause();
+  return a.finished.then(() => { Object.assign(el.style, props); a.cancel(); if (my !== token) return hang(); }, hang);
+}
+function pos(el) {
+  const r = el.getBoundingClientRect(), s = sf.getBoundingClientRect(), k = s.width / W;
+  return {x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k};
+}
+function applyCam(anim) {
+  const vw = vp.clientWidth, vh = vp.clientHeight, s = vw / W * cam.z;
+  let tx = vw / 2 - cam.x * s, ty = vh / 2 - cam.y * s;
+  tx = Math.min(0, Math.max(vw - W * s, tx));
+  ty = Math.min(0, Math.max(vh - H * s, ty));
+  sf.style.transition = anim && !instant && !RM && playing ? 'transform .7s cubic-bezier(.3,.7,.3,1)' : 'none';
+  sf.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
+}
+function focus(id) {
+  if (!id) cam = {x: W / 2, y: H / 2, z: 1};
+  else { const p = pos($(id)); cam = {x: p.x + p.w / 2, y: p.y + p.h / 2, z: vp.clientWidth < 760 ? 2.1 : 1}; }
+  applyCam(true);
+}
+async function moveTo(id, ox = .5, oy = .5) {
+  const p = pos($(id)), c = $('cur');
+  const x = p.x + p.w * ox, y = p.y + p.h * oy;
+  const d = Math.hypot(x - parseFloat(c.style.left || 900), y - parseFloat(c.style.top || 700));
+  await tween(c, {left: x + 'px', top: y + 'px'}, RM ? 0 : Math.min(1100, 320 + d * .9));
+}
+async function click(id, ox, oy) {
+  await moveTo(id, ox, oy);
+  const el = $(id), c = $('cur');
+  el.classList.add('down');
+  if (!instant && !RM) {
+    const r = document.createElement('span'); r.className = 'rip';
+    r.style.left = c.style.left; r.style.top = c.style.top; sf.appendChild(r);
+    setTimeout(() => r.remove(), 700);
+  }
+  await wait(170); el.classList.remove('down'); await wait(130);
+}
+async function type(id, text, per = 45) {
+  const el = $(id);
+  if (instant) { el.textContent = text; return; }
+  for (let i = 1; i <= text.length; i++) { el.textContent = text.slice(0, i); await wait(per); }
+}
+function tipOn(id, text) {
+  const t = $('tip'), p = pos($(id));
+  t.textContent = text; t.hidden = false;
+  t.style.left = Math.max(10, Math.min(p.x, W - 345)) + 'px';
+  t.style.top = (p.y + p.h + 70 > H ? p.y - 54 : p.y + p.h + 6) + 'px';
+}
+const tipOff = () => { $('tip').hidden = true; };
+function st(t) { $('status').textContent = t.length < 60 ? t : t.slice(0, 57) + '...'; }
+function log(msg) {
+  const s = 9 * 3600 + 30 * 60 + 5 + lt; lt += 6;
+  const ts = [s / 3600 | 0, (s / 60 | 0) % 60, s % 60].map(n => String(n).padStart(2, '0')).join(':');
+  const d = document.createElement('div'); d.textContent = ts + '  ' + msg; const L = $('log'); L.appendChild(d); while (L.children.length > 6) L.firstChild.remove();
+}
+function busy(on, ind) {
+  $('app').classList.toggle('busy', on);
+  $('stop').disabled = !on; $('stop').style.color = on ? '' : '#a0a0a0';
+  $('pb').classList.toggle('ind', !!ind);
+  if (ind || on) $('pbar').style.width = ind ? '' : '0%';
+}
+async function prog(from, to, ms) { await tween($('pbar'), {width: to + '%'}, ms, 'linear'); }
+function who(text, cls) { const w = $('who'); w.textContent = text; w.className = cls; }
+function counts(i, o, n) { $('counts').innerHTML = `In: ${i} file(s) &nbsp; | &nbsp; Out: ${o} file(s), ${n} not uploaded yet`; }
+function dest(folder) { $('folderBox').innerHTML = folder || '&nbsp;'; $('dest').innerHTML = `Results will go to:&nbsp; s3://${BKT}/priced/${folder}`; }
+
+const R = (id, d, name, kind, open, size = '', mod = '') =>
+  `<div class="tr${kind === 'd' ? ' fo' : ''}" id="${id}" style="--d:${d}"><span class="nm"><span class="tg">${kind === 'd' ? (open ? '&#9662;' : '&#9656;') : ''}</span>${name}</span><span class="r">${size}</span><span>${mod}</span></div>`;
+const TREE = [
+  () => R('t-c', 0, 'converted', 'd', 1) + R('t-a', 1, 'agency-a', 'd', 0) + R('t-b', 1, 'agency-b', 'd', 0),
+  () => R('t-c', 0, 'converted', 'd', 1) + R('t-a', 1, 'agency-a', 'd', 1) + R('t-a09', 2, '2026-09', 'd', 0) + R('t-a10', 2, '2026-10', 'd', 0) + R('t-b', 1, 'agency-b', 'd', 0),
+  () => R('t-c', 0, 'converted', 'd', 1) + R('t-a', 1, 'agency-a', 'd', 1) + R('t-a09', 2, '2026-09', 'd', 0) + R('t-a10', 2, '2026-10', 'd', 1) +
+        R('t-f1', 3, 'agency-a-credits-2026-10.xlsx', 'f', 0, '3.2 MB', '2026-11-03 09:12') + R('t-f2', 3, 'agency-a-cur-2026-10.xlsx', 'f', 0, '96.4 MB', '2026-11-03 09:14') + R('t-b', 1, 'agency-b', 'd', 0)
+];
+const outRow = (tag, status) => `<div class="tr ${tag}" id="o1"><span class="nm">agency-a-priced-2026-10.xlsx</span><span class="r">41.7 MB</span><span>${status}</span></div>`;
+function page(html) { $('bp').innerHTML = html; }
+
+const CH = [
+  ['Open CurWork', 'Start it and see where you stand'],
+  ['Sign in', 'Company sign-in with MFA, in your browser'],
+  ['Get files from S3', 'Pick the customer and month, download'],
+  ['Run your macros', 'The same macros, pointed at In and Out'],
+  ['Send results to S3', 'Check where they go, then upload'],
+  ['Finish and clean up', 'Log saved, laptop emptied']
+];
+const B = [
+  {c: 0, len: 4200, t: 'Start CurWork from the shortcut your admin gave you. The title bar shows the version, and that this is a draft for internal use.', run: async () => {
+    focus(null); busy(true, true); st('Checking sign-in...');
+    await wait(1600);
+    log(`CurWork 0.011-beta started by biller. Bucket: ${BKT}  Work folder: C:\\Users\\biller\\AppData\\Local\\CurWork`);
+    await wait(2200);
+  }},
+  {c: 0, len: 5200, t: "CurWork checks whether you're already signed in. You aren't yet, so the top right turns red and asks you to sign in.", run: async () => {
+    busy(false); who('Not signed in - click Sign in', 'bad'); st("Click 'Sign in' to start.");
+    focus('who'); await moveTo('who'); tipOn('who', TIP.who); await wait(2800); tipOff();
+  }},
+  {c: 1, len: 5200, t: 'Click Sign in. CurWork opens your web browser for your normal company sign-in.', run: async () => {
+    focus('signBtn'); await moveTo('signBtn'); tipOn('signBtn', TIP.sign); await wait(1800); tipOff();
+    await click('signBtn'); busy(true, true); st('Signing in (check your browser)...');
+    log('Opening your browser to sign in. Finish the sign-in (and MFA) there, then come back.');
+    await wait(900);
+  }},
+  {c: 1, len: 10500, t: "Sign in with your company account and your MFA code, then allow access. You type your password in the browser only. CurWork never sees it.", run: async () => {
+    $('browser').hidden = false; focus('browser');
+    page('<h4>Company sign-in</h4><p>Email</p><div class="fld" id="bEmail"></div><p>Password</p><div class="fld" id="bPw"></div><button id="bNext">Sign in</button>');
+    await click('bEmail'); await type('bEmail', 'biller@example.com', 40);
+    await click('bPw'); await type('bPw', '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', 55);
+    await click('bNext'); await wait(500);
+    page('<h4>Enter your MFA code</h4><p>Open your authenticator app and enter the 6-digit code.</p><div class="fld" id="bCode"></div><button id="bVer">Verify</button>');
+    await click('bCode'); await type('bCode', '\u2022 \u2022 \u2022 \u2022 \u2022 \u2022', 70);
+    await click('bVer'); await wait(500);
+    page('<h4>Allow access?</h4><p>The AWS command line tool on this computer is asking to use your sign-in. CurWork uses it to reach S3.</p><button id="bAllow">Allow access</button>');
+    await wait(1200); await click('bAllow'); await wait(400);
+    page('<div class="ok">&#10003;</div><h4>Request approved</h4><p>You can close this window and go back to CurWork.</p>');
+    await wait(1600);
+  }},
+  {c: 1, len: 6200, t: "Back in CurWork, the top right turns green and shows who you're signed in as, and your role. The left side now lists the customer folders you're allowed to open.", run: async () => {
+    $('browser').hidden = true; focus(null);
+    busy(false); who('Signed in: biller@example.com (CUR_Biller)', 'good'); $('signBtn').textContent = 'Sign in again';
+    log('Signed in as biller@example.com (CUR_Biller)'); st('Loading folder...');
+    await wait(700); $('tree').innerHTML = TREE[0](); st('Ready.');
+    await wait(4200);
+  }},
+  {c: 2, len: 5200, t: "Open the customer folder, then the month you're working on.", run: async () => {
+    focus('treeBox'); await click('t-a', .2); st('Loading folder...');
+    await wait(500); $('tree').innerHTML = TREE[1](); st('Ready.'); await wait(500);
+    await click('t-a10', .2); st('Loading folder...');
+    await wait(500); $('tree').innerHTML = TREE[2](); st('Ready.'); await wait(1200);
+  }},
+  {c: 2, len: 4600, t: 'Select the month folder to get every file in it. You can also select single files.', run: async () => {
+    await click('t-a10', .3); $('t-a10').classList.add('sel'); await wait(600);
+    focus('dlBtn'); await moveTo('dlBtn'); tipOn('dlBtn', TIP.dl); await wait(2000); tipOff();
+  }},
+  {c: 2, len: 7400, t: 'Click Download selected. The files go into the In folder on this laptop. CurWork also fills in the folder your results will go to later.', run: async () => {
+    await click('dlBtn'); busy(true); log('Downloading 2 file(s), 99.6 MB...');
+    st('Downloading agency-a-credits-2026-10.xlsx'); await prog(0, 4, 500);
+    st('Downloading agency-a-cur-2026-10.xlsx'); await prog(4, 100, 3200);
+    busy(false); $('pbar').style.width = '100%';
+    log('Done: 2 file(s) are in ' + IN); st('Downloaded 2 file(s). Run your macros next.');
+    counts(2, 0, 0); dest('agency-a/2026-10/'); focus('counts');
+    await wait(2600);
+  }},
+  {c: 3, len: 5400, t: "Step 2 is the work you already do. Copy path puts the In folder's location on the clipboard, ready to paste into the macro's file box.", run: async () => {
+    focus('inCopy'); await moveTo('inCopy'); tipOn('inCopy', TIP.copy); await wait(1700); tipOff();
+    await click('inCopy'); st('Copied: ' + IN); await wait(1800);
+  }},
+  {c: 3, len: 10000, t: "Run your macros exactly as before: pick the file from In and save the result to Out. The macros themselves don't change.", run: async () => {
+    $('excel').hidden = false; focus('excel'); await wait(600);
+    await click('xin'); await type('xin', IN + '\\agency-a-cur-2026-10.xlsx', 22);
+    await click('xout'); await type('xout', OUT + '\\agency-a-priced-2026-10.xlsx', 22);
+    await click('xrun'); $('xst').textContent = 'Running...';
+    await tween($('xbar'), {width: '100%'}, 2600, 'linear');
+    $('xst').textContent = 'Saved to Out.';
+    $('outTree').innerHTML = outRow('open', 'Open in Excel'); counts(2, 1, 1);
+    await wait(1500);
+  }},
+  {c: 3, len: 6400, t: "While the result is still open in Excel, CurWork marks it Open in Excel and won't upload it. Close Excel and it changes to Not uploaded.", run: async () => {
+    focus('outBox'); await moveTo('o1', .3); await wait(1800);
+    await click('xClose'); $('excel').hidden = true; await wait(1100);
+    $('outTree').innerHTML = outRow('pending', 'Not uploaded'); await wait(2400);
+  }},
+  {c: 4, len: 6800, t: 'Check the result type and the customer / month folder. The line under them shows exactly where in S3 your files will go.', run: async () => {
+    focus('stageBox'); await click('stageBox');
+    const p = pos($('stageBox')), dd = $('dd'); dd.style.left = p.x + 'px'; dd.style.top = (p.y + p.h) + 'px'; dd.hidden = false;
+    await wait(1100); await click('ddP'); dd.hidden = true;
+    focus('dest'); await moveTo('dest', .4); $('dest').classList.add('hl'); tipOn('dest', TIP.dest);
+    await wait(2600); tipOff(); $('dest').classList.remove('hl');
+  }},
+  {c: 4, len: 7400, t: "Click Upload all new or changed. Each file is checked after it lands. When it's done, the row turns green and says Uploaded.", run: async () => {
+    focus('upAll'); await click('upAll'); busy(true);
+    log(`Uploading 1 file(s) to s3://${BKT}/priced/agency-a/2026-10/ ...`);
+    st('Uploading agency-a-priced-2026-10.xlsx'); focus('outBox');
+    await prog(0, 100, 3000);
+    busy(false); $('pbar').style.width = '100%';
+    log('Done: 1 file(s) uploaded.'); st('Uploaded 1 file(s).');
+    $('outTree').innerHTML = outRow('done', 'Uploaded'); counts(2, 1, 0);
+    await wait(2400);
+  }},
+  {c: 5, len: 7200, t: "When you're done, click Finish and clean up. CurWork checks that nothing is still open or waiting to upload, and saves today's log to S3 for support.", run: async () => {
+    focus('finBtn'); await moveTo('finBtn'); tipOn('finBtn', TIP.fin); await wait(2400); tipOff();
+    await click('finBtn'); busy(true, true); st('Cleaning up...');
+    await wait(1600);
+    log(`Log saved to s3://${BKT}/logs/biller/2026-11-22/curwork-2026-11-22.log`);
+    await wait(600);
+  }},
+  {c: 5, len: 6400, t: 'Then it empties the In and Out folders. No customer billing files are left on the laptop.', run: async () => {
+    busy(false); $('pbar').style.width = '0%';
+    $('outTree').innerHTML = ''; counts(0, 0, 0); dest(''); st('All clean. Nothing is left in In or Out.');
+    $('msg').hidden = false; focus('msg'); await wait(2200);
+    await click('msgOk'); $('msg').hidden = true; focus(null); await wait(1800);
+  }},
+  {c: 5, len: 5600, t: "That's the whole session: sign in, download, run your macros, upload, finish. If you forget to finish, CurWork reminds you about leftover files the next time it starts.", run: async () => {
+    focus('counts'); await moveTo('counts', .2); await wait(3800); focus(null);
+  }}
+];
+const TOTAL = B.reduce((a, b) => a + b.len, 0);
+const before = B.map((b, i) => B.slice(0, i).reduce((a, x) => a + x.len, 0));
+
+$('chs').innerHTML = CH.map((c, i) => `<li data-c="${i}"><button type="button"><span>${i + 1}</span><span style="color:inherit;font-weight:600">${c[0]}<small>${c[1]}</small></span></button></li>`).join('');
+const fmt = ms => { const s = Math.round(ms / 1000); return (s / 60 | 0) + ':' + String(s % 60).padStart(2, '0'); };
+
+function showCap(i) {
+  const c = B[i].c;
+  $('lab').textContent = `${CH[c][0]} · chapter ${c + 1} of ${CH.length}`;
+  $('capText').textContent = B[i].t;
+  document.querySelectorAll('#chs li').forEach(li => { const n = +li.dataset.c; li.className = n === c ? 'now' : n < c ? 'done' : ''; });
+}
+function reset() {
+  sf.innerHTML = tpl.replace('ICON_DATA', ICON); lt = 0;
+  cam = {x: W / 2, y: H / 2, z: 1}; applyCam(false);
+}
+function setPlaying(p) {
+  playing = p; $('play').textContent = p ? 'Pause' : (ended ? 'Replay' : 'Play');
+  document.getAnimations().forEach(a => { try { p ? a.play() : a.pause(); } catch (e) {} });
+}
+async function go(k) {
+  const my = ++token; waits = []; ended = false;
+  document.getAnimations().forEach(a => { try { a.cancel(); } catch (e) {} });
+  instant = true; reset();
+  for (let i = 0; i < k; i++) { if (my !== token) return; await B[i].run(); }
+  if (my !== token) return;
+  instant = false; $('tip').hidden = true;
+  for (let i = k; i < B.length; i++) {
+    if (my !== token) return;
+    idx = i; beatStart = clock; showCap(i);
+    await B[i].run(); await wait(300);
+  }
+  if (my === token) { ended = true; idx = B.length - 1; beatStart = clock - B[idx].len; setPlaying(false); }
+}
+function frame(t) {
+  const dt = Math.min(100, t - last); last = t;
+  if (playing) {
+    clock += dt;
+    for (let i = waits.length - 1; i >= 0; i--) if (waits[i].end <= clock) waits.splice(i, 1)[0].res();
+  }
+  const done = ended ? TOTAL : before[idx] + Math.min(B[idx].len, clock - beatStart);
+  $('fill').style.width = (done / TOTAL * 100) + '%';
+  $('bar').setAttribute('aria-valuenow', Math.round(done / TOTAL * 100));
+  $('time').textContent = fmt(done) + ' / ' + fmt(TOTAL);
+  requestAnimationFrame(frame);
+}
+const jump = k => { k = Math.max(0, Math.min(B.length - 1, k)); go(k); if (!playing) setPlaying(true); };
+$('play').onclick = () => { if (ended) { setPlaying(true); go(0); } else setPlaying(!playing); };
+$('back').onclick = () => jump(clock - beatStart > 1500 ? idx : idx - 1);
+$('next').onclick = () => jump(idx + 1);
+$('again').onclick = () => jump(0);
+$('chs').onclick = e => { const li = e.target.closest('li'); if (li) jump(B.findIndex(b => b.c === +li.dataset.c)); };
+$('bar').onclick = e => {
+  const r = e.currentTarget.getBoundingClientRect(), at = (e.clientX - r.left) / r.width * TOTAL;
+  let k = before.findIndex((b, i) => at < b + B[i].len); jump(k < 0 ? B.length - 1 : k);
+};
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' && e.target.tagName !== 'BUTTON') { e.preventDefault(); $('play').click(); }
+  else if (e.key === 'ArrowRight') $('next').click();
+  else if (e.key === 'ArrowLeft') $('back').click();
+});
+const ro = new ResizeObserver(() => applyCam(false)); ro.observe(vp);
+const ICON = 'data:image/png;base64,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';
+playing = !RM; setPlaying(playing);
+go(0);
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
