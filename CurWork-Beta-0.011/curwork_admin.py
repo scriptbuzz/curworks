@@ -95,11 +95,12 @@ def form_to_managed(form: dict[str, str]) -> dict:
 
 
 def describe_changes(before: dict | None, after: dict) -> list[str]:
-    """One plain line per setting that changes, for the confirmation before saving."""
-    before = before or {}
+    """One plain line per setting that changes, for the confirmation before saving. A setting missing from
+    the saved version counts as CurWork's default, which is also what the form shows for it."""
     lines = []
     for key, label, _kind in FIELDS:
-        old, new = before.get(key), after.get(key)
+        old = (before.get(key, core.DEFAULT_CONFIG.get(key)) if before is not None else None)
+        new = after.get(key, core.DEFAULT_CONFIG.get(key))
         if old != new:
             lines.append(f"{label}: {json.dumps(old) if old is not None else '(not set)'} -> "
                          f"{json.dumps(new) if new is not None else '(not set)'}")
@@ -288,7 +289,7 @@ class AdminApp:
                 result = work()
                 self._q.put(lambda: done(result))
             except BaseException as e:  # noqa: BLE001
-                self._q.put(lambda: self._failed(e))
+                self._q.put(lambda err=e: self._failed(err))   # bind it now: Python clears e after this block
 
         threading.Thread(target=runner, daemon=True).start()
 

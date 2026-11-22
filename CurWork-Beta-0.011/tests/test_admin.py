@@ -166,9 +166,102 @@ def test_biller_policy_reads_but_cannot_change_the_settings_parameter():
         biller = boto3.client("ssm", region_name="us-east-1", aws_access_key_id=key["AccessKeyId"],
                               aws_secret_access_key=key["SecretAccessKey"], aws_session_token=None)
         assert json.loads(biller.get_parameter(Name=PARAM)["Parameter"]["Value"])["bucket"] == "managed-bucket"
-        for call in (lambda: biller.put_parameter(Name=PARAM, Value="{}", Type="String", Overwrite=True),
-                     lambda: biller.delete_parameter(Name=PARAM)):
+        # Every way to change the settings, or to see who changed them, is refused.
+        for label, call in (
+                ("overwrite", lambda: biller.put_parameter(Name=PARAM, Value="{}", Type="String", Overwrite=True)),
+                ("create a new one", lambda: biller.put_parameter(Name="/curwork/new", Value="{}", Type="String")),
+                ("delete", lambda: biller.delete_parameter(Name=PARAM)),
+                ("delete in bulk", lambda: biller.delete_parameters(Names=[PARAM])),
+                ("label an old version", lambda: biller.label_parameter_version(Name=PARAM, ParameterVersion=1, Labels=["x"])),
+                ("change its tags", lambda: biller.add_tags_to_resource(ResourceType="Parameter", ResourceId=PARAM,
+                                                                        Tags=[{"Key": "k", "Value": "v"}])),
+                ("read the change history", lambda: biller.get_parameter_history(Name=PARAM)),
+                ("list every parameter", lambda: biller.describe_parameters())):
             with pytest.raises(ClientError) as e:
                 call()
-            assert e.value.response["Error"]["Code"] in ("AccessDeniedException", "AccessDenied", "403")
+            assert e.value.response["Error"]["Code"] in ("AccessDeniedException", "AccessDenied", "403"), label
     run()
+
+
+# ---- more of what CurWork does with the managed settings ---------------------------
+
+def test_s3_uses_the_bucket_from_parameter_store_not_the_local_file(tmp_path):
+    with mock_aws():
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket="managed-bucket")
+        s3.put_object(Bucket="managed-bucket", Key="converted/agency-a/2026-10/a.xlsx", Body=b"a")
+        boto3.client("ssm", region_name="us-east-1").put_parameter(Name=PARAM, Value=json.dumps(MANAGED), Type="String")
+        svc = core.S3Service(local_settings(tmp_path), session=boto3.Session(region_name="us-east-1"))
+        svc.s = svc.load_managed_settings()
+        folders, _ = svc.list_level("converted/")
+        assert folders == ["converted/agency-a/"]
+        out = tmp_path / "r.xlsx"
+        out.write_bytes(b"r")
+        svc.upload([(out, "r.xlsx")], "reports/")
+        assert s3.head_object(Bucket="managed-bucket", Key="reports/r.xlsx")["ContentLength"] == 1
+        with pytest.raises(core.CurWorkError):
+            svc.upload([(out, "r.xlsx")], "converted/")   # folders billers may upload to come from the parameter too
+
+
+def test_a_new_version_is_used_at_the_next_sign_in(tmp_path):
+    with mock_aws():
+        ssm = boto3.client("ssm", region_name="us-east-1")
+        ssm.put_parameter(Name=PARAM, Value=json.dumps(MANAGED), Type="String")
+        svc = core.S3Service(local_settings(tmp_path), session=boto3.Session(region_name="us-east-1"))
+        assert svc.load_managed_settings().bucket == "managed-bucket"
+        ssm.put_parameter(Name=PARAM, Value=json.dumps({**MANAGED, "bucket": "moved-bucket"}), Type="String", Overwrite=True)
+        s = svc.load_managed_settings()
+        assert s.bucket == "moved-bucket" and "version 2" in s.admin_version
+
+
+def test_ignored_settings_are_written_to_the_log(tmp_path, caplog):
+    cfg = tmp_path / core.CONFIG_FILE_NAME
+    cfg.write_text(json.dumps({"aws_profile": "", "settings_parameter": PARAM, "bucket": "local", "work_dir": str(tmp_path)}))
+    with caplog.at_level("WARNING", logger="curwork"):
+        local = core.load_settings(str(cfg))
+    assert "Ignored bucket" in caplog.text and "come from Parameter Store" in caplog.text
+    caplog.clear()
+    with mock_aws():
+        boto3.client("ssm", region_name="us-east-1").put_parameter(
+            Name=PARAM, Value=json.dumps({**MANAGED, "login_banner": "x"}), Type="String")
+        with caplog.at_level("WARNING", logger="curwork"):
+            core.S3Service(local, session=boto3.Session(region_name="us-east-1")).load_managed_settings()
+    assert "Ignored login_banner in Parameter Store" in caplog.text
+
+
+def test_oversized_settings_are_refused_both_ways(tmp_path):
+    big = {**MANAGED, "_note": "x" * 5000}
+    with pytest.raises(core.CurWorkError, match="too large"):
+        core.validate_managed(big)
+    with pytest.raises(core.CurWorkError, match="too large"):
+        core.parse_managed(json.dumps(big))   # what CurWork does with a value read from Parameter Store
+
+
+def test_wrong_types_in_the_parameter_give_a_plain_message(tmp_path):
+    with mock_aws():
+        boto3.client("ssm", region_name="us-east-1").put_parameter(
+            Name=PARAM, Value=json.dumps({**MANAGED, "max_concurrency": "lots"}), Type="String")
+        svc = core.S3Service(local_settings(tmp_path), session=boto3.Session(region_name="us-east-1"))
+        with pytest.raises(core.CurWorkError, match="wrong type"):
+            svc.load_managed_settings()
+
+
+def test_a_biller_without_read_permission_is_told_which_permission_is_missing():
+    denied = ClientError({"Error": {"Code": "AccessDeniedException", "Message": "not authorized to perform: ssm:GetParameter"},
+                          "ResponseMetadata": {"HTTPStatusCode": 400}}, "GetParameter")
+    kind, msg = core.classify_error(denied)
+    assert kind == "denied" and "ssm:GetParameter" in msg and "Parameter Store" in msg
+
+
+def test_admin_store_reports_an_expired_admin_sign_in_plainly():
+    from botocore.exceptions import TokenRetrievalError
+    store = admin.AdminStore(PARAM, "us-east-1", session=boto3.Session(region_name="us-east-1"))
+
+    def expired(_name):
+        raise TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed")
+
+    store._client = expired
+    with pytest.raises(TokenRetrievalError) as e:
+        store.load()
+    kind, msg = core.classify_error(e.value)
+    assert kind == "auth" and "Sign in" in msg

@@ -53,6 +53,47 @@ def err(e: BaseException) -> str:
     return f"{type(e).__name__}: {e}"
 
 
+def admin_settings_app_checks(settings: core.Settings, admin_profile: str) -> None:
+    """The admin settings app against real AWS, on a separate test parameter that is deleted afterwards:
+    the admin role can save, a biller's save is refused, and AWS records who saved."""
+    import curwork_admin as admin
+    step("Admin settings app (a test parameter, deleted afterwards)")
+    name = f"/curwork/autotest-{STAMP}"
+    managed = {k: v for k, v in settings.local_data.items() if k in core.MANAGED_KEYS}
+    managed.update(bucket=settings.bucket, _version="autotest")
+    admin_store = admin.AdminStore(name, settings.region, profile=admin_profile)
+    biller_store = admin.AdminStore(name, settings.region, profile=settings.aws_profile)
+    try:
+        try:
+            check("The admin role can save admin settings", admin_store.save(managed, None) == 1, name)
+        except Exception as e:  # noqa: BLE001
+            check("The admin role can save admin settings", False, err(e))
+            return
+        try:
+            got, version = biller_store.load()
+            check("A biller can read them", got == managed and version == 1)
+        except Exception as e:  # noqa: BLE001
+            check("A biller can read them", False, err(e))
+        try:
+            biller_store.save({**managed, "bucket": "biller-was-here"}, 1)
+            check("The admin settings app refuses a biller's save", False, "AWS allowed it")
+        except core.CurWorkError as e:
+            check("The admin settings app refuses a biller's save", "Only the AWS admin role" in str(e), str(e))
+        try:
+            got, version = admin_store.load()
+            check("A refused save changes nothing", got == managed and version == 1, f"version {version}")
+            who, me = admin_store.history()[0]["who"], admin_store.whoami()
+            check("Parameter Store records who saved it (the admin's own sign-in)", who == me, who.split(" ")[-1])
+        except Exception as e:  # noqa: BLE001
+            check("A refused save changes nothing", False, err(e))
+    finally:
+        try:
+            admin_store._client("ssm").delete_parameter(Name=name)
+            check(f"Removed {name}", admin_store.load() == (None, None))
+        except Exception as e:  # noqa: BLE001
+            check(f"Removed {name}", False, err(e))
+
+
 def main() -> int:
     step("Settings CurWork will use")
     settings = core.load_settings(str(TOOL / core.CONFIG_FILE_NAME))
@@ -126,6 +167,9 @@ def main() -> int:
     if not check("Admin profile is signed in", admin_ok, admin_detail):
         print(f"  {Y}Stopping before any upload, so no test files are left in the bucket.{N}")
         return 1
+
+    if settings.settings_parameter:
+        admin_settings_app_checks(settings, admin_profile)
 
     step("Browse")
     try:

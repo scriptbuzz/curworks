@@ -331,6 +331,159 @@ def test_admin_settings_window_loads_edits_and_saves(world, monkeypatch):
     win.destroy()
 
 
+def test_before_sign_in_the_window_says_the_bucket_comes_from_aws(world):
+    a = _use_parameter(world)
+    a._apply_settings(a.s)
+    assert "read from AWS after you sign in" in a.where_lbl.cget("text")
+
+
+def test_signing_in_again_picks_up_an_admins_change(world):
+    a = _use_parameter(world, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    a.check_sign_in()
+    world.idle()
+    assert list(a.stage_box.cget("values")) == ["Priced"]
+    boto3.client("ssm", region_name="us-east-1").put_parameter(
+        Name="/curwork/admin-settings", Type="String", Overwrite=True,
+        Value=json.dumps({"bucket": BUCKET, "output_stages": {"Priced": "priced/", "Split": "split/"},
+                          "default_stage": "Split"}))
+    a.stage_var.set("Gone")             # a result type the admin removed falls back to the new default
+    a.check_sign_in()
+    world.idle()
+    assert list(a.stage_box.cget("values")) == ["Priced", "Split"] and a.stage_var.get() == "Split"
+    assert "version 2" in a.s.admin_version
+
+
+class _AdminWindow:
+    """The admin settings window against the mocked Parameter Store, with its message boxes recorded."""
+
+    def __init__(self, world, monkeypatch, value=None, answer=True, local=None):
+        import curwork_admin
+        self.world, self.mod = world, curwork_admin
+        self.ssm = boto3.client("ssm", region_name="us-east-1")
+        if value is not None:
+            self.ssm.put_parameter(Name="/curwork/admin-settings", Type="String", Value=json.dumps(value))
+        self.seen: list[tuple[str, str]] = []
+        for name in ("showerror", "showinfo"):
+            monkeypatch.setattr(curwork_admin.messagebox, name,
+                                lambda *a, _n=name, **k: self.seen.append((_n, a[1])))
+        monkeypatch.setattr(curwork_admin.messagebox, "askyesno",
+                            lambda *a, **k: (self.seen.append(("ask", a[1])), answer)[1])
+        store = curwork_admin.AdminStore("/curwork/admin-settings", "us-east-1",
+                                         session=boto3.Session(region_name="us-east-1"))
+        self.win = tk.Toplevel(world.root)
+        self.app = curwork_admin.AdminApp(self.win, store, local)
+
+    def wait(self):
+        end = time.time() + 20
+        self.world.pump(0.2)
+        while self.app.busy and time.time() < end:
+            self.world.pump(0.1)
+        self.world.pump(0.2)
+
+    def set(self, key, text):
+        w = self.app.inputs[key]
+        if isinstance(w, tk.Text):
+            w.delete("1.0", "end")
+            w.insert("1.0", text)
+        else:
+            w.delete(0, "end")
+            w.insert(0, text)
+
+    def version(self):
+        return self.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Version"]
+
+    def kinds(self, kind):
+        return [m for k, m in self.seen if k == kind]
+
+
+def test_admin_window_saves_nothing_when_nothing_changed_or_the_admin_cancels(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}}, answer=False)
+    w.app.load()
+    w.wait()
+    w.app.save()
+    assert w.kinds("showinfo") and "Nothing has changed" in w.kinds("showinfo")[-1]
+    w.set("bucket", "other-bucket")
+    w.app.save()
+    w.wait()
+    assert w.kinds("ask") and "other-bucket" in w.kinds("ask")[-1]
+    assert w.version() == 1, "a cancelled save writes nothing"
+    w.win.destroy()
+
+
+def test_admin_window_explains_bad_values_and_saves_nothing(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    w.app.load()
+    w.wait()
+    for key, text, message in (("max_concurrency", "many", "whole number"),
+                               ("output_stages", "Priced priced/", "Name = folder/"),
+                               ("browse_roots", "priced/", "overlap")):
+        w.set(key, text)
+        w.app.save()
+        w.wait()
+        assert w.kinds("showerror") and message in w.kinds("showerror")[-1], key
+        w.app.load()
+        w.wait()
+    assert w.version() == 1 and not w.kinds("ask")
+    w.win.destroy()
+
+
+def test_admin_window_wont_overwrite_another_admins_newer_save(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    w.app.load()
+    w.wait()
+    w.ssm.put_parameter(Name="/curwork/admin-settings", Type="String", Overwrite=True,
+                        Value=json.dumps({"bucket": "someone-elses", "output_stages": {"Priced": "priced/"}}))
+    w.set("bucket", "mine")
+    w.app.save()
+    w.wait()
+    assert w.kinds("showerror") and "Someone else saved" in w.kinds("showerror")[-1]
+    assert json.loads(w.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Value"])["bucket"] == "someone-elses"
+    w.win.destroy()
+
+
+def test_admin_window_creates_the_parameter_from_the_local_file(world, monkeypatch):
+    local = core.settings_from_dict({"bucket": BUCKET, "aws_profile": "biller", "work_dir": str(world.tmp),
+                                     "output_stages": {"Priced": "priced/"}, "_version": "from the file"})
+    w = _AdminWindow(world, monkeypatch, local=local)
+    assert str(w.app.save_btn.cget("state")) == "disabled", "nothing can be saved before Load"
+    w.app.load()
+    w.wait()
+    assert "doesn't exist yet" in w.app.status_lbl.cget("text")
+    w.app.fill_from_local()
+    assert w.app.inputs["bucket"].get() == BUCKET
+    w.app.save()
+    w.wait()
+    saved = json.loads(w.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Value"])
+    assert saved["bucket"] == BUCKET and "aws_profile" not in saved, "only managed settings are copied"
+    assert "Saved version 1" in w.app.status_lbl.cget("text")
+    w.win.destroy()
+
+
+def test_admin_window_history_lists_every_version(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}, "_version": "first"})
+    w.ssm.put_parameter(Name="/curwork/admin-settings", Type="String", Overwrite=True,
+                        Value=json.dumps({"bucket": BUCKET, "output_stages": {"Priced": "priced/"}, "_version": "second"}))
+    w.app.show_history()
+    w.wait()
+    trees = [c for top in w.win.winfo_children() if isinstance(top, tk.Toplevel)
+             for c in top.winfo_children() if isinstance(c, tk.ttk.Treeview)]
+    rows = [(trees[0].item(i, "text"), trees[0].item(i, "values")[2]) for i in trees[0].get_children()]
+    assert rows == [("2", "second"), ("1", "first")]
+    w.win.destroy()
+
+
+def test_admin_window_changing_the_parameter_name_needs_a_new_load(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    w.app.load()
+    w.wait()
+    assert str(w.app.save_btn.cget("state")) == "normal"
+    w.app.param_var.set("/curwork/other")
+    w.app.show_history()               # any action picks up the new name
+    w.wait()
+    assert str(w.app.save_btn.cget("state")) == "disabled" and w.app.store.parameter == "/curwork/other"
+    w.win.destroy()
+
+
 def test_about_and_settings_windows(world):
     a = world.app
     dlg = curwork.AboutDialog(world.root, a)
