@@ -82,6 +82,18 @@ d["sso"] = {"session_name": E["CURWORK_SSO_SESSION"], "start_url": E["CURWORK_SS
             "sso_region": sso_region, "account_id": E["CURWORK_ACCOUNT"], "role_name": E["CURWORK_ROLE"]}
 json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
 print(f"CurWork will use bucket {bucket} ({region}) and sign in as {E['CURWORK_ROLE']} (profile {E['CURWORK_PROFILE']}, SSO Region {sso_region}).")
+if d.get("settings_parameter"):
+    # CurWork ignores the local bucket when the settings come from Parameter Store, so save it there too,
+    # with the admin profile (billers can't change the parameter).
+    sys.path.insert(0, "CurWork-Beta-0.011")
+    import curwork_core as core, curwork_admin as admin
+    store = admin.AdminStore(d["settings_parameter"], region, profile=setup_profile)
+    managed, version = store.load()
+    if managed is None:
+        managed = {k: v for k, v in d.items() if k in core.MANAGED_KEYS}
+    managed["bucket"] = bucket
+    managed["_version"] = f"Mac TEST settings - updated {stamp}"
+    print(f"Saved the bucket to Parameter Store {d['settings_parameter']} (version {store.save(managed, version)}).")
 PY
 
 step "Check everything was created (re-reads AWS)" CurWork-Beta-0.011/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
@@ -135,6 +147,13 @@ for local, key in (("agency-a-cur-2026-09.xlsx", "converted/agency-a/2026-09/age
 def settings_point_here():
     d = json.load(open("CurWork-Beta-0.011/curwork_admin_settings.json", encoding="utf-8-sig")); return d.get("bucket") == bucket, d.get("bucket")
 check("CurWork's admin settings use this bucket", settings_point_here)
+param = json.load(open("CurWork-Beta-0.011/curwork_admin_settings.json", encoding="utf-8-sig")).get("settings_parameter")
+if param:
+    def parameter_points_here():
+        got = json.loads(boto3.Session(profile_name=profile, region_name=region).client("ssm")
+                         .get_parameter(Name=param)["Parameter"]["Value"]).get("bucket")
+        return got == bucket, f"{param} says {got}"
+    check("The admin settings in Parameter Store use this bucket", parameter_points_here)
 bad = results.count(False)
 print(f"\n  {G+'All '+str(len(results))+' checks passed.'+N if not bad else R+str(bad)+' of '+str(len(results))+' checks FAILED.'+N}")
 sys.exit(1 if bad else 0)
