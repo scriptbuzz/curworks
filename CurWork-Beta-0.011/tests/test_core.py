@@ -547,3 +547,46 @@ def test_built_mac_app_finds_admin_settings_next_to_the_app(monkeypatch, tmp_pat
     monkeypatch.setattr(core.sys, "executable", str(mac / "CurWork"))
     monkeypatch.delenv("CURWORK_CONFIG", raising=False)
     assert core.candidate_config_paths()[0] == tmp_path.resolve() / core.CONFIG_FILE_NAME
+
+
+def _frozen_app(monkeypatch, tmp_path):
+    """Pretend to be the built CurWork.exe in tmp_path/tool, with a biller's own settings file elsewhere."""
+    tool = tmp_path / "tool"; tool.mkdir()
+    (tool / "CurWork.exe").write_bytes(b"")
+    monkeypatch.setattr(core.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(core.sys, "executable", str(tool / "CurWork.exe"))
+    good = {"bucket": "installed-bucket", "output_stages": {"Priced": "priced/"}, "browse_roots": ["converted/"]}
+    own = dict(good, bucket="bypass-bucket")
+    mine = tmp_path / "mine.json"; mine.write_text(__import__("json").dumps(own), encoding="utf-8")
+    appdata = tmp_path / "appdata"; (appdata / "CurWork").mkdir(parents=True)
+    (appdata / "CurWork" / core.CONFIG_FILE_NAME).write_text(__import__("json").dumps(own), encoding="utf-8")
+    monkeypatch.setenv("APPDATA", str(appdata))
+    monkeypatch.setenv("CURWORK_CONFIG", str(mine))
+    return tool, good, mine
+
+
+def test_built_app_always_uses_installed_admin_settings(monkeypatch, tmp_path):
+    tool, good, mine = _frozen_app(monkeypatch, tmp_path)
+    (tool / core.CONFIG_FILE_NAME).write_text(__import__("json").dumps(good), encoding="utf-8")
+    s = core.load_settings(str(mine))
+    assert s.bucket == "installed-bucket"
+    assert s.source_path == tool.resolve() / core.CONFIG_FILE_NAME
+    assert s.ignored_config_overrides == [f"--config {mine}", f"CURWORK_CONFIG={mine}"]
+    assert core.candidate_config_paths(str(mine)) == [tool.resolve() / core.CONFIG_FILE_NAME]
+
+
+def test_built_app_without_installed_settings_refuses_other_files(monkeypatch, tmp_path):
+    tool, good, mine = _frozen_app(monkeypatch, tmp_path)
+    with pytest.raises(core.CurWorkError) as e:
+        core.load_settings(str(mine))   # --config, CURWORK_CONFIG and %APPDATA% all hold a usable file
+    assert str(tool.resolve() / core.CONFIG_FILE_NAME) in str(e.value)
+    assert "mine.json" not in str(e.value) and "appdata" not in str(e.value).lower()
+
+
+def test_running_from_source_still_accepts_config_override(monkeypatch, tmp_path):
+    monkeypatch.setattr(core.sys, "frozen", False, raising=False)
+    mine = tmp_path / "mine.json"
+    mine.write_text('{"bucket": "dev-bucket", "output_stages": {"Priced": "priced/"}}', encoding="utf-8")
+    monkeypatch.delenv("CURWORK_CONFIG", raising=False)
+    s = core.load_settings(str(mine))
+    assert s.bucket == "dev-bucket" and s.ignored_config_overrides == []

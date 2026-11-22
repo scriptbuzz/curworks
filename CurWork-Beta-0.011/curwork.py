@@ -755,6 +755,9 @@ class CurWorkApp:
 
         log.info("CurWork %s started by %s. Bucket: %s  Work folder: %s",
                  core.VERSION, core.current_user(), self.s.bucket, self.work.root)
+        for override in self.s.ignored_config_overrides:
+            log.warning("Ignored %s. This app only uses the admin settings file installed next to it: %s",
+                        override, self.s.source_path)
         log.info("Your preferences are saved in %s%s", self.prefs_store.path,
                  " (the tool folder isn't writable, so the work folder is used)" if self.prefs_store.fallback_used else "")
         self._after_ids: dict[str, str] = {}
@@ -1721,6 +1724,10 @@ def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = No
     if frozen:
         check("Admin settings are next to the app, not inside it",
               settings.source_path is not None and settings.source_path.parent == core.tool_folder(), str(core.tool_folder()))
+        check("Admin settings locked to the installed file (--config and CURWORK_CONFIG ignored)",
+              core.candidate_config_paths() == [core.tool_folder() / core.CONFIG_FILE_NAME]
+              and settings.source_path == core.tool_folder() / core.CONFIG_FILE_NAME,
+              "ignored: " + (", ".join(settings.ignored_config_overrides) or "nothing"))
     check("Work folder usable", app.work.root.is_dir() and os.access(app.work.root, os.W_OK), str(app.work.root))
     details = about_details(app)
     flat = " ".join(f"{k} {v}" for _, rows in details for k, v in rows).lower()
@@ -1756,7 +1763,8 @@ def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = No
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CurWork: CUR files between S3 and your laptop.")
-    parser.add_argument("--config", help="Path to curwork_admin_settings.json")
+    parser.add_argument("--config", help="Path to curwork_admin_settings.json. Only used when running from source: "
+                                         "the built app always uses the file installed next to it")
     parser.add_argument("--self-test", action="store_true",
                         help="Open the window without dialogs, check settings, icon, About and sign-in role, print a JSON report, exit")
     parser.add_argument("--report", metavar="FILE",

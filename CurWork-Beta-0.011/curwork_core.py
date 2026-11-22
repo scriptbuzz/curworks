@@ -126,6 +126,7 @@ class Settings:
     login_banner: str = ""
     sso: dict = field(default_factory=dict)
     source_path: Path | None = None
+    ignored_config_overrides: list[str] = field(default_factory=list)
     user_settings_location: str = "tool_folder"
     admin_version: str = ""
 
@@ -150,18 +151,38 @@ def _expand_work_dir(raw: str) -> Path:
 
 
 def candidate_config_paths(explicit: str | None = None) -> list[Path]:
+    """Where to look for the admin settings file, in order.
+
+    Config lock (NIST SP 800-53 CM-5, CM-6): the built app (CurWork.exe, or CurWork.app on a Mac) only
+    reads the admin settings file installed next to it. It ignores --config, CURWORK_CONFIG and the
+    user-writable %APPDATA% folder, so a biller can't point it at a settings file of their own.
+    Running from source still accepts them: anyone who can run the source can also change it, so a
+    lock there would add nothing, and the tests need them.
+    """
+    if getattr(sys, "frozen", False):
+        return [tool_folder() / CONFIG_FILE_NAME]
     paths: list[Path] = []
     if explicit:
         paths.append(Path(explicit))
     if os.environ.get("CURWORK_CONFIG"):
         paths.append(Path(os.environ["CURWORK_CONFIG"]))
-    if getattr(sys, "frozen", False):  # built app: next to CurWork.exe, or next to CurWork.app on a Mac
-        paths.append(tool_folder() / CONFIG_FILE_NAME)
     paths.append(Path(__file__).resolve().parent / CONFIG_FILE_NAME)
     appdata = os.environ.get("APPDATA")
     if appdata:
         paths.append(Path(appdata) / "CurWork" / CONFIG_FILE_NAME)
     return paths
+
+
+def ignored_config_overrides(explicit: str | None = None) -> list[str]:
+    """In the built app, the --config and CURWORK_CONFIG values it ignored (see candidate_config_paths)."""
+    if not getattr(sys, "frozen", False):
+        return []
+    ignored = []
+    if explicit:
+        ignored.append(f"--config {explicit}")
+    if os.environ.get("CURWORK_CONFIG"):
+        ignored.append(f"CURWORK_CONFIG={os.environ['CURWORK_CONFIG']}")
+    return ignored
 
 
 def load_settings(explicit: str | None = None) -> Settings:
@@ -185,7 +206,9 @@ def load_settings(explicit: str | None = None) -> Settings:
     if not isinstance(data, dict):
         raise CurWorkError(f"{path} must contain a JSON object ({{ ... }}).")
     try:
-        return settings_from_dict(data, source_path=path)
+        settings = settings_from_dict(data, source_path=path)
+        settings.ignored_config_overrides = ignored_config_overrides(explicit)
+        return settings
     except CurWorkError:
         raise
     except (TypeError, ValueError, AttributeError) as e:

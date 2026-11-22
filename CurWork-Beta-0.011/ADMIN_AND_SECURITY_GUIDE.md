@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 18:13 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 20:56 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -130,7 +130,7 @@ How the app protects the split:
 
 Keys that start with `_` are notes and are ignored. Keep `_version` up to date with the version and date/time of each change; the Settings window shows it to users.
 
-**How the app finds the admin settings file**, in this order: `--config <path>`, the `CURWORK_CONFIG` environment variable, next to the app, then `%APPDATA%\CurWork\`. Because the first two come before the installed copy, a biller can point the app at their own admin file. The permission set still limits what they can reach in S3, but this gap stays open until the "config lock" decision in section 9.
+**How the app finds the admin settings file:** the built app (`CurWork.exe`, or `CurWork.app` on a Mac) only reads the file installed next to it. It ignores `--config`, the `CURWORK_CONFIG` environment variable and `%APPDATA%\CurWork\`, so a biller can't point it at a settings file of their own. If someone tries, the app writes a warning to the log naming what it ignored. If the installed file is missing, the app won't start and names the one place the file must go. When CurWork runs from source (`python curwork.py`), it still accepts `--config` and `CURWORK_CONFIG`, then looks next to `curwork.py`, then in `%APPDATA%\CurWork\`. Anyone who can run the source can also change it, so a lock there would add nothing, and the tests need these options.
 
 **User preferences reference**
 
@@ -205,7 +205,7 @@ Keys that start with `_` are notes and are ignored. Keep `_version` up to date w
 | AU-2, AU-3, AU-12 Audit events | CloudTrail data events for every S3 read and write, sent to the SIEM; local log with actions and file names | AWS + app | Met |
 | AU-9 Protect audit data | Billers can edit local logs, so CloudTrail is the official record | AWS | By design |
 | AU-10 Non-repudiation | Identity comes from Identity Center and CloudTrail; the Windows user name in logs and S3 metadata is for convenience only | AWS | By design |
-| CM-5, CM-6 Config control | Admin settings in Program Files; user preferences can't change them. `--config` and `CURWORK_CONFIG` can still point to another admin file. | IT + app | Partly met |
+| CM-5, CM-6 Config control | Admin settings in Program Files; user preferences can't change them. The built app only reads the admin settings installed next to it and ignores `--config` and `CURWORK_CONFIG` (config lock). IT still has to make the install folder read-only for billers. | IT + app | Met (app); IT to confirm folder permissions |
 | CM-7, SI-7 Least function, integrity | No `aws.exe` from the current folder; fixed arguments, no shell | App | Met |
 | CM-14, SI-7(15) Signed software | Sign the exe before deployment; allow only the signed app | IT | Process |
 | IA-2 MFA | Entra sign-in with MFA through Identity Center | Entra + AWS | Met |
@@ -227,7 +227,6 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 - Billers can edit their local logs. CloudTrail is the official record.
 - No check-out lock between billers. S3 Versioning keeps every replaced copy.
 - While a session is open, customer data sits on the laptop. BitLocker and Finish limit that.
-- A biller can point the app at another admin settings file (`--config`, `CURWORK_CONFIG`).
 - In the tool folder, the user preferences file is shared by everyone who uses that laptop, and it can name customers (recent and pinned folders).
 
 **Decisions to make**
@@ -235,13 +234,14 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 - [ ] **Entra connection:** confirm Entra connects through IAM Identity Center.
 - [ ] **Packaging:** single-file exe, folder build with an installer, or run from source.
 - [ ] **HTTPS inspection:** confirm whether the proxy inspects AWS traffic and which fix IT prefers.
-- [ ] **Config lock:** a small code change so the installed admin settings file always wins over `--config` and `CURWORK_CONFIG`.
+- [x] **Config lock:** done 2026-11-22 20:56 UTC. The built app only reads the admin settings installed next to it.
 - [ ] **Settings file permissions:** who can read and write each file, and whether user preferences stay in the tool folder or move to each user's work folder (`user_settings_location`).
 
 ## 10. Change log
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-22 20:56 | Beta 0.011 | Config lock (NIST SP 800-53 CM-5, CM-6): the built app only reads the admin settings installed next to it. `--config`, `CURWORK_CONFIG` and `%APPDATA%` are ignored there and logged; the self-test checks the lock. Running from source is unchanged. 3 new tests; 71 pass. | mbitar |
 | 2026-11-22 18:13 | Beta 0.011 | Source control: AWS account numbers, sign-in URLs and profile names are kept in a private, Git-ignored `curwork_test.env`; commit and push checks block them (NIST SP 800-53 AC-22 Publicly Accessible Content, SA-11 developer testing). AWS doesn't class account IDs as secret, but keeping them, sign-in URLs and profile names out of a shared repository limits what an outsider can learn about the environment. The admin settings file is not stored in Git. | mbitar |
 | 2026-11-22 17:09 | Beta 0.011 | Testing: window tests, app self-test (`--self-test`), and a Mac runner that also tests the biller permission set against real AWS (allowed calls work; writes to `converted/`, deletes and whole-bucket listing are refused). | mbitar |
 | 2026-11-22 16:53 | Beta 0.011 | Mac test moved to a CurWorkBillerTest permission set built from the biller policy (test buckets only); the AWSReadOnlyAccess set has only ViewOnlyAccess (no s3:GetObject). Built Mac app now reads admin settings next to CurWork.app. Refusal messages name the AWS call refused. | mbitar |
@@ -250,4 +250,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 18:13 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 20:56 UTC · Modified by: mbitar*
