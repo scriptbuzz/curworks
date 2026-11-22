@@ -1,6 +1,6 @@
 # CurWork
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 20:56 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:50 UTC · Modified by: mbitar
 
 CurWork is a small Windows app for the billing team. It copies converted CUR workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then sends the results back to S3 and cleans up the laptop. **The VBA code doesn't change.**
 
@@ -114,6 +114,7 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 
 | Version | Date (UTC) | Changes | Modified by |
 |---|---|---|---|
+| Beta 0.011 | 2026-11-22 21:50 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error instead of quietly using the settings file next to `curwork.py`. | mbitar |
 | Beta 0.011 | 2026-11-22 20:56 | Config lock: the built app only reads the admin settings file installed next to it. It ignores `--config` and `CURWORK_CONFIG` and logs a warning if either is used. Running from source still accepts them. | mbitar |
 | Beta 0.011 | 2026-11-22 18:13 | AWS details out of Git: the test scripts read the account number, admin profile and sign-in URL from a private `curwork_test.env` (ignored by Git; template `curwork_test.env.example`). New commit and push checks block AWS account numbers, sign-in URLs, emails, keys and private values, and the automated tests run the same check. The admin settings file is ignored too. Docs no longer name the test account or profile. | mbitar |
 | Beta 0.011 | 2026-11-22 18:08 | Added `.gitignore`. Test scripts' messages now say "send ... for review". Image files carry no extra metadata. | mbitar |
@@ -142,4 +143,4 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 | 1.0.0 (code) | 2026-11-22 11:33 | First release | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 20:56 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:50 UTC · Modified by: mbitar*

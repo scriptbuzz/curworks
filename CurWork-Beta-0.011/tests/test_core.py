@@ -590,3 +590,17 @@ def test_running_from_source_still_accepts_config_override(monkeypatch, tmp_path
     monkeypatch.delenv("CURWORK_CONFIG", raising=False)
     s = core.load_settings(str(mine))
     assert s.bucket == "dev-bucket" and s.ignored_config_overrides == []
+
+
+def test_running_from_source_refuses_a_named_settings_file_that_is_missing(monkeypatch, tmp_path):
+    """A missing --config or CURWORK_CONFIG file stops CurWork instead of falling back to another file."""
+    monkeypatch.setattr(core.sys, "frozen", False, raising=False)
+    monkeypatch.delenv("CURWORK_CONFIG", raising=False)
+    missing = tmp_path / "nope.json"
+    with pytest.raises(core.CurWorkError) as e:
+        core.load_settings(str(missing))
+    assert f"--config {missing}" in str(e.value)
+    monkeypatch.setenv("CURWORK_CONFIG", str(missing))
+    with pytest.raises(core.CurWorkError) as e:
+        core.load_settings(None)
+    assert f"CURWORK_CONFIG={missing}" in str(e.value)

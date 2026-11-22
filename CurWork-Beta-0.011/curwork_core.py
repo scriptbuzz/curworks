@@ -186,6 +186,15 @@ def ignored_config_overrides(explicit: str | None = None) -> list[str]:
 
 
 def load_settings(explicit: str | None = None) -> Settings:
+    if not getattr(sys, "frozen", False):
+        # A settings file someone names on purpose must exist. Quietly falling back to a different
+        # file would run CurWork against settings they didn't choose (NIST SP 800-53 CM-6).
+        named = [(f"--config {explicit}", explicit)] if explicit else []
+        if os.environ.get("CURWORK_CONFIG"):
+            named.append((f"CURWORK_CONFIG={os.environ['CURWORK_CONFIG']}", os.environ["CURWORK_CONFIG"]))
+        for how, value in named:
+            if not Path(value).is_file():
+                raise CurWorkError(f"The settings file you named ({how}) doesn't exist. Check the path and try again.")
     path = next((p for p in candidate_config_paths(explicit) if p.is_file()), None)
     if path is None:
         looked = "\n".join(str(p) for p in candidate_config_paths(explicit))

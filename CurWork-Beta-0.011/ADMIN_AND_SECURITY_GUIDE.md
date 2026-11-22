@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 20:56 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:50 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -130,7 +130,7 @@ How the app protects the split:
 
 Keys that start with `_` are notes and are ignored. Keep `_version` up to date with the version and date/time of each change; the Settings window shows it to users.
 
-**How the app finds the admin settings file:** the built app (`CurWork.exe`, or `CurWork.app` on a Mac) only reads the file installed next to it. It ignores `--config`, the `CURWORK_CONFIG` environment variable and `%APPDATA%\CurWork\`, so a biller can't point it at a settings file of their own. If someone tries, the app writes a warning to the log naming what it ignored. If the installed file is missing, the app won't start and names the one place the file must go. When CurWork runs from source (`python curwork.py`), it still accepts `--config` and `CURWORK_CONFIG`, then looks next to `curwork.py`, then in `%APPDATA%\CurWork\`. Anyone who can run the source can also change it, so a lock there would add nothing, and the tests need these options.
+**How the app finds the admin settings file:** the built app (`CurWork.exe`, or `CurWork.app` on a Mac) only reads the file installed next to it. It ignores `--config`, the `CURWORK_CONFIG` environment variable and `%APPDATA%\CurWork\`, so a biller can't point it at a settings file of their own. If someone tries, the app writes a warning to the log naming what it ignored. If the installed file is missing, the app won't start and names the one place the file must go. When CurWork runs from source (`python curwork.py`), it still accepts `--config` and `CURWORK_CONFIG`, then looks next to `curwork.py`, then in `%APPDATA%\CurWork\`. If the file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error instead of quietly using a different file. Anyone who can run the source can also change it, so a lock there would add nothing, and the tests need these options.
 
 **User preferences reference**
 
@@ -241,6 +241,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-22 21:50 | Beta 0.011 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error. Before, it quietly used the settings file next to `curwork.py` instead (NIST SP 800-53 CM-6). | mbitar |
 | 2026-11-22 20:56 | Beta 0.011 | Config lock (NIST SP 800-53 CM-5, CM-6): the built app only reads the admin settings installed next to it. `--config`, `CURWORK_CONFIG` and `%APPDATA%` are ignored there and logged; the self-test checks the lock. Running from source is unchanged. 3 new tests; 71 pass. | mbitar |
 | 2026-11-22 18:13 | Beta 0.011 | Source control: AWS account numbers, sign-in URLs and profile names are kept in a private, Git-ignored `curwork_test.env`; commit and push checks block them (NIST SP 800-53 AC-22 Publicly Accessible Content, SA-11 developer testing). AWS doesn't class account IDs as secret, but keeping them, sign-in URLs and profile names out of a shared repository limits what an outsider can learn about the environment. The admin settings file is not stored in Git. | mbitar |
 | 2026-11-22 17:09 | Beta 0.011 | Testing: window tests, app self-test (`--self-test`), and a Mac runner that also tests the biller permission set against real AWS (allowed calls work; writes to `converted/`, deletes and whole-bucket listing are refused). | mbitar |
@@ -250,4 +251,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 20:56 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:50 UTC · Modified by: mbitar*
