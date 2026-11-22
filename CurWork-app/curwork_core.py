@@ -2,9 +2,9 @@
 CurWork core: moves CUR workbooks between Amazon S3 and a local work folder
 so the billing VBA macros can run on local files with no code changes.
 
-Version:     Beta 0.011
+Version:     Beta 0.012
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 18:04 UTC
+Updated:     2026-11-22 23:32 UTC
 Modified by: mbitar
 
 This module has no GUI code, so it can be tested on its own.
@@ -33,8 +33,8 @@ import botocore.exceptions as bexc
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config as BotoConfig
 
-VERSION = "0.011-beta"            # no spaces: used in the S3 user agent and metadata
-RELEASE_LABEL = "Beta 0.011"
+VERSION = "0.012-beta"            # no spaces: used in the S3 user agent and metadata
+RELEASE_LABEL = "Beta 0.012"
 STATUS = "DRAFT - For Internal Use"
 BUILD_DATE = "2026-11-22 18:04 UTC"
 MODIFIED_BY = "mbitar"
@@ -252,13 +252,13 @@ MAX_PARAMETER_BYTES = 4096   # the Standard tier's limit for one parameter value
 def validate_managed(managed: dict) -> dict:
     """Check a managed settings object before it's saved to Parameter Store. Returns it unchanged."""
     if not isinstance(managed, dict):
-        raise CurWorkError("The managed settings must be a JSON object ({ ... }).")
+        raise CurWorkError("The settings kept in AWS must be a JSON object ({ ... }).")
     unknown = sorted(k for k in managed if not k.startswith("_") and k not in MANAGED_KEYS)
     if unknown:
-        raise CurWorkError(f"These settings can't be managed in Parameter Store: {', '.join(unknown)}. "
+        raise CurWorkError(f"These settings can't be kept in AWS: {', '.join(unknown)}. "
                            f"They stay in {CONFIG_FILE_NAME} on each laptop.")
     if len(json.dumps(managed, indent=2).encode("utf-8")) > MAX_PARAMETER_BYTES:
-        raise CurWorkError("The managed settings are too large for one Parameter Store parameter (4 KB).")
+        raise CurWorkError("The settings are too large to keep in AWS Parameter Store (the limit is 4 KB).")
     try:
         settings_from_dict({}, managed=managed)
     except (TypeError, ValueError, AttributeError) as e:
@@ -327,7 +327,7 @@ def settings_from_dict(data: dict, source_path: Path | None = None, managed: dic
     bucket = str(merged["bucket"]).strip()
     waiting_for_managed = bool(parameter) and managed is None
     if (not bucket or bucket.upper().startswith("CHANGE")) and not waiting_for_managed:
-        where = "the managed settings in Parameter Store" if managed is not None else CONFIG_FILE_NAME
+        where = "the settings kept in AWS Parameter Store" if managed is not None else CONFIG_FILE_NAME
         raise CurWorkError(f"The admin settings don't name an S3 bucket yet. Set \"bucket\" in {where}.")
 
     stages = {str(k): _norm_prefix(v) for k, v in dict(merged["output_stages"]).items() if _norm_prefix(v)}
@@ -593,10 +593,10 @@ _OPERATION_LABELS = {
     "ListObjectsV2": "listing files in S3 (needs s3:ListBucket)",
     "HeadObject": "reading a file's details in S3 (needs s3:GetObject)",
     "GetObject": "downloading a file from S3 (needs s3:GetObject)",
-    "PutObject": "uploading a file to S3 (needs s3:PutObject)",
-    "CreateMultipartUpload": "starting a large upload to S3 (needs s3:PutObject)",
-    "UploadPart": "uploading part of a large file to S3 (needs s3:PutObject)",
-    "CompleteMultipartUpload": "finishing a large upload to S3 (needs s3:PutObject)",
+    "PutObject": "saving a file in S3 (needs s3:PutObject)",
+    "CreateMultipartUpload": "starting to save a large file in S3 (needs s3:PutObject)",
+    "UploadPart": "saving part of a large file in S3 (needs s3:PutObject)",
+    "CompleteMultipartUpload": "finishing saving a large file in S3 (needs s3:PutObject)",
     "GetCallerIdentity": "checking who you're signed in as (sts:GetCallerIdentity)",
     "GetParameter": "reading CurWork's admin settings from Parameter Store (ssm:GetParameter)",
     "PutParameter": "saving CurWork's admin settings to Parameter Store (ssm:PutParameter)",
@@ -731,7 +731,7 @@ class OutFile:
     path: Path
     rel: str
     size: int
-    status: str  # "Not uploaded", "Uploaded", "Changed since upload", "Open in Excel"
+    status: str  # "Not saved in S3", "Saved in S3", "Changed since saved", "Open in Excel"
     s3_key: str = ""
 
 
@@ -863,21 +863,21 @@ class WorkArea:
             if is_open_elsewhere(p):
                 status = "Open in Excel"
             elif rec and rec["size"] == s.st_size and abs(rec["mtime"] - s.st_mtime) < 0.001:
-                status = "Uploaded"
+                status = "Saved in S3"
             elif rec:
-                status = "Changed since upload"
+                status = "Changed since saved"
             else:
-                status = "Not uploaded"
+                status = "Not saved in S3"
             result.append(OutFile(p, rel, s.st_size, status, rec["key"] if rec else ""))
         return result
 
     def pending_out(self) -> list[OutFile]:
-        return [f for f in self.out_files() if f.status != "Uploaded"]
+        return [f for f in self.out_files() if f.status != "Saved in S3"]
 
     def leftovers(self) -> tuple[int, int, int]:
         """(files in In, Out files not yet uploaded, all files in Out)."""
         out = self.out_files()
-        return len(self.in_files()), sum(1 for f in out if f.status != "Uploaded"), len(out)
+        return len(self.in_files()), sum(1 for f in out if f.status != "Saved in S3"), len(out)
 
     # ---- cleanup ---------------------------------------------------------
     def clean(self) -> list[str]:
@@ -1321,14 +1321,14 @@ class S3Service:
         plan: list[tuple[Path, str, str]] = []
         for path, rel in items:
             if path.suffix.lower() not in self.s.upload_extensions:
-                log.info("Skipped %s (file type isn't on the upload list)", rel)
+                log.info("Skipped %s (your admin hasn't allowed this file type to be saved in S3)", rel)
                 continue
             if is_open_elsewhere(path):
-                raise CurWorkError(f"'{path.name}' is still open in Excel. Save and close it, then upload.")
+                raise CurWorkError(f"'{path.name}' is still open in Excel. Save and close it, then save it in S3.")
             key = dest + safe_relative_path(rel).as_posix()
             plan.append((path, rel, key))
         if not plan:
-            raise CurWorkError("There's nothing to upload in the Out folder.")
+            raise CurWorkError("There's nothing in the Out folder to save in S3.")
 
         total = sum(p.stat().st_size for p, _, _ in plan)
         progress = _Progress(total, on_progress, cancel)
@@ -1344,7 +1344,7 @@ class S3Service:
                     log.info("Skipped %s (already in S3, kept the S3 copy)", key)
                     progress(path.stat().st_size)
                     continue
-                log.info("Replacing %s (S3 Versioning keeps the old copy if it's turned on)", key)
+                log.info("Replacing %s (S3 keeps the old copy if version history is turned on)", key)
             if on_file:
                 on_file(key)
             size = path.stat().st_size
@@ -1354,8 +1354,8 @@ class S3Service:
             )
             head = self.client.head_object(Bucket=self.s.bucket, Key=key)
             if head["ContentLength"] != size:
-                raise CurWorkError(f"S3 has a different size for {key} than the local file. Upload it again.")
-            log.info("Uploaded %s -> s3://%s/%s (%s)", path, self.s.bucket, key, human_size(size))
+                raise CurWorkError(f"S3 has a different size for {key} than the local file. Save it in S3 again.")
+            log.info("Saved %s in s3://%s/%s (%s)", path, self.s.bucket, key, human_size(size))
             if on_uploaded:
                 on_uploaded(path, rel, key)
             uploaded.append(key)

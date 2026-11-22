@@ -25,7 +25,7 @@
   <text x="226" y="184" font-size="21" fill="#DCE6F2">AWS cost report workbooks, from Amazon S3</text>
   <text x="226" y="211" font-size="21" fill="#DCE6F2">to your Excel macros and back. Nothing is</text>
   <text x="226" y="238" font-size="21" fill="#DCE6F2">left on the laptop when you're done.</text>
-  <text x="226" y="276" font-size="14" font-weight="700" fill="#9FD8D2" letter-spacing="1.2">BETA 0.011  ·  DRAFT - FOR INTERNAL USE (FPT)</text>
+  <text x="226" y="276" font-size="14" font-weight="700" fill="#9FD8D2" letter-spacing="1.2">BETA 0.012  ·  DRAFT - FOR INTERNAL USE (FPT)</text>
   <g font-size="15" font-weight="700" text-anchor="middle">
     <rect x="896" y="72" width="140" height="44" rx="22" fill="#FFFFFF"/><text x="966" y="99" fill="#0B2545">Amazon S3</text>
     <rect x="896" y="138" width="140" height="44" rx="22" fill="#0F8B80"/><text x="966" y="165" fill="#FFFFFF">In  →  macros</text>

@@ -1,6 +1,6 @@
 # CurWork IAM files
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 22:44 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
 | File | Use |
 |---|---|

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-22 16:51 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Sets up the sign-in CurWork uses for testing: an IAM Identity Center permission set (CURWORK_ROLE, default CurWorkBillerTest),
 # built from CurWork's own least-privilege biller policy (iam/biller_permission_set_policy.json), limited to
 # test buckets (curwork-test-<account>-*), and assigned to you in the test account (CURWORK_ACCOUNT).
@@ -24,7 +24,7 @@ fi
 for P in "$CURWORK_ADMIN_PROFILE" ${CURWORK_IC_PROFILE:-}; do
   aws sts get-caller-identity --profile "$P" >/dev/null 2>&1 || aws sso login --profile "$P" || { echo "STOPPED: sign-in to $P failed."; pause "Press any key to close."; exit 1; }
 done
-CurWork-Beta-0.011/.venv/bin/python /dev/fd/3 3<<'PY'
+CurWork-app/.venv/bin/python /dev/fd/3 3<<'PY'
 import json, os, shutil, sys, time
 import boto3
 from botocore.exceptions import ClientError
@@ -64,7 +64,7 @@ arn, store = inst[0]["InstanceArn"], inst[0]["IdentityStoreId"]
 print(f"  Instance: {arn}")
 
 print("\n== Build the policy from iam/biller_permission_set_policy.json")
-text = open("CurWork-Beta-0.011/iam/biller_permission_set_policy.json").read()
+text = open("CurWork-app/iam/biller_permission_set_policy.json").read()
 text = text.replace("arn:aws:s3:::BUCKET_NAME", BUCKETS)
 try:
     key_arn = s.client("kms", region_name=SSO_REGION).describe_key(KeyId="alias/aws/s3")["KeyMetadata"]["Arn"]
@@ -180,9 +180,9 @@ else:
     print(f"  Already assigned. Pushed the policy to the account: {st['Status']} {st.get('FailureReason', '')}")
 
 print("\n== Point CurWork at this sign-in (admin settings file)")
-cfg_path = "CurWork-Beta-0.011/curwork_admin_settings.json"
+cfg_path = "CurWork-app/curwork_admin_settings.json"
 if not os.path.exists(cfg_path):   # fresh clone: start from the example (the real file is never in Git)
-    shutil.copy("CurWork-Beta-0.011/curwork_admin_settings.example.json", cfg_path)
+    shutil.copy("CurWork-app/curwork_admin_settings.example.json", cfg_path)
 cfg = json.load(open(cfg_path, encoding="utf-8-sig"))
 cfg["aws_profile"] = E["CURWORK_PROFILE"]
 cfg.setdefault("sso", {}).update({"session_name": E["CURWORK_SSO_SESSION"], "start_url": E["CURWORK_SSO_START_URL"],

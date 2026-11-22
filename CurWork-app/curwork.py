@@ -3,9 +3,9 @@ CurWork: a simple window for billers to get CUR workbooks from Amazon S3,
 run the existing VBA macros on local copies, send the results back to S3,
 and leave nothing behind on the laptop.
 
-Version:     Beta 0.011
+Version:     Beta 0.012
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 18:04 UTC
+Updated:     2026-11-22 23:32 UTC
 Modified by: mbitar
 
 Run:  python curwork.py            (or the packaged CurWork.exe)
@@ -39,9 +39,9 @@ import curwork_help as helptext
 log = core.log
 APP_NAME = "CurWork"
 APP_TITLE = "CurWork - CUR files from S3"
-APP_DESCRIPTION = ("CurWork moves converted CUR workbooks between Amazon S3 and this laptop. It downloads "
-                   "workbooks to your In folder so the existing Excel/VBA macros can run on local copies, "
-                   "uploads the results from your Out folder to S3, and cleans up your work folder when you finish.")
+APP_DESCRIPTION = ("CurWork downloads converted CUR workbooks from Amazon S3 to your In folder, so the existing "
+                   "Excel macros can run on copies on this laptop. It saves the results from your Out folder in S3, "
+                   "and cleans up your work folder when you finish.")
 WINDOWS_APP_ID = "CurWork.Desktop"   # groups CurWork's windows under its own taskbar icon on Windows
 
 
@@ -478,7 +478,8 @@ class ExistsDialog(tk.Toplevel):
         ttk.Label(self, text=key, font=("Segoe UI", 9, "bold"), padding=(16, 0, 16, 8), wraplength=520).pack(anchor="w")
         ttk.Label(
             self,
-            text="Replacing it is safe if S3 Versioning is on: the old copy is kept as a previous version.",
+            text="Replacing it is safe: S3 keeps the old copy as an earlier version, as long as your admin "
+                 "has turned on version history for the bucket.",
             padding=(16, 0, 16, 12), wraplength=520,
         ).pack(anchor="w")
         row = ttk.Frame(self, padding=(16, 0, 16, 14))
@@ -614,7 +615,7 @@ class SettingsDialog(tk.Toplevel):
 
     @staticmethod
     def _short_version(text: str) -> str:
-        """'Admin settings for CurWork Beta 0.011 - DRAFT - ... - updated 2026-11-22 14:32 UTC - modified by: x' -> short form."""
+        """'Admin settings for CurWork Beta 0.012 - DRAFT - ... - updated 2026-11-22 14:32 UTC - modified by: x' -> short form."""
         if not text:
             return "not stated"
         ver = re.search(r"Beta [0-9.]+|\b\d+\.\d+(?:\.\d+)?\b", text)
@@ -653,8 +654,8 @@ class SettingsDialog(tk.Toplevel):
             ("Storage", [
                 ("Bucket", s.bucket),
                 ("Region", s.region),
-                ("Encryption on upload", "KMS key set by admin" if s.kms_key_id else "Bucket default"),
-                ("FIPS endpoints", "On" if s.use_fips_endpoint else "Off"),
+                ("Encryption of saved files", "Key chosen by your admin" if s.kms_key_id else "The bucket's own key"),
+                ("Government-grade (FIPS) encryption", "On" if s.use_fips_endpoint else "Off"),
             ]),
             ("Sign-in", [
                 ("AWS profile", s.aws_profile or "default"),
@@ -665,13 +666,13 @@ class SettingsDialog(tk.Toplevel):
                 ("You can download from", ", ".join(s.browse_roots)),
                 *[(f"Result type: {name}", folder) for name, folder in s.output_stages.items()],
                 ("Default result type", s.default_stage),
-                ("Logs go to", s.log_prefix),
+                ("Logs are saved in", s.log_prefix),
                 ("Work folder on this computer", str(s.work_dir)),
             ]),
-            ("Transfers", [
-                ("File types you can upload", "  ".join(s.upload_extensions)),
-                ("Ask before downloading over", f"{s.large_download_warning_mb:,} MB"),
-                ("Parallel transfers", str(s.max_concurrency)),
+            ("Downloading and saving", [
+                ("File types you can save in S3", "  ".join(s.upload_extensions)),
+                ("Ask before downloading more than", f"{s.large_download_warning_mb:,} MB"),
+                ("Files copied at the same time", str(s.max_concurrency)),
             ]),
             ("This computer", [
                 ("AWS CLI", s.aws_cli_path or "Found automatically"),
@@ -813,7 +814,7 @@ class CurWorkApp:
         self.who_lbl.pack(side="right", padx=10)
 
         # Step 1: S3 browser ---------------------------------------------
-        s1 = self._step_frame(outer, "1. Get files from S3", "step1")
+        s1 = self._step_frame(outer, "1. Download files from S3", "step1")
         s1.grid(row=1, column=0, sticky="nsew", padx=(0, 8))
         s1.rowconfigure(1, weight=1)
         s1.columnconfigure(0, weight=1)
@@ -877,7 +878,7 @@ class CurWorkApp:
         self.in_count_lbl.grid(row=3, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
         # Step 3: upload -------------------------------------------------
-        s3 = self._step_frame(right, "3. Send results to S3", "step3")
+        s3 = self._step_frame(right, "3. Save results in S3", "step3")
         s3.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         s3.columnconfigure(0, weight=1)
         s3.rowconfigure(0, weight=1)
@@ -921,15 +922,16 @@ class CurWorkApp:
         b3 = ttk.Frame(s3)
         b3.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         tip(self._btn(b3, "Refresh list", self.refresh_out), "refresh_out").pack(side="left")
-        tip(self._btn(b3, "Upload selected", lambda: self.upload(selected_only=True)), "upload_selected").pack(side="left", padx=6)
-        tip(self._btn(b3, "Upload all new or changed  ↑", lambda: self.upload(selected_only=False),
+        tip(self._btn(b3, "Save selected in S3", lambda: self.upload(selected_only=True)), "upload_selected").pack(side="left", padx=6)
+        tip(self._btn(b3, "Save all new or changed in S3  ↑", lambda: self.upload(selected_only=False),
                       style="Big.TButton"), "upload_all").pack(side="right")
 
         # Step 4: finish -------------------------------------------------
         s4 = self._step_frame(right, "4. When you're done", "step4")
         s4.grid(row=2, column=0, sticky="ew", pady=(8, 0))
         tip(self._btn(s4, "Finish and clean up", self.finish, style="Big.TButton"), "finish").pack(side="right")
-        ttk.Label(s4, text="Checks that nothing is still open or waiting to upload, uploads today's log, then empties In and Out on this laptop.",
+        ttk.Label(s4, text="Checks that nothing is still open in Excel or waiting to be saved in S3, saves today's log "
+                           "in S3, then empties In and Out on this laptop.",
                   style="Hint.TLabel", wraplength=420).pack(side="left", fill="x", expand=True)
 
         # Bottom: progress + log -----------------------------------------
@@ -1012,7 +1014,7 @@ class CurWorkApp:
     def _update_dest_preview(self) -> None:
         prefix = self.s.output_stages.get(self.stage_var.get(), "")
         folder = core._norm_prefix(self.folder_var.get())
-        self.dest_lbl.configure(text=f"Results will go to:  s3://{self.s.bucket}/{prefix}{folder}")
+        self.dest_lbl.configure(text=f"Results will be saved in:  s3://{self.s.bucket}/{prefix}{folder}")
 
     def _dest_prefix(self) -> str:
         return self.s.output_stages.get(self.stage_var.get(), "") + core._norm_prefix(self.folder_var.get())
@@ -1153,16 +1155,16 @@ class CurWorkApp:
             if n_in:
                 parts.append(f"{n_in} file(s) in In")
             if n_out:
-                parts.append(f"{n_out} result file(s) in Out that were NOT uploaded")
+                parts.append(f"{n_out} result file(s) in Out that are NOT saved in S3 yet")
             if n_out_all - n_out:
-                parts.append(f"{n_out_all - n_out} result file(s) in Out that were uploaded")
+                parts.append(f"{n_out_all - n_out} result file(s) in Out that are already saved in S3")
             msg = ("Files from your last session are still on this laptop:\n\n  - " + "\n  - ".join(parts) +
                    "\n\nKeep them so you can finish that work?\n\n"
-                   "Yes = keep them (upload or clean up when you're done)\n"
+                   "Yes = keep them (save them in S3 or clean up when you're done)\n"
                    "No = delete them now")
             if not messagebox.askyesno(APP_TITLE, msg, parent=self.root):
                 if n_out and not messagebox.askyesno(
-                        APP_TITLE, f"Delete {n_out} result file(s) that were never uploaded? This can't be undone.",
+                        APP_TITLE, f"Delete {n_out} result file(s) that were never saved in S3? This can't be undone.",
                         icon="warning", parent=self.root):
                     pass
                 else:
@@ -1257,7 +1259,7 @@ class CurWorkApp:
             if not added and not core.profile_exists(self.s.aws_profile):
                 raise core.CurWorkError(
                     f"The AWS profile '{self.s.aws_profile}' isn't set up on this laptop, and the admin settings file "
-                    "doesn't have the SSO details to set it up. Ask your admin."
+                    "doesn't have the sign-in details to set it up. Ask your admin."
                 )
             log.info("Opening your browser to sign in. Finish the sign-in (and MFA) there, then come back.")
             core.run_sso_login(self.s.aws_profile, on_line=lambda line: log.info("  %s", line),
@@ -1388,7 +1390,7 @@ class CurWorkApp:
         for iid in current - wanted:
             self.out_tree.delete(iid)
         for f in files:
-            tag = {"Uploaded": "done", "Open in Excel": "open"}.get(f.status, "pending")
+            tag = {"Saved in S3": "done", "Open in Excel": "open"}.get(f.status, "pending")
             values = (core.human_size(f.size), f.status)
             if f.rel in current:
                 self.out_tree.item(f.rel, values=values, tags=(tag,))
@@ -1398,7 +1400,7 @@ class CurWorkApp:
         extras = len(self.work.in_extras())
         warn = f"  ({extras} new or changed - results belong in Out)" if extras else ""
         self.in_count_lbl.configure(text=f"In: {n_in} file(s){warn}   |   Out: {len(files)} file(s), "
-                                         f"{sum(1 for f in files if f.status != 'Uploaded')} not uploaded yet",
+                                         f"{sum(1 for f in files if f.status != 'Saved in S3')} not saved in S3 yet",
                                     style="Bad.TLabel" if extras else "Hint.TLabel")
 
     def _auto_refresh_out(self) -> None:
@@ -1417,9 +1419,9 @@ class CurWorkApp:
                 messagebox.showinfo(APP_TITLE, "Select one or more files in the list first.", parent=self.root)
                 return
         else:
-            files = [f for f in files if f.status != "Uploaded"]
+            files = [f for f in files if f.status != "Saved in S3"]
             if not files:
-                messagebox.showinfo(APP_TITLE, "Everything in the Out folder is already uploaded.", parent=self.root)
+                messagebox.showinfo(APP_TITLE, "Everything in the Out folder is already saved in S3.", parent=self.root)
                 return
         open_files = [f.rel for f in files if f.status == "Open in Excel"]
         if open_files:
@@ -1433,7 +1435,7 @@ class CurWorkApp:
             messagebox.showerror(APP_TITLE, str(e), parent=self.root)
             return
         if not core._norm_prefix(self.folder_var.get()) and not messagebox.askyesno(
-                APP_TITLE, "You didn't fill in the customer / month folder, so the results will go straight into "
+                APP_TITLE, "You didn't fill in the customer / month folder, so the results will be saved straight into "
                            f"s3://{self.s.bucket}/{dest}\n\nIs that right?", parent=self.root):
             return
 
@@ -1449,21 +1451,21 @@ class CurWorkApp:
             return choice
 
         def work():
-            log.info("Uploading %d file(s) to s3://%s/%s ...", len(files), self.s.bucket, dest)
+            log.info("Saving %d file(s) in s3://%s/%s ...", len(files), self.s.bucket, dest)
             return self.svc.upload(
                 [(f.path, f.rel) for f in files], dest, on_exists=on_exists, on_progress=self._progress_cb,
-                on_file=lambda k: self.ui(lambda: self._set_status(f"Uploading {k.rsplit('/', 1)[-1]}")),
+                on_file=lambda k: self.ui(lambda: self._set_status(f"Saving {k.rsplit('/', 1)[-1]} in S3")),
                 on_uploaded=lambda p, rel, key: self.work.record_upload(rel, p, key),
                 cancel=self.cancel_event,
             )
 
         def done(keys):
-            log.info("Done: %d file(s) uploaded.", len(keys))
-            self._set_status(f"Uploaded {len(keys)} file(s).")
+            log.info("Done: %d file(s) saved in S3.", len(keys))
+            self._set_status(f"Saved {len(keys)} file(s) in S3.")
             if keys:
                 self._add_recent(self.folder_var.get())
 
-        self.run_task("Uploading...", work, done)
+        self.run_task("Saving in S3...", work, done)
 
     # ------------------------------------------------------------ user preferences
     def _save_prefs(self, quiet: bool = True) -> bool:
@@ -1624,7 +1626,7 @@ class CurWorkApp:
             ans = messagebox.askyesnocancel(
                 APP_TITLE, f"These files in In are new or were changed after download. They may be results "
                            f"saved to the wrong folder:\n\n{names}\n\n"
-                           "Yes = move them to Out so you can upload them\n"
+                           "Yes = move them to Out so you can save them in S3\n"
                            "No = delete them with everything else\nCancel = go back", icon="warning", parent=self.root)
             if ans is None:
                 return
@@ -1632,14 +1634,14 @@ class CurWorkApp:
                 moved = self.work.move_to_out([(p, rel) for p, rel, _ in extras],
                                               strip_prefix=core._norm_prefix(self.folder_var.get()))
                 self.refresh_out()
-                messagebox.showinfo(APP_TITLE, f"Moved {len(moved)} file(s) to Out. Upload them, then click "
+                messagebox.showinfo(APP_TITLE, f"Moved {len(moved)} file(s) to Out. Save them in S3, then click "
                                                "'Finish and clean up' again.", parent=self.root)
                 return
         if pending:
             names = "\n".join(f.rel for f in pending[:10]) + ("\n..." if len(pending) > 10 else "")
             if not messagebox.askyesno(
-                    APP_TITLE, f"{len(pending)} result file(s) in Out were NOT uploaded:\n\n{names}\n\n"
-                               "Delete them anyway? (No = go back and upload them)", icon="warning", parent=self.root):
+                    APP_TITLE, f"{len(pending)} result file(s) in Out are NOT saved in S3 yet:\n\n{names}\n\n"
+                               "Delete them anyway? (No = go back and save them in S3)", icon="warning", parent=self.root):
                 return
 
         def work():
@@ -1648,7 +1650,7 @@ class CurWorkApp:
                 if self.signed_in:
                     key = self.svc.upload_log(self.log_file)
             except Exception as e:  # noqa: BLE001 - the cleanup still matters more
-                log.warning("Couldn't upload the log (%s). Cleaning up anyway.", core.classify_error(e)[1])
+                log.warning("Couldn't save the log in S3 (%s). Cleaning up anyway.", core.classify_error(e)[1])
             skipped = self.work.clean()
             return key, skipped
 
@@ -1674,7 +1676,7 @@ class CurWorkApp:
         if self._closed:
             return
         if self.busy:
-            if not messagebox.askyesno(APP_TITLE, "A transfer is still running. Stop it and close?", parent=self.root):
+            if not messagebox.askyesno(APP_TITLE, "A download or save is still running. Stop it and close?", parent=self.root):
                 return
             self.cancel_event.set()
             self._close_after_task = True  # finish the stop cleanly (removes partial files), then come back here
@@ -1690,7 +1692,7 @@ class CurWorkApp:
             if ans:
                 self.finish(then=self._destroy)
                 return
-            log.info("Closed with files left in the work folder (In: %d, Out not uploaded: %d).", n_in, n_out)
+            log.info("Closed with files left in the work folder (In: %d, Out not saved in S3: %d).", n_in, n_out)
         self._destroy()
 
     def _destroy(self) -> None:

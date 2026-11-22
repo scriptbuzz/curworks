@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-22 16:51 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Creates a NEW test bucket in the test account (CURWORK_ACCOUNT in curwork_test.env), set up the way the Admin and Security Guide describes,
 # uploads the made-up sample workbooks, and points CurWork's admin settings file at the bucket.
 # The admin profile (CURWORK_ADMIN_PROFILE) is used ONLY for this setup. CurWork itself signs in with the CurWorkBillerTest permission
@@ -54,7 +54,7 @@ step "Default encryption: SSE-KMS" aws s3api put-bucket-encryption --bucket "$BU
   --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"},"BucketKeyEnabled":true}]}'
 step "Remove old versions after 30 days" aws s3api put-bucket-lifecycle-configuration --bucket "$BUCKET" "${A[@]}" \
   --lifecycle-configuration '{"Rules":[{"ID":"curwork-test-old-versions","Status":"Enabled","Filter":{},"NoncurrentVersionExpiration":{"NoncurrentDays":30},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":7}}]}'
-sed "s/BUCKET_NAME/$BUCKET/g" CurWork-Beta-0.011/iam/bucket_policy_additions.json > "$HERE/.bucket_policy_test.json"
+sed "s/BUCKET_NAME/$BUCKET/g" CurWork-app/iam/bucket_policy_additions.json > "$HERE/.bucket_policy_test.json"
 step "Bucket policy: TLS 1.2 or higher only" aws s3api put-bucket-policy --bucket "$BUCKET" "${A[@]}" --policy "file://$HERE/.bucket_policy_test.json"
 step "Tag the bucket" aws s3api put-bucket-tagging --bucket "$BUCKET" "${A[@]}" \
   --tagging 'TagSet=[{Key=Purpose,Value=CurWork-test},{Key=Data,Value=sample-only}]'
@@ -63,19 +63,19 @@ step "Upload sample workbooks" aws s3 cp sample-data/agency-a-cur-2026-09.xlsx "
 step "Upload sample workbooks" aws s3 cp sample-data/agency-a-cur-2026-10.xlsx "s3://$BUCKET/converted/agency-a/2026-10/" "${A[@]}"
 step "Upload sample workbooks" aws s3 cp sample-data/agency-b-cur-2026-10.xlsx "s3://$BUCKET/converted/agency-b/2026-10/" "${A[@]}"
 
-step "Point CurWork at the test bucket (read-only sign-in)" CurWork-Beta-0.011/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
+step "Point CurWork at the test bucket (read-only sign-in)" CurWork-app/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
 import json, sys, datetime, configparser, os
 bucket, region, setup_profile = sys.argv[1:4]
 # Find the SSO Region the admin profile uses (names and Regions only; no tokens are read).
 cfg = configparser.RawConfigParser(); cfg.read(os.path.expanduser("~/.aws/config"))
 sec = cfg["profile " + setup_profile]
 sso_region = sec.get("sso_region") or (cfg["sso-session " + sec["sso_session"]].get("sso_region") if sec.get("sso_session") else None) or region
-p = "CurWork-Beta-0.011/curwork_admin_settings.json"
+p = "CurWork-app/curwork_admin_settings.json"
 if not os.path.exists(p):   # fresh clone: start from the example (the real file is never in Git)
-    import shutil; shutil.copy("CurWork-Beta-0.011/curwork_admin_settings.example.json", p)
+    import shutil; shutil.copy("CurWork-app/curwork_admin_settings.example.json", p)
 d = json.load(open(p, encoding="utf-8-sig"))
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-d["_version"] = f"Admin settings for CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
+d["_version"] = f"Admin settings for CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
 E = os.environ
 d["bucket"], d["region"], d["aws_profile"] = bucket, region, E["CURWORK_PROFILE"]
 d["sso"] = {"session_name": E["CURWORK_SSO_SESSION"], "start_url": E["CURWORK_SSO_START_URL"],
@@ -85,7 +85,7 @@ print(f"CurWork will use bucket {bucket} ({region}) and sign in as {E['CURWORK_R
 if d.get("settings_parameter"):
     # CurWork ignores the local bucket when the settings come from Parameter Store, so save it there too,
     # with the admin profile (billers can't change the parameter).
-    sys.path.insert(0, "CurWork-Beta-0.011")
+    sys.path.insert(0, "CurWork-app")
     import curwork_core as core, curwork_admin as admin
     store = admin.AdminStore(d["settings_parameter"], region, profile=setup_profile)
     managed, version = store.load()
@@ -96,7 +96,7 @@ if d.get("settings_parameter"):
     print(f"Saved the bucket to Parameter Store {d['settings_parameter']} (version {store.save(managed, version)}).")
 PY
 
-step "Check everything was created (re-reads AWS)" CurWork-Beta-0.011/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
+step "Check everything was created (re-reads AWS)" CurWork-app/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
 import json, os, sys, boto3
 from botocore.exceptions import ClientError
 bucket, region, profile = sys.argv[1:4]
@@ -145,9 +145,9 @@ for local, key in (("agency-a-cur-2026-09.xlsx", "converted/agency-a/2026-09/age
         return want == got, f"{got} of {want} bytes"
     check(f"In S3: {key}", same_size)
 def settings_point_here():
-    d = json.load(open("CurWork-Beta-0.011/curwork_admin_settings.json", encoding="utf-8-sig")); return d.get("bucket") == bucket, d.get("bucket")
+    d = json.load(open("CurWork-app/curwork_admin_settings.json", encoding="utf-8-sig")); return d.get("bucket") == bucket, d.get("bucket")
 check("CurWork's admin settings use this bucket", settings_point_here)
-param = json.load(open("CurWork-Beta-0.011/curwork_admin_settings.json", encoding="utf-8-sig")).get("settings_parameter")
+param = json.load(open("CurWork-app/curwork_admin_settings.json", encoding="utf-8-sig")).get("settings_parameter")
 if param:
     def parameter_points_here():
         got = json.loads(boto3.Session(profile_name=profile, region_name=region).client("ssm")

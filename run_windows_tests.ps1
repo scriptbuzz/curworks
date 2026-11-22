@@ -1,4 +1,4 @@
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - Windows test runner - updated 2026-11-22 20:10 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Windows test runner - updated 2026-11-22 23:32 UTC - modified by: mbitar
 #
 # Runs CurWork's automated tests on a Windows 11 test machine and saves one PASS/FAIL report
 # (windows_tests_results.txt, which Git ignores). Run it from the top folder of the repository:
@@ -14,13 +14,13 @@
 #      test files with your admin profile.
 #   4. Self-test of CurWork from source, and of dist\CurWork.exe if it has been built
 #
-# Needs: build_exe.ps1 run once in CurWork-Beta-0.011 (it creates .venv), and curwork_test.env filled in.
+# Needs: build_exe.ps1 run once in CurWork-app (it creates .venv), and curwork_test.env filled in.
 
 param([string]$Bucket = "")
 
 $ErrorActionPreference = "Stop"
 $Root = $PSScriptRoot
-$Tool = Join-Path $Root "CurWork-Beta-0.011"
+$Tool = Join-Path $Root "CurWork-app"
 $Py   = Join-Path $Tool ".venv\Scripts\python.exe"
 $Results = Join-Path $Root "windows_tests_results.txt"
 $script:Failed = 0
@@ -35,7 +35,7 @@ try {
     Write-Host ("== CurWork Windows tests - {0:yyyy-MM-dd HH:mm} UTC" -f (Get-Date).ToUniversalTime())
 
     # ---- Checks before starting ----
-    if (-not (Test-Path $Py)) { throw "CurWork's .venv isn't set up. In CurWork-Beta-0.011 run .\build_exe.ps1 once first." }
+    if (-not (Test-Path $Py)) { throw "CurWork's .venv isn't set up. In CurWork-app run .\build_exe.ps1 once first." }
     $envFile = Join-Path $Root "curwork_test.env"
     if (-not (Test-Path $envFile)) { throw "curwork_test.env is missing. Copy curwork_test.env.example to curwork_test.env and fill it in." }
 

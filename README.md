@@ -4,7 +4,7 @@
 
 <!-- These badges are fixed images. Update the numbers here when they change. -->
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.011-0B2545?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.012-0B2545?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-draft%2C%20internal%20use-B54708?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-proprietary%20(FPT)-5F6B7A?style=flat-square">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-1F4E89?logo=python&logoColor=white&style=flat-square">
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="#watch-the-demo"><b>Watch the demo</b></a> &nbsp;·&nbsp;
   <a href="WINDOWS.md"><b>Windows 11 guide</b></a> &nbsp;·&nbsp;
-  <a href="CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md"><b>Admin and security guide</b></a> &nbsp;·&nbsp;
+  <a href="CurWork-app/ADMIN_AND_SECURITY_GUIDE.md"><b>Admin and security guide</b></a> &nbsp;·&nbsp;
   <a href="SECURITY.md"><b>Report a security problem</b></a> &nbsp;·&nbsp;
   <a href="LICENSE"><b>License</b></a>
 </p>
@@ -28,13 +28,13 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 21:02 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
-1. It copies AWS cost report workbooks from Amazon S3 to the biller's laptop.
+1. It downloads AWS cost report workbooks from Amazon S3 to the biller's laptop.
 2. The biller runs their usual Excel macros on those files. The macros don't change.
-3. It sends the results back to S3.
+3. It saves the results in S3.
 4. It deletes the files from the laptop when the biller is done.
 
 | At a glance | |
@@ -50,7 +50,7 @@ CurWork is a small desktop app for the billing team. It does four things:
 
 ## Watch the demo
 
-<a href="docs/demo/curwork-demo.html"><img src="docs/demo/curwork-demo.gif" width="800" alt="Animated demo: a biller signs in, downloads a month of files, runs the macros, uploads the result and cleans up the laptop."></a>
+<a href="docs/demo/curwork-demo.html"><img src="docs/demo/curwork-demo.gif" width="800" alt="Animated demo: a biller signs in, downloads a month of files, runs the macros, saves the result in S3 and cleans up the laptop."></a>
 
 This loop plays a whole biller session at 2.5 times normal speed. The full demo, with captions, chapters and pause buttons, is [docs/demo/curwork-demo.html](docs/demo/curwork-demo.html). GitHub shows that page's code instead of playing it, so download the file and open it in a web browser. The demo uses made-up sample data.
 
@@ -58,15 +58,15 @@ This loop plays a whole biller session at 2.5 times normal speed. The full demo,
 
 To set CurWork up, test it and run it on Windows 11, follow [WINDOWS.md](WINDOWS.md).
 
-![Exhibit 1: How CurWork moves files. Files go from the converted folder in S3 to the In folder on the laptop, the biller's Excel macros save results to the Out folder, CurWork uploads them to the results folders in S3, and Finish and clean up uploads the log and empties both folders.](docs/diagrams/exhibit1-workflow.svg)
+![Exhibit 1: How CurWork moves files. Files go from the converted folder in S3 to the In folder on the laptop, the biller's Excel macros save results to the Out folder, CurWork saves them in the results folders in S3, and Finish and clean up uploads the log and empties both folders.](docs/diagrams/exhibit1-workflow.svg)
 
 ## Security came first
 
 CurWork handles cost data for federal agency customers, so we designed it around security from day one. We didn't bolt it on later. Every decision aimed to keep data from leaking, stop mistakes from changing the wrong files, and give an attacker as little as possible to work with.
 
-Here's what that means in practice. The last column lists the matching controls from NIST SP 800-53 Rev. 5, the US government's security control catalog. We also followed the AWS Well-Architected Framework (Security Pillar) and the CIS AWS Foundations Benchmark for the S3 and sign-in settings. The [Admin and Security Guide](CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md) has the full details.
+Here's what that means in practice. The last column lists the matching controls from NIST SP 800-53 Rev. 5, the US government's security control catalog. We also followed the AWS Well-Architected Framework (Security Pillar) and the CIS AWS Foundations Benchmark for the S3 and sign-in settings. The [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details.
 
-![Exhibit 2: What a biller can and can't do. Billers can list and download from converted, list, download and upload in the results and logs folders, and can't delete anything or touch the rest of the bucket. Public access is blocked, only TLS 1.2 or newer is allowed, files are encrypted with SSE-KMS, and old copies are kept for 30 days.](docs/diagrams/exhibit2-access.svg)
+![Exhibit 2: What a biller can and can't do. Billers can list and download from converted, list, download and save files in the results and logs folders, and can't delete anything or touch the rest of the bucket. Public access is blocked, only TLS 1.2 or newer is allowed, files are encrypted with SSE-KMS, and old copies are kept for 30 days.](docs/diagrams/exhibit2-access.svg)
 
 | What we wanted | What CurWork does | NIST controls |
 |---|---|---|
@@ -89,7 +89,7 @@ This table describes how we built and tested CurWork. It isn't a certification o
 ## What's in this repository
 
 ```
-CurWork-Beta-0.011/            The app itself
+CurWork-app/            The app itself
   curwork.py                   The window
   curwork_core.py              S3, sign-in, settings and file handling
   curwork_help.py              The tips and Help text
@@ -128,14 +128,14 @@ The [animated demo](docs/demo/curwork-demo.html) plays these steps from start to
 1. Start CurWork and click **Sign in**. Finish signing in in your browser.
 2. **Step 1:** open a customer folder, pick a month or some files, and click **Download selected**.
 3. **Step 2:** run your macros as usual. Open the files from the **In** folder and save the results to the **Out** folder.
-4. **Step 3:** check the result type and the customer/month folder, then click **Upload all new or changed**.
+4. **Step 3:** check the result type and the customer/month folder, then click **Save all new or changed in S3**.
 5. **Step 4:** close the files in Excel and click **Finish and clean up**.
 
-If you're not sure what something does, point at it to see a tip, click the **?** next to a step, or press **F1** for Help. The full guide is [CurWork-Beta-0.011/README.md](CurWork-Beta-0.011/README.md).
+If you're not sure what something does, point at it to see a tip, click the **?** next to a step, or press **F1** for Help. The full guide is [CurWork-app/README.md](CurWork-app/README.md).
 
 ## For admins
 
-Read the [Admin and Security Guide](CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md). It covers the S3 bucket and folders, the biller permissions (the files are in [iam/](CurWork-Beta-0.011/iam/)), the admin settings file, how to roll CurWork out, and how each security control is met.
+Read the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md). It covers the S3 bucket and folders, the biller permissions (the files are in [iam/](CurWork-app/iam/)), the admin settings file, how to roll CurWork out, and how each security control is met.
 
 ## Testing on a Mac
 
@@ -189,7 +189,7 @@ Your account number, sign-in address and profile names are only stored in `curwo
 
 ## Where things stand
 
-This is Beta 0.011, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
+This is Beta 0.012, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 21:02 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*

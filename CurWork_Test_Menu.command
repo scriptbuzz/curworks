@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - Mac test menu - updated 2026-11-22 17:07 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Mac test menu - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # One place to run every Mac test script, in the order they're meant to run. Under each option it says
 # when to use it, exactly what it does, and what it changes. Each script still asks before it changes anything.
 HERE="$(cd "$(dirname "$0")" && pwd)"; cd "$HERE" || exit 1
@@ -47,16 +47,16 @@ while true; do
   [ "$NOW" != "$STARTED" ] && exec bash "$SELF"      # the menu was updated: reload it so the numbers match
   clear
   BUCKET=$( [ -f test_bucket.txt ] && cut -d' ' -f1 test_bucket.txt || echo "none yet" )
-  APP=$( [ -d CurWork-Beta-0.011/CurWork.app ] && echo "built" || echo "not built yet" )
+  APP=$( [ -d CurWork-app/CurWork.app ] && echo "built" || echo "not built yet" )
   echo "${B}CurWork - Mac test menu${N}"
-  echo "${D}DRAFT - For Internal Use · Beta 0.011 · Mac testing only; never give to billers.${N}"
+  echo "${D}DRAFT - For Internal Use · Beta 0.012 · Mac testing only; never give to billers.${N}"
   echo "Test bucket: $BUCKET"
   echo "CurWork.app: $APP"
   echo "Run them top to bottom. Run 8 before testing by hand. 11 starts over."
 
   item 1 "Check this Mac" run_mac_checks.command mac_check_results.txt \
     "First, once. Again after updating Python or CurWork's packages." \
-    "Creates or refreshes the .venv folder inside CurWork-Beta-0.011. Nothing in AWS." \
+    "Creates or refreshes the .venv folder inside CurWork-app. Nothing in AWS." \
     "Checks Python is 3.10 or newer (not Apple's built-in 3.9) and that Tk, the window toolkit, works." \
     "Checks the AWS CLI is installed and lists your AWS profile names (names only)." \
     "Creates .venv and installs CurWork's packages, checking each against its SHA-256 hash." \
@@ -98,7 +98,7 @@ while true; do
     "Copies the last 40 lines of today's CurWork log into diagnose_results.txt."
   item 7 "Build and open CurWork.app" build_mac_app.command build_mac_app_results.txt \
     "To run CurWork as a real Mac app. Rebuild after any change to CurWork's code. Use 7 or 9, not both at once." \
-    "Creates or replaces CurWork-Beta-0.011/CurWork.app. Nothing in AWS." \
+    "Creates or replaces CurWork-app/CurWork.app. Nothing in AWS." \
     "Builds CurWork.app with PyInstaller from CurWork's .venv, with its own name, version and icon." \
     "Runs the new app's self-test and opens it only if every check passes." \
     "Signs it for this Mac only (ad-hoc) and checks the signature." \
@@ -122,7 +122,7 @@ while true; do
 
   item 11 "Reset everything" reset_everything.command reset_results.txt \
     "When you want a clean start: after a crash, a messy test, or before showing the tool to someone." \
-    "Deletes every test item in AWS and on this Mac, then creates a new test bucket. Keeps CurWork-Beta-0.011 (program, .venv, CurWork.app), the scripts and sample-data." \
+    "Deletes every test item in AWS and on this Mac, then creates a new test bucket. Keeps CurWork-app (program, .venv, CurWork.app), the scripts and sample-data." \
     "Part 1: finds every CurWork test item (like option 2), picks all of them, and deletes them after you type confirm. Each delete is re-checked." \
     "Stops there if you cancel or anything isn't confirmed deleted." \
     "Part 2: creates a fresh test bucket and uploads all samples, including the large one (like option 3), and sets up biller test access again (like option 4), after you type confirm. Ends with all the checks."

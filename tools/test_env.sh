@@ -1,4 +1,4 @@
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - test settings loader - updated 2026-11-22 18:12 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - test settings loader - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Sourced by the test scripts. Loads your AWS details from curwork_test.env (kept out of Git) so no account
 # number, profile name or sign-in URL is written into any script.
 _here="${HERE:-$(pwd)}"

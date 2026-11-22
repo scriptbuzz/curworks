@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 22:44 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -149,10 +149,10 @@ Set `settings_parameter` in the local file, for example `/curwork/admin-settings
 python curwork_admin.py --profile <admin profile>
 ```
 
-- **Sign in** opens the browser for the admin sign-in. **Load** reads the current version.
-- The form checks every value with the same rules CurWork uses before anything is saved. **Save to AWS** lists each change and asks you to confirm it.
-- If another admin saved a newer version after you clicked Load, nothing is saved. Load their version first, then make your change again.
-- **Fill in from the local settings file** copies the managed settings from `curwork_admin_settings.json`. Use it once to create the parameter.
+- **Sign in** opens the browser for the admin sign-in. **Load from AWS** reads the current version.
+- The form checks every value with the same rules CurWork uses before anything is saved. **Save in AWS** lists each change and asks you to confirm it.
+- If another admin saved a newer version after you clicked Load from AWS, nothing is saved. Load their version first, then make your change again.
+- **Copy from this laptop's settings file** copies the settings kept in AWS from `curwork_admin_settings.json`. Use it once to create the parameter.
 - **History** lists every saved version, when it was saved and who saved it.
 - A sign-in without permission to change the parameter, such as a biller's, gets a message saying that only the AWS admin role can change the settings. The app doesn't decide this itself; AWS refuses the save.
 
@@ -265,6 +265,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-22 23:33 | Beta 0.012 | Plain wording: CurWork and the admin settings app now say "save in S3" instead of "send" or "upload". The admin app's buttons are now **Load from AWS**, **Save in AWS** and **Copy from this laptop's settings file**. The program folder is now `CurWork-app`. New tests prove that billers can only read the settings kept in AWS and that only an admin can save them (NIST SP 800-53 AC-3, AC-6, CM-5). | mbitar |
 | 2026-11-22 22:44 | Beta 0.011 | Managed settings (NIST SP 800-53 AC-3, CM-5, AU-12): the settings that decide where data goes can live in AWS Parameter Store. Billers can only read them, only the AWS admin role can change them, and the new CurWork Admin Settings app is how admins change them. | mbitar |
 | 2026-11-22 21:50 | Beta 0.011 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error. Before, it quietly used the settings file next to `curwork.py` instead (NIST SP 800-53 CM-6). | mbitar |
 | 2026-11-22 20:56 | Beta 0.011 | Config lock (NIST SP 800-53 CM-5, CM-6): the built app only reads the admin settings installed next to it. `--config`, `CURWORK_CONFIG` and `%APPDATA%` are ignored there and logged; the self-test checks the lock. Running from source is unchanged. 3 new tests; 71 pass. | mbitar |
@@ -276,4 +277,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 22:44 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*

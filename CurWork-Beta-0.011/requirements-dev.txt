@@ -1,6 +1,0 @@
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 13:42 UTC - modified by: mbitar
-# Build and test tools only. Not shipped to laptops.
-pyinstaller>=6
-pytest>=8
-moto[s3]>=5
-pip-audit>=2.7

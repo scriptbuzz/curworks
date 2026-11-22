@@ -1,6 +1,6 @@
 # CurWork
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 22:44 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
 CurWork is a small Windows app for the billing team. It copies converted CUR workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then sends the results back to S3 and cleans up the laptop. **The VBA code doesn't change.**
 
@@ -11,7 +11,7 @@ CurWork is a small Windows app for the billing team. It copies converted CUR wor
 1. Start CurWork and click **Sign in**. Finish the company sign-in and MFA in the browser. The sign-in line at the top turns green and shows your user name and role.
 2. **Step 1:** open a customer folder, select a month or single files, and click **Download selected**.
 3. **Step 2:** run your macros as usual. Pick files from `In` (use **Copy path**) and save results to `Out`.
-4. **Step 3:** check the result type and the customer/month folder, then click **Upload all new or changed**.
+4. **Step 3:** check the result type and the customer/month folder, then click **Save all new or changed in S3**.
 5. **Step 4:** close the files in Excel, then click **Finish and clean up**. When it says the In and Out folders are empty, you're done.
 
 Need help? Point at any button or box to see what it does, click the **?** next to a step, or press **F1** (or click **Help**) for the full help with search.
@@ -20,10 +20,10 @@ Need help? Point at any button or box to see what it does, click the **?** next 
 
 One window with four steps:
 
-1. **Get files from S3:** open a customer folder, select files or a whole month, click **Download selected**. Files land in `In`. **Pin selected folder** and **Go** jump straight to folders you use often.
+1. **Download files from S3:** open a customer folder, select files or a whole month, click **Download selected**. Files land in `In`. **Pin selected folder** and **Go** jump straight to folders you use often.
 2. **Run your macros as usual:** in the macro menu, pick files from `In` and save results to `Out`. **Open** and **Copy path** buttons make this quick.
-3. **Send results to S3:** the list shows every file in `Out` with a status (*Not uploaded*, *Uploaded*, *Changed since upload*, *Open in Excel*). Pick the result type and click **Upload all new or changed**. The customer/month folder is filled in from the download, and recent folders are in the drop-down.
-4. **Finish and clean up:** stops if anything is still open in Excel, left in `In` or not uploaded. Otherwise it uploads the day's log and empties `In` and `Out`.
+3. **Save results in S3:** the list shows every file in `Out` with a status (*Not saved in S3*, *Saved in S3*, *Changed since saved*, *Open in Excel*). Pick the result type and click **Save all new or changed in S3**. The customer/month folder is filled in from the download, and recent folders are in the drop-down.
+4. **Finish and clean up:** stops if anything is still open in Excel, left in `In` or not saved in S3. Otherwise it saves the day's log in S3 and empties `In` and `Out`.
 
 **Settings** (top right) holds each user's own preferences: recent and pinned folders, whether to remember the last result type, and the window layout. It also shows the admin settings, read-only.
 
@@ -115,6 +115,7 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 
 | Version | Date (UTC) | Changes | Modified by |
 |---|---|---|---|
+| Beta 0.012 | 2026-11-22 23:33 | Plain wording: the window, Help, the admin settings app and the guides now say "save in S3" instead of "send" or "upload". For example, the main button is **Save all new or changed in S3** and a finished file shows **Saved in S3**. The program folder is now `CurWork-app`, with no version in its name. Since the last entry: there is a checklist for testing by hand on a Mac (`MAC_HAND_TEST.md`); a settings file named with `--config` that doesn't exist now stops CurWork with an error; new tests cover the use notice, an expired sign-in and the checksum S3 checks when a file is saved; option 3 also saves a new test bucket to the settings kept in AWS; and new tests check that the Parameter Store settings work, are easy to use, and can only be changed by an admin. | mbitar |
 | Beta 0.011 | 2026-11-22 22:44 | Managed settings: the settings that decide where data goes can live in AWS Parameter Store. CurWork reads them after each sign-in, billers can only read them, and only the AWS admin role can change them with the new CurWork Admin Settings app (`curwork_admin.py`). 91 tests pass. | mbitar |
 | Beta 0.011 | 2026-11-22 21:50 | Running from source: if the settings file named by `--config` or `CURWORK_CONFIG` doesn't exist, CurWork stops with an error instead of quietly using the settings file next to `curwork.py`. | mbitar |
 | Beta 0.011 | 2026-11-22 20:56 | Config lock: the built app only reads the admin settings file installed next to it. It ignores `--config` and `CURWORK_CONFIG` and logs a warning if either is used. Running from source still accepts them. | mbitar |
@@ -145,4 +146,4 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 | 1.0.0 (code) | 2026-11-22 11:33 | First release | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 22:44 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*

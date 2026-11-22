@@ -2,9 +2,9 @@
 CurWork Admin Settings: a small window for AWS admins to view and change CurWork's managed admin
 settings (bucket, folders, encryption, upload rules) in AWS Systems Manager Parameter Store.
 
-Version:     Beta 0.011
+Version:     Beta 0.012
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 22:40 UTC
+Updated:     2026-11-22 23:32 UTC
 Modified by: mbitar
 
 Who can change the settings is decided by AWS, not by this window: billers' permissions can only read
@@ -37,14 +37,14 @@ DEFAULT_PARAMETER = "/curwork/admin-settings"
 # The form: (key, label, kind). kind is text, list (comma-separated), stages (one "Name = folder/" per line) or int.
 FIELDS = (
     ("bucket", "S3 bucket", "text"),
-    ("kms_key_id", "KMS key for uploads (blank: the bucket's default)", "text"),
-    ("browse_roots", "Folders billers download from (comma-separated)", "list"),
+    ("kms_key_id", "Encryption key for saved files (leave blank to use the bucket's own key)", "text"),
+    ("browse_roots", "Folders billers can download from (separate them with commas)", "list"),
     ("output_stages", "Result types (one per line: Name = folder/)", "stages"),
-    ("default_stage", "Default result type", "text"),
-    ("log_prefix", "Folder for CurWork's logs", "text"),
-    ("upload_extensions", "File types billers can upload (comma-separated)", "list"),
+    ("default_stage", "Result type picked at start", "text"),
+    ("log_prefix", "Folder where CurWork saves its logs", "text"),
+    ("upload_extensions", "File types billers can save in S3 (separate them with commas)", "list"),
     ("large_download_warning_mb", "Ask before downloading more than (MB)", "int"),
-    ("max_concurrency", "Parallel transfers (1 to 32)", "int"),
+    ("max_concurrency", "Files copied at the same time (1 to 32)", "int"),
     ("_version", "Version label (shown in CurWork's About window)", "text"),
 )
 
@@ -174,7 +174,7 @@ class AdminStore:
         if version != expected_version:
             raise core.CurWorkError(
                 f"Someone else saved the settings since you loaded them (now version {version}). "
-                "Click Load to see their change, then make yours again.")
+                "Click Load from AWS to see their change, then make yours again.")
         ssm = self._client("ssm")
         kw = {"Name": self.parameter, "Value": json.dumps(managed, indent=2), "Type": "String", "Tier": "Standard",
               "Description": "CurWork admin settings. Change them with the CurWork Admin Settings app."}
@@ -190,7 +190,7 @@ class AdminStore:
                     "Your AWS sign-in isn't allowed to change CurWork's admin settings. "
                     "Only the AWS admin role can. Sign in with the admin profile and try again.") from None
             if code == "ParameterAlreadyExists":
-                raise core.CurWorkError("Someone else created the settings a moment ago. Click Load, then try again.") from None
+                raise core.CurWorkError("Someone else created the settings a moment ago. Click Load from AWS, then try again.") from None
             raise
         return int(resp["Version"])
 
@@ -227,20 +227,20 @@ class AdminApp:
         self.param_var = tk.StringVar(value=self.store.parameter)
         self.region_var = tk.StringVar(value=self.store.region)
         for row, (label, var) in enumerate((("AWS admin profile", self.profile_var),
-                                            ("Parameter name", self.param_var),
-                                            ("Region", self.region_var)), start=2):
+                                            ("Where the settings are kept (Parameter Store name)", self.param_var),
+                                            ("AWS Region", self.region_var)), start=2):
             ttk.Label(f, text=label).grid(row=row, column=0, sticky="w", pady=2)
             ttk.Entry(f, textvariable=var).grid(row=row, column=1, sticky="ew", pady=2)
         btns = ttk.Frame(f)
         btns.grid(row=2, column=2, rowspan=3, sticky="ne", padx=(10, 0))
         self.sign_btn = ttk.Button(btns, text="Sign in", command=self.sign_in, width=14)
         self.sign_btn.pack(fill="x")
-        self.load_btn = ttk.Button(btns, text="Load", command=self.load, width=14)
+        self.load_btn = ttk.Button(btns, text="Load from AWS", command=self.load, width=14)
         self.load_btn.pack(fill="x", pady=4)
-        self.status_lbl = ttk.Label(f, text="Sign in with the admin profile, then click Load.")
+        self.status_lbl = ttk.Label(f, text="Sign in with the admin profile, then click Load from AWS.")
         self.status_lbl.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 8))
 
-        form = ttk.LabelFrame(f, text="Managed settings", padding=10)
+        form = ttk.LabelFrame(f, text="Settings kept in AWS", padding=10)
         form.grid(row=6, column=0, columnspan=3, sticky="nsew")
         f.rowconfigure(6, weight=1)
         form.columnconfigure(1, weight=1)
@@ -256,11 +256,11 @@ class AdminApp:
 
         bottom = ttk.Frame(f)
         bottom.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(10, 0))
-        self.copy_btn = ttk.Button(bottom, text="Fill in from the local settings file", command=self.fill_from_local)
+        self.copy_btn = ttk.Button(bottom, text="Copy from this laptop's settings file", command=self.fill_from_local)
         self.copy_btn.pack(side="left")
         self.history_btn = ttk.Button(bottom, text="History", command=self.show_history)
         self.history_btn.pack(side="left", padx=6)
-        self.save_btn = ttk.Button(bottom, text="Save to AWS", command=self.save, state="disabled")
+        self.save_btn = ttk.Button(bottom, text="Save in AWS", command=self.save, state="disabled")
         self.save_btn.pack(side="right")
 
     # ---- form
@@ -323,7 +323,7 @@ class AdminApp:
             self.store.reset()
             return self.store.whoami()
         self.run("Signing in (check your browser)...", work,
-                 lambda who: self.status_lbl.configure(text=f"Signed in as {who}. Click Load."))
+                 lambda who: self.status_lbl.configure(text=f"Signed in as {who}. Click Load from AWS."))
 
     def load(self) -> None:
         def work():
@@ -335,8 +335,8 @@ class AdminApp:
             self.save_btn.configure(state="normal")
             if managed is None:
                 self.set_form(managed_to_form({}))
-                self.status_lbl.configure(text=f"Signed in as {who}. {self.store.parameter} doesn't exist yet: "
-                                               "fill in the form (or from the local file) and save to create it.")
+                self.status_lbl.configure(text=f"Signed in as {who}. {self.store.parameter} doesn't exist yet. Fill in the form, or "
+                                               "copy from this laptop's settings file, then click Save in AWS to create it.")
             else:
                 self.set_form(managed_to_form(managed))
                 self.status_lbl.configure(text=f"Signed in as {who}. Loaded version {version} of {self.store.parameter}.")
@@ -348,7 +348,7 @@ class AdminApp:
             return
         local = {k: v for k, v in self.local.local_data.items() if k in core.MANAGED_KEYS or k == "_version"}
         self.set_form(managed_to_form(local))
-        self.status_lbl.configure(text=f"Filled in from {self.local.source_path}. Check it, then click Save to AWS.")
+        self.status_lbl.configure(text=f"Copied from {self.local.source_path}. Check it, then click Save in AWS.")
 
     def save(self) -> None:
         if not self.can_save:
@@ -362,7 +362,7 @@ class AdminApp:
         if not changes:
             messagebox.showinfo(APP_TITLE, "Nothing has changed, so there's nothing to save.", parent=self.root)
             return
-        if not messagebox.askyesno(APP_TITLE, "Save these changes to AWS? Every CurWork user gets them "
+        if not messagebox.askyesno(APP_TITLE, "Save these changes in AWS? Every CurWork user gets them "
                                    "the next time they sign in.\n\n" + "\n".join(changes), parent=self.root):
             return
         expected = self.version

@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-22 18:04 UTC - modified by: mbitar
+CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-22 23:32 UTC - modified by: mbitar
 
 All of CurWork's help in one place: the short tips that appear when you point at a control, and the topics
 in the Help window. Keeping the words here (not scattered through the window code) means the help and the
@@ -32,24 +32,24 @@ TIPS: dict[str, str] = {
     "pin": "Add the folder selected above to your pinned folders, so you can jump back to it later.",
     # Step 2
     "in_path": "Your In folder: files downloaded from S3 land here. Open them from here in Excel.",
-    "out_path": "Your Out folder: save your macro results here. Only files in Out can be uploaded.",
+    "out_path": "Your Out folder: save your macro results here. Only files in Out can be saved in S3.",
     "open": "Open this folder in Finder (Mac) or File Explorer (Windows).",
     "copy_path": "Copy this folder's path, to paste into the macro's file dialog.",
-    "counts": "How many files are in In and Out, and how many results still need to be uploaded.",
+    "counts": "How many files are in In and Out, and how many results still need to be saved in S3.",
     # Step 3
-    "out_list": "Result files in your Out folder and their status: Not uploaded, Uploaded, Changed since "
-                "upload, or Open in Excel (close it before uploading).",
+    "out_list": "Result files in your Out folder and their status: Not saved in S3, Saved in S3, Changed "
+                "since saved, or Open in Excel (close it before you save it in S3).",
     "stage": "What kind of results these are. It decides which S3 folder they go to (for example Priced).",
     "folder": "The customer and month, for example agency-a/2026-10. It's filled in for you when you "
               "download a month folder. Type or pick a recent one to change it.",
-    "dest": "Exactly where in S3 your results will be saved. Check it before you upload.",
-    "refresh_out": "Re-check the Out folder now. It's also checked every few seconds.",
-    "upload_selected": "Upload only the files you selected in the list above.",
-    "upload_all": "Upload every file in Out that isn't uploaded yet, or that changed since it was uploaded.",
+    "dest": "Exactly where in S3 your results will be saved. Check it before you save.",
+    "refresh_out": "Check the Out folder again now. It's also checked every few seconds.",
+    "upload_selected": "Save only the files you selected in the list above in S3.",
+    "upload_all": "Save every file in Out in S3 that isn't saved there yet, or that changed since it was saved.",
     # Step 4 and bottom
-    "finish": "Use at the end of your work. It checks nothing is still open or waiting to upload, uploads "
-              "today's log for support, then empties In and Out on this computer.",
-    "stop": "Stop the download or upload that's running. Partly copied files are removed.",
+    "finish": "Use at the end of your work. It checks that nothing is still open or waiting to be saved, saves "
+              "today's log in S3 for support, then empties In and Out on this computer.",
+    "stop": "Stop the download or save that's running. Partly copied files are removed.",
     "log": "What CurWork has done this session. If something goes wrong, the details are here.",
     "log_folder": "Open the folder with CurWork's log files, to send one to support.",
     # Settings window
@@ -66,7 +66,7 @@ TIPS: dict[str, str] = {
     "s_save": "Save your preferences and close this window.",
     "s_cancel": "Close without saving changes.",
     # Help window
-    "h_search": "Type a word to find topics, for example upload, Excel or permission.",
+    "h_search": "Type a word to find topics, for example save, Excel or permission.",
 }
 
 # --------------------------------------------------------------------------------------------------------------
@@ -75,11 +75,11 @@ TIPS: dict[str, str] = {
 TOPICS: list[tuple[str, str, str]] = [
     ("quick_start", "Quick start", """\
 # Quick start
-CurWork copies CUR workbooks from S3 to this computer, lets you run your usual Excel macros on them, sends the results back to S3, and then cleans up.
+CurWork downloads CUR workbooks from S3 to this computer, lets you run your usual Excel macros on them, saves the results in S3, and then cleans up.
 - 1. Sign in. Click Sign in at the top right and finish signing in in your browser.
-- 2. Get files. In step 1, open a customer, select a month folder (or single files), and click Download selected. They go to your In folder.
+- 2. Download files. In step 1, open a customer, select a month folder (or single files), and click Download selected. They go to your In folder.
 - 3. Run your macros as usual. Open the files from the In folder. Save the results to the Out folder.
-- 4. Send results. In step 3, check the result type and the customer/month folder, then click Upload all new or changed.
+- 4. Save results in S3. In step 3, check the result type and the customer/month folder, then click Save all new or changed in S3.
 - 5. Finish. In step 4, click Finish and clean up when you're done for the day.
 Tip: point at any button or box to see what it does. Press F1 to open this Help at any time.
 """),
@@ -91,8 +91,8 @@ CurWork uses your company sign-in. You don't type a password into CurWork.
 - Sign-ins expire after a few hours. If CurWork says your sign-in has expired, click Sign in again. Nothing you've downloaded is lost.
 - If the browser doesn't open, or it says you have no access, contact your admin.
 """),
-    ("step1", "Step 1: Get files from S3", """\
-# Step 1: Get files from S3
+    ("step1", "Step 1: Download files from S3", """\
+# Step 1: Download files from S3
 The list on the left shows the folders in S3 that you can use, usually one folder per customer and one per month inside it.
 - Open a folder by clicking the arrow next to it.
 - Select a whole month folder to download every file in it, or select single files. Hold Cmd (Mac) or Ctrl (Windows) to select more than one.
@@ -109,28 +109,29 @@ Your macros don't change. Only where the files are is different.
 - In the macro, pick the input files from the In folder. Click Copy path next to In to paste the folder path into the macro's file dialog.
 - Save the results to the Out folder (click Copy path next to Out).
 - Don't save results into In. CurWork warns you if new or changed files appear there.
-- Close the result files in Excel when you're done with them. Files that are open can't be uploaded.
+- Close the result files in Excel when you're done with them. Files that are open can't be saved in S3.
 """),
-    ("step3", "Step 3: Send results to S3", """\
-# Step 3: Send results to S3
+    ("step3", "Step 3: Save results in S3", """\
+# Step 3: Save results in S3
+Saving a file in S3 copies it from your Out folder to S3. Some people call this uploading.
 The list shows the files in your Out folder and their status:
-- Not uploaded: new, not sent yet.
-- Uploaded: sent, and not changed since.
-- Changed since upload: you changed it after sending it. Upload it again.
+- Not saved in S3: new, and not saved in S3 yet.
+- Saved in S3: saved, and not changed since.
+- Changed since saved: you changed it after saving it in S3. Save it again.
 - Open in Excel: close it in Excel first.
-Before you upload, check the two boxes under the list:
-- Result type: the kind of results (for example Priced). It decides the S3 folder they go to.
+Before you save, check the two boxes under the list:
+- Result type: the kind of results (for example Priced). It decides which S3 folder they're saved in.
 - Customer / month folder: for example agency-a/2026-10. It's filled in when you download a month folder.
-The line under the boxes shows exactly where the results will go. Then click Upload all new or changed, or select files and click Upload selected.
+The line under the boxes shows exactly where in S3 the results will be saved. Then click Save all new or changed in S3, or select files and click Save selected in S3.
 # If a file is already in S3
-CurWork asks whether to Replace it, Skip it, or Stop. Replacing is safe: S3 keeps the old copy as a previous version.
+CurWork asks whether to Replace it, Skip it, or Stop. Replacing is safe: S3 keeps the old copy as an earlier version.
 """),
     ("step4", "Step 4: Finish and clean up", """\
 # Step 4: Finish and clean up
 Click Finish and clean up at the end of your work. CurWork:
-- checks no file is still open in Excel and nothing is waiting to be uploaded, and asks you first if something is;
-- if files in In look like results saved in the wrong place, offers to move them to Out so you can upload them;
-- uploads today's log, so support can help if needed;
+- checks that no file is still open in Excel and nothing is waiting to be saved in S3, and asks you first if something is;
+- if files in In look like results saved in the wrong place, offers to move them to Out so you can save them in S3;
+- saves today's log in S3, so support can help if needed;
 - empties the In and Out folders on this computer.
 Your files stay safe in S3. If you close CurWork without finishing, it reminds you about leftover files the next time it starts.
 """),
@@ -153,8 +154,8 @@ CurWork says what happened in plain words, and the details go into the log at th
 - "AWS said you don't have permission for that": the message says what AWS refused (for example downloading a file). If you think you should be allowed, send the log to your admin.
 - "Can't reach AWS": check your internet or VPN connection, then try again.
 - "That file or folder isn't in S3": someone may have moved or deleted it. Click Refresh.
-- A file shows "Open in Excel": save and close it in Excel, then upload again.
-- A download or upload was stopped part-way: partly copied files are removed. Just start it again.
+- A file shows "Open in Excel": save and close it in Excel, then save it in S3 again.
+- A download or save was stopped part-way: partly copied files are removed. Just start it again.
 - CurWork found files from last time when it started: choose Yes to keep them and carry on, or No to delete them.
 If you're stuck, see Getting help.
 """),

@@ -1,8 +1,8 @@
 # Security policy
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 18:41 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
-CurWork is FPT's private software, and we built it with security first. The [README](README.md) explains how, and the [Admin and Security Guide](CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md) has the details.
+CurWork is FPT's private software, and we built it with security first. The [README](README.md) explains how, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the details.
 
 ## If you find a security problem
 
@@ -13,11 +13,11 @@ CurWork is FPT's private software, and we built it with security first. The [REA
 
 ## Which versions get fixes
 
-Only the latest build of Beta 0.011. Fixes go into the next build, so replace older builds rather than patching them.
+Only the latest build of Beta 0.012. Fixes go into the next build, so replace older builds rather than patching them.
 
 ## What this covers
 
-The CurWork app, its settings files, the AWS permission policies in `CurWork-Beta-0.011/iam/`, the Windows build script and the Mac test kit. Please also report problems you find in AWS, Python or other parts CurWork uses, and we'll pass them on to whoever makes them.
+The CurWork app, its settings files, the AWS permission policies in `CurWork-app/iam/`, the Windows build script and the Mac test kit. Please also report problems you find in AWS, Python or other parts CurWork uses, and we'll pass them on to whoever makes them.
 
 ## What we promise
 
@@ -28,4 +28,4 @@ The CurWork app, its settings files, the AWS permission policies in `CurWork-Bet
 These are our design promises for an early internal version. They aren't an official certification under NIST, FedRAMP or any other program.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 18:41 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-22 16:52 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Finds EVERYTHING the CurWork test created, even after a crash, lists it, and deletes only what you pick:
 #   S3:      buckets named curwork-test-* or tagged Purpose=CurWork-test, in any Region (with every file
 #            version and unfinished upload)
@@ -19,7 +19,7 @@ pause() { [ "$CURWORK_RESET" = "1" ] || read -n1 -r -p "$1"; }   # no key wait w
 . "$HERE/tools/test_env.sh" || { read -n1 -r -p "Press any key to close."; exit 1; }
 aws sts get-caller-identity --profile "$CURWORK_ADMIN_PROFILE" >/dev/null 2>&1 || aws sso login --profile "$CURWORK_ADMIN_PROFILE" || { pause "Sign-in failed. Press any key to close."; exit 1; }
 # The Python code comes in on file descriptor 3, so the keyboard stays connected for your answers.
-CurWork-Beta-0.011/.venv/bin/python /dev/fd/3 3<<'PY'
+CurWork-app/.venv/bin/python /dev/fd/3 3<<'PY'
 import datetime, glob, hashlib, json, os, re, shutil, sys, time
 import boto3
 from botocore.exceptions import ClientError
@@ -29,7 +29,7 @@ BOLD = lambda s: f"\033[1m{s}\033[0m"
 G, R, N = "\033[1;32m", "\033[1;31m", "\033[0m"
 HOME = os.path.expanduser("~")
 HERE = os.getcwd()                                   # the CurWorks folder
-TOOL = os.path.join(HERE, "CurWork-Beta-0.011")
+TOOL = os.path.join(HERE, "CurWork-app")
 E = os.environ
 ACCOUNT = E["CURWORK_ACCOUNT"]
 

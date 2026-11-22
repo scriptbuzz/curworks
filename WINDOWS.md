@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.011** · Updated 2026-11-22 20:13 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -72,7 +72,7 @@ PowerShell blocks scripts by default. The first command below allows them in thi
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-cd $HOME\curworks\CurWork-Beta-0.011
+cd $HOME\curworks\CurWork-app
 .\build_exe.ps1
 ```
 
@@ -97,7 +97,7 @@ cd $HOME\curworks
 .\run_windows_tests.ps1 -Bucket curwork-test-REPLACE-WITH-YOUR-BUCKET
 ```
 
-The first time, this creates `CurWork-Beta-0.011\curwork_admin_settings.json` from the example file. It fills in the bucket, your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
+The first time, this creates `CurWork-app\curwork_admin_settings.json` from the example file. It fills in the bucket, your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
 
 ## 6. Run the automated tests
 
@@ -123,10 +123,10 @@ It ends with either **"All Windows tests passed"** or **"STOPPED"** and a list o
 
 ## 7. Test it by hand
 
-Start `CurWork-Beta-0.011\dist\CurWork.exe`. To run it from the source code instead, use:
+Start `CurWork-app\dist\CurWork.exe`. To run it from the source code instead, use:
 
 ```powershell
-cd $HOME\curworks\CurWork-Beta-0.011
+cd $HOME\curworks\CurWork-app
 .\.venv\Scripts\python.exe curwork.py
 ```
 
@@ -136,20 +136,20 @@ Go through these and note anything that looks wrong:
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.011 (DRAFT - For Internal Use)" |
+| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.012 (DRAFT - For Internal Use)" |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green |
 | 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar, then the 116 MB file appears in **In** |
 | 4 | Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
-| 5 | Close the file in Excel. Pick a result type, then click **Upload all new or changed** | The status changes to **Uploaded** |
-| 6 | Upload the same file again | CurWork asks whether to replace it |
+| 5 | Close the file in Excel. Pick a result type, then click **Save all new or changed in S3** | The status changes to **Saved in S3** |
+| 6 | Select the same file and click **Save selected in S3** | CurWork asks whether to replace it |
 | 7 | Point at a few buttons, press **F1**, and click a step's **?** | A tip under each button. Help opens at the right topic |
 | 8 | Open **About**, click **Copy details**, then close it | The details paste cleanly. The window closes straight away |
 | 9 | Change something in **Settings**, close CurWork and open it again | Your change is kept |
-| 10 | Click **Finish and clean up** | In and Out are emptied and the log is uploaded |
+| 10 | Click **Finish and clean up** | In and Out are emptied and the log is saved in S3 |
 
 ## 8. Getting CurWork onto biller laptops
 
-This is the admin's job, and the [Admin and Security Guide](CurWork-Beta-0.011/ADMIN_AND_SECURITY_GUIDE.md) has the full details. In short:
+This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details. In short:
 
 - Build on a clean build PC, not a biller laptop.
 - Sign `CurWork.exe` with the company code-signing certificate.
@@ -181,4 +181,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-Beta-0.011/A
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.011 · Updated 2026-11-22 20:13 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*

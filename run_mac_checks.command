@@ -1,11 +1,11 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - Mac check script - updated 2026-11-22 14:58 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Mac check script - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Double-click to run. It checks Python, Tk and the AWS CLI, sets up CurWork's Python environment,
 # runs the automated tests, and saves everything to mac_check_results.txt next to this file.
-# It reads no passwords and changes nothing outside the CurWork-Beta-0.011 folder.
+# It reads no passwords and changes nothing outside the CurWork-app folder.
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-cd "$HERE/CurWork-Beta-0.011" || { echo "CurWork-Beta-0.011 folder not found next to this script."; read -n1 -r -p "Press any key to close."; exit 1; }
+cd "$HERE/CurWork-app" || { echo "CurWork-app folder not found next to this script."; read -n1 -r -p "Press any key to close."; exit 1; }
 OUT="$HERE/mac_check_results.txt"
 exec > >(tee "$OUT") 2>&1
 
@@ -32,7 +32,7 @@ else
 fi
 
 if [ -n "$PY" ]; then
-  echo; echo "== Python environment (.venv in CurWork-Beta-0.011)"
+  echo; echo "== Python environment (.venv in CurWork-app)"
   "$PY" -m venv .venv && source .venv/bin/activate || { echo "RESULT: couldn't create .venv"; }
   python -m pip install -q --upgrade pip
   python -m pip install -q --require-hashes -r requirements-lock.txt && echo "Runtime packages installed (hash-checked)." || echo "RESULT: runtime package install failed."

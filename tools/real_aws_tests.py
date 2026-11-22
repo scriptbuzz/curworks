@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - real AWS tests - modified by: mbitar
+CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - real AWS tests - modified by: mbitar
 
 Runs CurWork's own code (curwork_core) against the real test bucket with the sign-in CurWork uses,
 the way the window does, and reports PASS/FAIL for each step. No mocks.
@@ -9,7 +9,7 @@ tries one upload that must be refused, then removes every version of what it mad
 profile (CURWORK_ADMIN_PROFILE) (the biller sign-in can't delete, by design) and checks they're gone.
 It checks the admin profile is signed in before uploading anything, so it never leaves test files behind.
 
-Run from the CurWorks folder with CurWork's .venv:  CurWork-Beta-0.011/.venv/bin/python tools/real_aws_tests.py
+Run from the CurWorks folder with CurWork's .venv:  CurWork-app/.venv/bin/python tools/real_aws_tests.py
 Exit code 0 = everything passed.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 
 HERE = Path.cwd()
-TOOL = HERE / "CurWork-Beta-0.011"
+TOOL = HERE / "CurWork-app"
 sys.path.insert(0, str(TOOL))
 
 import boto3  # noqa: E402

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.011 - DRAFT - For Internal Use (FPT) - automated tests - updated 2026-11-22 18:05 UTC - modified by: mbitar
+# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - automated tests - updated 2026-11-22 23:32 UTC - modified by: mbitar
 # Runs every automated check before you test by hand, and saves one PASS/FAIL report:
 #   1. Script checks: every .command file parses and can run.
 #   2. Code tests: CurWork's unit tests, then each window test in its own process (windows flash up briefly;
@@ -15,7 +15,7 @@ exec > >(tee "$HERE/automated_tests_results.txt") 2>&1
 export AWS_PAGER="" PYTHONUNBUFFERED=1
 . "$HERE/tools/test_env.sh" || { read -n1 -r -p "Press any key to close."; exit 1; }
 B=$'\033[1m'; G=$'\033[1;32m'; R=$'\033[1;31m'; Y=$'\033[1;33m'; N=$'\033[0m'
-TOOL="$HERE/CurWork-Beta-0.011"; PY="$TOOL/.venv/bin/python"; APP="$TOOL/CurWork.app"
+TOOL="$HERE/CurWork-app"; PY="$TOOL/.venv/bin/python"; APP="$TOOL/CurWork.app"
 FAILS=0; PARTS=()
 pass() { echo "  ${G}PASS${N}  $1"; }
 fail() { echo "  ${R}FAIL${N}  $1"; FAILS=$((FAILS + 1)); }

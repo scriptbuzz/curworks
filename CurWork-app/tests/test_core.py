@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.011 - DRAFT - For Internal Use - updated 2026-11-22 13:42 UTC - modified by: mbitar
+# CurWork tests - Beta 0.012 - DRAFT - For Internal Use - updated 2026-11-22 23:32 UTC - modified by: mbitar
 """Tests for curwork_core using a mocked S3 (moto). Run: python -m pytest -q"""
 import os
 import sys
@@ -148,7 +148,7 @@ def test_upload_and_status(s3env):
         svc.upload([(out, "agency-a_priced.xlsx")], "priced/agency-a/2026-10/")
     (work.out_dir / "~$agency-a_priced.xlsx").unlink()
 
-    assert work.out_files()[0].status == "Not uploaded"
+    assert work.out_files()[0].status == "Not saved in S3"
     keys = svc.upload(
         [(f.path, f.rel) for f in work.out_files()], "priced/agency-a/2026-10/",
         on_uploaded=lambda p, rel, key: work.record_upload(rel, p, key),
@@ -157,11 +157,11 @@ def test_upload_and_status(s3env):
     head = s3.head_object(Bucket=BUCKET, Key=keys[0])
     assert head["ContentLength"] == 500
     assert head["Metadata"]["curwork-version"] == core.VERSION
-    assert work.out_files()[0].status == "Uploaded"
+    assert work.out_files()[0].status == "Saved in S3"
 
     # Change the file -> status changes
     os.utime(out, (out.stat().st_atime, out.stat().st_mtime + 10))
-    assert work.out_files()[0].status == "Changed since upload"
+    assert work.out_files()[0].status == "Changed since saved"
 
 
 def test_upload_existing_skip_and_overwrite(s3env):

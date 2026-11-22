@@ -162,7 +162,7 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
 </head>
 <body>
 <header class="band">
-  <p class="stamp"><b>DRAFT - For Internal Use (FPT)</b> · Demo version 1.0 for CurWork Beta 0.011 · Updated 2026-11-22 20:26 UTC · Modified by: mbitar</p>
+  <p class="stamp"><b>DRAFT - For Internal Use (FPT)</b> · Demo version 1.0 for CurWork Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar</p>
   <h1>A biller's CurWork session, start to finish</h1>
   <p class="lede">One customer's month goes from S3, through your usual macros, and back to S3, and nothing is left on the laptop at the end. It takes under two minutes to watch.</p>
 </header>
@@ -190,10 +190,10 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
 <section class="band recap">
   <h2>The four steps in the CurWork window</h2>
   <div class="steps">
-    <div><h3>1. Get files from S3</h3><p>Open the customer folder and the month, select it, then click <b>Download selected</b>. The files go into the In folder.</p></div>
+    <div><h3>1. Download files from S3</h3><p>Open the customer folder and the month, select it, then click <b>Download selected</b>. The files go into the In folder.</p></div>
     <div><h3>2. Run your macros as usual</h3><p>Use <b>Copy path</b> to paste the In folder into the macro's file box. Save results to the Out folder.</p></div>
-    <div><h3>3. Send results to S3</h3><p>Check the result type and the folder line under it, then click <b>Upload all new or changed</b>. Green means uploaded.</p></div>
-    <div><h3>4. When you're done</h3><p>Click <b>Finish and clean up</b>. CurWork saves today's log to S3 and empties In and Out.</p></div>
+    <div><h3>3. Save results in S3</h3><p>Check the result type and the folder line under it, then click <b>Save all new or changed in S3</b>. Green means the file is saved in S3.</p></div>
+    <div><h3>4. When you're done</h3><p>Click <b>Finish and clean up</b>. CurWork saves today's log in S3 and empties In and Out.</p></div>
   </div>
   <div class="two">
     <div>
@@ -215,25 +215,25 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
         <tbody>
           <tr><td>Sign-in with MFA in your browser. CurWork never sees your password.</td><td>IA-2(1)</td></tr>
           <tr><td>Files stay on the laptop only until you finish, then In and Out are emptied.</td><td>MP-6, SC-28</td></tr>
-          <tr><td>Each upload is checked after it lands, and you're asked before anything in S3 is replaced.</td><td>SI-7</td></tr>
+          <tr><td>Each saved file is checked in S3 after it is saved, and you're asked before anything in S3 is replaced.</td><td>SI-7</td></tr>
           <tr><td>Today's log goes to S3 when you finish, so support can see what happened.</td><td>AU-2, AU-9</td></tr>
         </tbody>
       </table>
       </div>
     </div>
   </div>
-  <p class="src">Source: CurWork Beta 0.011 window layout, messages and tips (curwork.py, curwork_help.py). Some screens are simplified. The browser and Excel windows are generic examples. Windows testing hasn't been done yet. It's waiting for approval.</p>
+  <p class="src">Source: CurWork Beta 0.012 window layout, messages and tips (curwork.py, curwork_help.py). Some screens are simplified. The browser and Excel windows are generic examples. Windows testing hasn't been done yet. It's waiting for approval.</p>
 </section>
 
 <template id="tpl">
 <div class="desk"></div>
 <div class="win">
-  <div class="tb"><img alt="" src="ICON_DATA"><span>CurWork – Beta 0.011 (DRAFT - For Internal Use)</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
+  <div class="tb"><img alt="" src="ICON_DATA"><span>CurWork – Beta 0.012 (DRAFT - For Internal Use)</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
   <div class="mb">Help</div>
   <div class="app" id="app">
     <div class="hd"><span class="ttl">CurWork</span><span class="hint">bucket: example-cur-bucket &nbsp; | &nbsp; region: us-east-1</span><span class="sp"></span><span id="who" class="hint">Checking sign-in...</span><span style="width:4px"></span><button>Help</button><button>About</button><button>Settings</button><button id="signBtn" class="big">Sign in</button></div>
     <div class="cols">
-      <fieldset class="s1"><legend>1. Get files from S3<i>?</i></legend>
+      <fieldset class="s1"><legend>1. Download files from S3<i>?</i></legend>
         <span class="hint">Open a customer folder, select files or a whole month, then click Download.</span>
         <div class="tv" id="treeBox"><div class="th"><span>Name</span><span>Size</span><span>Last changed</span></div><div id="tree"></div></div>
         <div class="row"><button class="act">Refresh</button><span class="sp"></span><button id="dlBtn" class="big act">Download selected &#8594;</button></div>
@@ -246,16 +246,16 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
             <span>In (files from S3):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\In</span><button>Open</button><button id="inCopy">Copy path</button>
             <span>Out (your results):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\Out</span><button>Open</button><button>Copy path</button>
           </div>
-          <span class="hint" id="counts">In: 0 file(s) &nbsp; | &nbsp; Out: 0 file(s), 0 not uploaded yet</span>
+          <span class="hint" id="counts">In: 0 file(s) &nbsp; | &nbsp; Out: 0 file(s), 0 not saved in S3 yet</span>
         </fieldset>
-        <fieldset class="s3"><legend>3. Send results to S3<i>?</i></legend>
+        <fieldset class="s3"><legend>3. Save results in S3<i>?</i></legend>
           <div class="tv out" id="outBox"><div class="th"><span>File in Out folder</span><span>Size</span><span>Status</span></div><div id="outTree"></div></div>
           <div class="row"><span>Result type:</span><span class="combo" id="stageBox" style="width:150px">Priced</span><span style="width:6px"></span><span>Customer / month folder:</span><span class="combo grow" id="folderBox">&nbsp;</span></div>
-          <span class="hint" id="dest">Results will go to:&nbsp; s3://example-cur-bucket/priced/</span>
-          <div class="row"><button class="act">Refresh list</button><button class="act">Upload selected</button><span class="sp"></span><button id="upAll" class="big act">Upload all new or changed &#8593;</button></div>
+          <span class="hint" id="dest">Results will be saved in:&nbsp; s3://example-cur-bucket/priced/</span>
+          <div class="row"><button class="act">Refresh list</button><button class="act">Save selected in S3</button><span class="sp"></span><button id="upAll" class="big act">Save all new or changed in S3 &#8593;</button></div>
         </fieldset>
         <fieldset><legend>4. When you're done<i>?</i></legend>
-          <div class="row"><span class="hint grow">Checks that nothing is still open or waiting to upload, uploads today's log, then empties In and Out on this laptop.</span><button id="finBtn" class="big act">Finish and clean up</button></div>
+          <div class="row"><span class="hint grow">Checks that nothing is still open in Excel or waiting to be saved in S3, saves today's log in S3, then empties In and Out on this laptop.</span><button id="finBtn" class="big act">Finish and clean up</button></div>
         </fieldset>
       </div>
     </div>
@@ -309,8 +309,8 @@ const TIP = {
   sign: 'Opens your browser to sign in with your company account. Use it when you start, or when your sign-in has expired.',
   dl: 'Copy the selected files (or every file in the selected folders) from S3 into your In folder.',
   copy: "Copy this folder's path, to paste into the macro's file dialog.",
-  dest: 'Exactly where in S3 your results will be saved. Check it before you upload.',
-  fin: 'Use at the end of your work. It checks nothing is still open or waiting to upload, uploads today\'s log for support, then empties In and Out on this computer.'
+  dest: 'Exactly where in S3 your results will be saved. Check it before you save.',
+  fin: 'Use at the end of your work. It checks nothing is still open or waiting to be saved in S3, saves today\'s log in S3 for support, then empties In and Out on this computer.'
 };
 let token = 0, playing = false, instant = false, ended = false, idx = 0, clock = 0, beatStart = 0, waits = [], last = performance.now(), lt = 0;
 let cam = {x: W / 2, y: H / 2, z: 1};
@@ -388,8 +388,8 @@ function busy(on, ind) {
 }
 async function prog(from, to, ms) { await tween($('pbar'), {width: to + '%'}, ms, 'linear'); }
 function who(text, cls) { const w = $('who'); w.textContent = text; w.className = cls; }
-function counts(i, o, n) { $('counts').innerHTML = `In: ${i} file(s) &nbsp; | &nbsp; Out: ${o} file(s), ${n} not uploaded yet`; }
-function dest(folder) { $('folderBox').innerHTML = folder || '&nbsp;'; $('dest').innerHTML = `Results will go to:&nbsp; s3://${BKT}/priced/${folder}`; }
+function counts(i, o, n) { $('counts').innerHTML = `In: ${i} file(s) &nbsp; | &nbsp; Out: ${o} file(s), ${n} not saved in S3 yet`; }
+function dest(folder) { $('folderBox').innerHTML = folder || '&nbsp;'; $('dest').innerHTML = `Results will be saved in:&nbsp; s3://${BKT}/priced/${folder}`; }
 
 const R = (id, d, name, kind, open, size = '', mod = '') =>
   `<div class="tr${kind === 'd' ? ' fo' : ''}" id="${id}" style="--d:${d}"><span class="nm"><span class="tg">${kind === 'd' ? (open ? '&#9662;' : '&#9656;') : ''}</span>${name}</span><span class="r">${size}</span><span>${mod}</span></div>`;
@@ -405,16 +405,16 @@ function page(html) { $('bp').innerHTML = html; }
 const CH = [
   ['Open CurWork', 'Start it and see where you stand'],
   ['Sign in', 'Company sign-in with MFA, in your browser'],
-  ['Get files from S3', 'Pick the customer and month, download'],
+  ['Download files from S3', 'Pick the customer and month, download'],
   ['Run your macros', 'The same macros, pointed at In and Out'],
-  ['Send results to S3', 'Check where they go, then upload'],
+  ['Save results in S3', 'Check where they will be saved, then save them'],
   ['Finish and clean up', 'Log saved, laptop emptied']
 ];
 const B = [
   {c: 0, len: 4200, t: 'Start CurWork from the shortcut your admin gave you. The title bar shows the version, and that this is a draft for internal use.', run: async () => {
     focus(null); busy(true, true); st('Checking sign-in...');
     await wait(1600);
-    log(`CurWork 0.011-beta started by biller. Bucket: ${BKT}  Work folder: C:\\Users\\biller\\AppData\\Local\\CurWork`);
+    log(`CurWork 0.012-beta started by biller. Bucket: ${BKT}  Work folder: C:\\Users\\biller\\AppData\\Local\\CurWork`);
     await wait(2200);
   }},
   {c: 0, len: 5200, t: "CurWork checks whether you're already signed in. You aren't yet, so the top right turns red and asks you to sign in.", run: async () => {
@@ -481,10 +481,10 @@ const B = [
     $('outTree').innerHTML = outRow('open', 'Open in Excel'); counts(2, 1, 1);
     await wait(1500);
   }},
-  {c: 3, len: 6400, t: "While the result is still open in Excel, CurWork marks it Open in Excel and won't upload it. Close Excel and it changes to Not uploaded.", run: async () => {
+  {c: 3, len: 6400, t: "While the result is still open in Excel, CurWork marks it Open in Excel and won't save it in S3. Close Excel and it changes to Not saved in S3.", run: async () => {
     focus('outBox'); await moveTo('o1', .3); await wait(1800);
     await click('xClose'); $('excel').hidden = true; await wait(1100);
-    $('outTree').innerHTML = outRow('pending', 'Not uploaded'); await wait(2400);
+    $('outTree').innerHTML = outRow('pending', 'Not saved in S3'); await wait(2400);
   }},
   {c: 4, len: 6800, t: 'Check the result type and the customer / month folder. The line under them shows exactly where in S3 your files will go.', run: async () => {
     focus('stageBox'); await click('stageBox');
@@ -493,17 +493,17 @@ const B = [
     focus('dest'); await moveTo('dest', .4); $('dest').classList.add('hl'); tipOn('dest', TIP.dest);
     await wait(2600); tipOff(); $('dest').classList.remove('hl');
   }},
-  {c: 4, len: 7400, t: "Click Upload all new or changed. Each file is checked after it lands. When it's done, the row turns green and says Uploaded.", run: async () => {
+  {c: 4, len: 7400, t: "Click Save all new or changed in S3. CurWork checks each file in S3 after saving it. When it's done, the row turns green and says Saved in S3.", run: async () => {
     focus('upAll'); await click('upAll'); busy(true);
-    log(`Uploading 1 file(s) to s3://${BKT}/priced/agency-a/2026-10/ ...`);
-    st('Uploading agency-a-priced-2026-10.xlsx'); focus('outBox');
+    log(`Saving 1 file(s) in s3://${BKT}/priced/agency-a/2026-10/ ...`);
+    st('Saving in S3: agency-a-priced-2026-10.xlsx'); focus('outBox');
     await prog(0, 100, 3000);
     busy(false); $('pbar').style.width = '100%';
-    log('Done: 1 file(s) uploaded.'); st('Uploaded 1 file(s).');
-    $('outTree').innerHTML = outRow('done', 'Uploaded'); counts(2, 1, 0);
+    log('Done: 1 file(s) saved in S3.'); st('Saved 1 file(s) in S3.');
+    $('outTree').innerHTML = outRow('done', 'Saved in S3'); counts(2, 1, 0);
     await wait(2400);
   }},
-  {c: 5, len: 7200, t: "When you're done, click Finish and clean up. CurWork checks that nothing is still open or waiting to upload, and saves today's log to S3 for support.", run: async () => {
+  {c: 5, len: 7200, t: "When you're done, click Finish and clean up. CurWork checks that nothing is still open or waiting to be saved in S3, and saves today's log in S3 for support.", run: async () => {
     focus('finBtn'); await moveTo('finBtn'); tipOn('finBtn', TIP.fin); await wait(2400); tipOff();
     await click('finBtn'); busy(true, true); st('Cleaning up...');
     await wait(1600);
@@ -516,7 +516,7 @@ const B = [
     $('msg').hidden = false; focus('msg'); await wait(2200);
     await click('msgOk'); $('msg').hidden = true; focus(null); await wait(1800);
   }},
-  {c: 5, len: 5600, t: "That's the whole session: sign in, download, run your macros, upload, finish. If you forget to finish, CurWork reminds you about leftover files the next time it starts.", run: async () => {
+  {c: 5, len: 5600, t: "That's the whole session: sign in, download, run your macros, save in S3, finish. If you forget to finish, CurWork reminds you about leftover files the next time it starts.", run: async () => {
     focus('counts'); await moveTo('counts', .2); await wait(3800); focus(null);
   }}
 ];
