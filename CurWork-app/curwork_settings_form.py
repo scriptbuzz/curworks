@@ -1,9 +1,9 @@
 """
 CurWork settings form: the tabbed form for the settings kept in AWS Parameter Store.
 
-Version:     Beta 0.016
+Version:     Beta 0.017
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 01:23 UTC
+Updated:     2026-11-23 01:38 UTC
 Modified by: mbitar
 
 Two windows show the same form, so admins and billers see the same tabs, names and explanations:

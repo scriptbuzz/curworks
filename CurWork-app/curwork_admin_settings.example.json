@@ -1,5 +1,5 @@
 {
-  "_version": "Admin settings for CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:23 UTC - modified by: mbitar",
+  "_version": "Admin settings for CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:38 UTC - modified by: mbitar",
   "_help": "PROTECTED laptop settings. Put this file next to CurWork.exe (or CurWork.app) in a folder billers can read but not change. It only holds what CurWork needs to sign in. Everything else (the bucket, S3 folders, encryption key, work folder and file rules) is kept in AWS Parameter Store and changed with the CurWork admin settings app. Keys that start with _ are notes and are ignored.",
   "region": "us-east-1",
   "aws_profile": "fpt-biller",

@@ -3,9 +3,9 @@ CurWork: a simple window for billers to get CUR workbooks from Amazon S3,
 run the existing VBA macros on local copies, send the results back to S3,
 and leave nothing behind on the laptop.
 
-Version:     Beta 0.016
+Version:     Beta 0.017
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 01:23 UTC
+Updated:     2026-11-23 01:38 UTC
 Modified by: mbitar
 
 Run:  python curwork.py            (or the packaged CurWork.exe)
@@ -649,7 +649,7 @@ class SettingsPanel(ttk.Frame):
 
     @staticmethod
     def _short_version(text: str) -> str:
-        """'Admin settings for CurWork Beta 0.016 - DRAFT - ... - updated 2026-11-23 01:23 UTC - modified by: x' -> short form."""
+        """'Admin settings for CurWork Beta 0.017 - DRAFT - ... - updated 2026-11-23 01:38 UTC - modified by: x' -> short form."""
         if not text:
             return "not stated"
         ver = re.search(r"Beta [0-9.]+|\b\d+\.\d+(?:\.\d+)?\b", text)

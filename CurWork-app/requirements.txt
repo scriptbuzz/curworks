@@ -1,4 +1,4 @@
-# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:38 UTC - modified by: mbitar
 # Runtime packages, as version ranges. Used when running from source (pip install -r requirements.txt).
 # The build uses requirements-lock.txt instead: exact versions with SHA-256 hashes.
 # tkinter ships with the python.org installer.

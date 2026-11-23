@@ -1,12 +1,12 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.016** · Updated 2026-11-23 01:23 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
 This guide walks you through getting CurWork working on a Windows 11 PC, from a fresh machine to a tested app. It's written for whoever builds and tests CurWork. Billers don't need any of this: they only get the finished `CurWork.exe` and its settings file.
 
-There are seven parts, and you do them in order:
+Parts 1 to 7 get CurWork built and tested, and you do them in order. Parts 8 and 9 cover handing it out and cleaning up afterwards.
 
 1. Install the tools
 2. Get the code
@@ -86,18 +86,20 @@ The build script does all of this, and stops at the first step that fails:
 6. Builds `dist\CurWork.exe` with its icon, without the admin code. It also builds `dist\CurWorkAdmin.exe`, the admin settings app.
 7. Runs both new apps in self-test mode and stops if any check fails.
 
-It finishes with `dist\CurWork.exe`, `dist\curwork_admin_settings.json` and the SBOM. If you see a yellow warning that the admin settings file is only the example, that's expected on a test PC: part 5 replaces it.
+It finishes with `dist\CurWork.exe`, `dist\CurWorkAdmin.exe`, `dist\curwork_admin_settings.json` and the SBOM. If you see a yellow warning that the admin settings file is only the example, that's expected on a test PC: part 5 replaces it.
 
 ## 5. Point CurWork at the test bucket
 
 You need the name of the test bucket. It starts with `curwork-test-`. You can find it in the AWS console under S3, or on the Mac in the `test_bucket.txt` file in the repository folder.
+
+Before you run the command below, sign in with your admin profile (`aws sso login --profile <admin profile>`). The script saves the bucket to Parameter Store with it.
 
 ```powershell
 cd $HOME\curworks
 .\run_windows_tests.ps1 -Bucket curwork-test-REPLACE-WITH-YOUR-BUCKET
 ```
 
-The first time, this creates `CurWork-app\curwork_admin_settings.json` from the example file. That file only holds the sign-in settings: it fills in your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. It saves the bucket in AWS Parameter Store with your admin profile, because CurWork reads every other setting from there after sign-in. Sign in with the admin profile first. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
+The first time, this creates `CurWork-app\curwork_admin_settings.json` from the example file. That file only holds the sign-in settings: it fills in your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. It saves the bucket in AWS Parameter Store with your admin profile, because CurWork reads every other setting from there after sign-in. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
 
 ## 6. Run the automated tests
 
@@ -136,16 +138,19 @@ Go through these and note anything that looks wrong:
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.016 (DRAFT - For Internal Use)" |
+| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.017 (DRAFT - For Internal Use)" |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green |
-| 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar, then the 116 MB file appears in **In** |
-| 4 | Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
-| 5 | Close the file in Excel. Pick a result type, then click **Save all new or changed in S3** | The status changes to **Saved in S3** |
+| 3 | On the **1. Download from S3** tab, open `agency-b` > `2026-10` and click **Download selected** | A progress bar moves at the bottom of the window, then the 116 MB file appears in **Already in your In folder** |
+| 4 | Click **Next: 2. Work in Excel**. Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
+| 5 | Close the file in Excel. On the **3. Save in S3** tab, pick a result type, then click **Save all new or changed in S3** | The status changes to **Saved in S3** |
 | 6 | Select the same file and click **Save selected in S3** | CurWork asks whether to replace it |
-| 7 | Point at a few buttons, press **F1**, and click a step's **?** | A tip under each button. Help opens at the right topic |
+| 7 | Point at a few buttons, press **F1**, and click **? Help for this step** on a tab. Press Ctrl+1 to Ctrl+5 | A tip under each button. Help opens at the right topic. Each Ctrl+number opens one tab |
 | 8 | Open **About**, click **Copy details**, then close it | The details paste cleanly. The window closes straight away |
-| 9 | Change something in **Settings**, close CurWork and open it again | Your change is kept |
-| 10 | Click **Finish and clean up** | In and Out are emptied and the log is saved in S3 |
+| 9 | On the **Settings** tab, change something in **My preferences** and click **Save**. Close CurWork and open it again | Your change is kept |
+| 10 | On the **Settings** tab, open **Admin settings (read-only)** | It shows the same tabs as CurWorkAdmin.exe, filled in with the bucket and folders. Nothing can be changed |
+| 11 | Make the window as small as it goes and look at each tab | Nothing is cut off. The admin settings get a scroll bar |
+| 12 | Start `dist\CurWorkAdmin.exe` | The admin app opens with its own name. Close it without signing in |
+| 13 | Click **4. Finish and clean up** | In and Out are emptied and the log is saved in S3 |
 
 ## 8. Getting CurWork onto biller laptops
 
@@ -182,4 +187,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.016 · Updated 2026-11-23 01:23 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*

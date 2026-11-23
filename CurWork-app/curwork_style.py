@@ -2,9 +2,9 @@
 CurWork styling in one place: fonts, colours, spacing, list sizes and the ttk styles that use them.
 CurWork and the CurWork Admin Settings app both call apply() once, so every window looks the same.
 
-Version:     Beta 0.016
+Version:     Beta 0.017
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 01:23 UTC
+Updated:     2026-11-23 01:38 UTC
 Modified by: mbitar
 
 Fonts are made from the system's own default font (TkDefaultFont), so the text matches the rest of

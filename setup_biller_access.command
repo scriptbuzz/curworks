@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-23 01:38 UTC - modified by: mbitar
 # Sets up the sign-in CurWork uses for testing: an IAM Identity Center permission set (CURWORK_ROLE, default CurWorkBillerTest),
 # built from CurWork's own least-privilege biller policy (iam/biller_permission_set_policy.json), limited to
 # test buckets (curwork-test-<account>-*), and assigned to you in the test account (CURWORK_ACCOUNT).

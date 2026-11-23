@@ -4,13 +4,13 @@
 
 <!-- These badges are fixed images. Update the numbers here when they change. -->
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.016-0B2545?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.017-0B2545?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-draft%2C%20internal%20use-B54708?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-proprietary%20(FPT)-5F6B7A?style=flat-square">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-1F4E89?logo=python&logoColor=white&style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2011%20%7C%20macOS-1F4E89?style=flat-square">
   <img alt="AWS" src="https://img.shields.io/badge/AWS-S3%20%2B%20IAM%20Identity%20Center-0F8B80?style=flat-square">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-71%20passing-1B7F3B?style=flat-square">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-121%20passing-1B7F3B?style=flat-square">
   <img alt="NIST" src="https://img.shields.io/badge/NIST%20SP%20800--53-Rev.%205%20mapped-0F8B80?style=flat-square">
   <img alt="AWS details check" src="https://img.shields.io/badge/AWS%20details-blocked%20by%20Git%20checks-1B7F3B?style=flat-square">
   <img alt="Windows tests" src="https://img.shields.io/badge/Windows%20tests-pending%20approval-B54708?style=flat-square">
@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.016** · Updated 2026-11-23 01:23 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -44,7 +44,7 @@ CurWork is a small desktop app for the billing team. It does four things:
 | **Sign-in** | Your normal company sign-in with MFA, through AWS IAM Identity Center. No passwords or keys are saved. |
 | **What billers can touch** | Only CurWork's folders in one S3 bucket. They can't delete anything. |
 | **Left on the laptop afterwards** | Nothing. **Finish and clean up** empties the work folders. |
-| **Tested** | 71 automated tests, plus permission checks against real AWS. Windows testing is waiting for approval. |
+| **Tested** | 121 automated tests, plus 26 checks against real AWS, including the biller's permissions. Windows testing is waiting for approval. |
 
 **Contents:** [Watch the demo](#watch-the-demo) · [How it works](#how-it-works) · [Security came first](#security-came-first) · [What's in this repository](#whats-in-this-repository) · [For billers](#for-billers) · [For admins](#for-admins) · [Testing on a Mac](#testing-on-a-mac) · [Testing on Windows 11](#testing-on-windows-11) · [Keeping AWS details out of GitHub](#keeping-aws-details-out-of-github) · [License and disclaimers](#license-and-disclaimers) · [Where things stand](#where-things-stand)
 
@@ -66,17 +66,17 @@ CurWork handles cost data for federal agency customers, so we designed it around
 
 Here's what that means in practice. The last column lists the matching controls from NIST SP 800-53 Rev. 5, the US government's security control catalog. We also followed the AWS Well-Architected Framework (Security Pillar) and the CIS AWS Foundations Benchmark for the S3 and sign-in settings. The [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details.
 
-![Exhibit 2: What a biller can and can't do. Billers can list and download from converted, list, download and save files in the results and logs folders, and can't delete anything or touch the rest of the bucket. Public access is blocked, only TLS 1.2 or newer is allowed, files are encrypted with SSE-KMS, and old copies are kept for 30 days.](docs/diagrams/exhibit2-access.svg)
+![Exhibit 2: What a biller can and can't do. Billers can list and download from converted, list, download and save files in the results and logs folders, and can't delete anything or touch the rest of the bucket. Public access is blocked, only TLS 1.2 or newer is allowed, files are encrypted with SSE-KMS, and old copies are kept for the admin's retention period.](docs/diagrams/exhibit2-access.svg)
 
 | What we wanted | What CurWork does | NIST controls |
 |---|---|---|
 | **Give people only the access they need** | A biller can only see CurWork's folders, only download from the input folder, and only upload to the results and logs folders. They can't delete anything or look at the rest of the bucket. Our automated tests check this against real AWS every time they run. | AC-3, AC-6 |
 | **Never store passwords or keys** | People sign in with their normal company sign-in, including their company's multi-factor step. AWS hands out short-lived access that expires on its own (after 8 hours in our tests). CurWork never asks for, saves or logs a password, key or token. | IA-2, IA-5, AC-12 |
 | **Encrypt everything** | The S3 bucket only accepts secure (TLS 1.2 or newer) connections and encrypts every file it stores. Admins can also switch on AWS's FIPS-validated connections. | SC-8, SC-13, SC-28 |
-| **Lock down the storage** | Public access to the bucket is blocked. It keeps old copies when a file is replaced, and deletes those old copies after 30 days. | AC-3, CM-6, CP-9 |
+| **Lock down the storage** | Public access to the bucket is blocked. It keeps old copies when a file is replaced, and deletes those old copies after the admin's retention period (30 days in the test bucket). | AC-3, CM-6, CP-9 |
 | **Don't leave data on laptops** | Files are only on the laptop between download and "Finish and clean up", which empties the work folders. CurWork also warns you if the work folder is inside OneDrive, Box, Dropbox, Google Drive or iCloud Drive, because those would copy the files off the laptop. | MP-6, SC-28, AC-3 |
 | **Never change files by surprise** | Every upload is checked with a SHA-256 fingerprint and its size. Downloads only replace a file once they've fully arrived. CurWork asks before replacing a file in S3, or a downloaded file you've edited. | SI-7, SI-10 |
-| **Keep risky settings with the admin** | The bucket, folders, encryption and sign-in settings sit in an admin file that users can't change. Users can only change a few harmless preferences, like their pinned folders. The built app only reads the admin file installed next to it, so nobody can point it at a different one. | CM-5, CM-6, CM-7 |
+| **Keep risky settings with the admin** | The bucket, folders and encryption settings are kept in AWS Parameter Store, and only the AWS admin role can change them. The laptop settings file holds only the sign-in settings, and the built app only reads the copy installed next to it, so nobody can point it at a different one. Users can only change a few harmless preferences, like their pinned folders. | CM-5, CM-6, CM-7 |
 | **Check every file name and path** | CurWork refuses any file name or folder path that could write outside its own folders, and only uploads to the folders the admin allows. | SI-10, AC-3 |
 | **Keep a record** | Each session writes a log of who did what and where, without any secrets. The log goes to S3 when the biller finishes. When AWS refuses something, the message says exactly what was refused. | AU-2, AU-3, AU-9, AU-12 |
 | **Show a warning banner if needed** | Admins can turn on a "system use" notice that users must accept when CurWork starts. | AC-8 |
@@ -90,16 +90,22 @@ This table describes how we built and tested CurWork. It isn't a certification o
 
 ```
 CurWork-app/            The app itself
-  curwork.py                   The window
+  curwork.py                   The CurWork window
+  curwork_admin.py             The CurWork Admin Settings app, built as its own app for admins
+  curwork_settings_form.py     The settings form both apps show (read-only in CurWork)
+  curwork_style.py             The fonts, colours and spacing both apps use
   curwork_core.py              S3, sign-in, settings and file handling
   curwork_help.py              The tips and Help text
   assets/                      The app icon
   iam/                         The AWS permission policies for billers and the bucket
   tests/                       Automated tests
-  build_exe.ps1                Builds CurWork.exe on a Windows machine
+  build_exe.ps1                Builds CurWork.exe and CurWorkAdmin.exe on a Windows machine
   README.md                    The full app guide
   ADMIN_AND_SECURITY_GUIDE.md  Setup and security guide for admins
 WINDOWS.md                     How to set up, test and run CurWork on Windows 11
+MAC_HAND_TEST.md               The checklist for testing CurWork by hand on a Mac
+SECURITY.md                    How to report a security problem
+THIRD_PARTY_NOTICES.md         The licences of the software CurWork uses
 run_windows_tests.ps1          Runs all the automated tests on Windows
 CurWork_Test_Menu.command      The Mac test menu (start here to test)
 *.command                      The test scripts the menu runs
@@ -118,24 +124,25 @@ Some files are never uploaded to GitHub. The `.gitignore` file keeps them out:
 - your private test settings file (`curwork_test.env`);
 - each user's own preferences;
 - test results and logs;
-- the built app (`CurWork.app` and `CurWork.exe`) and the Python setup folder (`.venv`);
+- the built apps (`CurWork.app`, `CurWork Admin.app`, `CurWork.exe` and `CurWorkAdmin.exe`) and the Python setup folder (`.venv`);
 - the 116 MB test workbook, because GitHub won't take files over 100 MB. You can make it again with `tools/make_large_sample.py`.
 
 ## For billers
 
 The [animated demo](docs/demo/curwork-demo.html) plays these steps from start to finish. It uses made-up sample data.
 
-1. Start CurWork and click **Sign in**. Finish signing in in your browser.
-2. On the **1. Download from S3** tab, open a customer folder, pick a month or some files, and click **Download selected**.
-3. On the **2. Work in Excel** tab, see your **In** and **Out** folders. Run your macros as usual: open the files from **In** and save the results to **Out**.
-4. On the **3. Save in S3** tab, check the result type and the customer/month folder, then click **Save all new or changed in S3**.
-5. Close the files in Excel and click **4. Finish and clean up** at the bottom right of the window.
+First, start CurWork and click **Sign in**. Then finish signing in in the browser window that opens. After that, each step has its own tab:
+
+1. On the **1. Download from S3** tab, open a customer folder, pick a month or some files, and click **Download selected**.
+2. On the **2. Work in Excel** tab, see your **In** and **Out** folders. Run your macros as usual: open the files from **In** and save the results to **Out**.
+3. On the **3. Save in S3** tab, check the result type and the customer/month folder, then click **Save all new or changed in S3**.
+4. Close the files in Excel and click **4. Finish and clean up** at the bottom right of the window.
 
 If you're not sure what something does, point at it to see a tip, click **? Help for this step** on a tab, or press **F1** for Help. The full guide is [CurWork-app/README.md](CurWork-app/README.md).
 
 ## For admins
 
-Read the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md). It covers the S3 bucket and folders, the biller permissions (the files are in [iam/](CurWork-app/iam/)), the admin settings file, how to roll CurWork out, and how each security control is met.
+Read the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md). It covers the S3 bucket and folders, the biller permissions (the files are in [iam/](CurWork-app/iam/)), the laptop settings file, the settings kept in Parameter Store and the CurWork Admin Settings app, how to roll CurWork out, and how each security control is met.
 
 ## Testing on a Mac
 
@@ -189,7 +196,7 @@ Your account number, sign-in address and profile names are only stored in `curwo
 
 ## Where things stand
 
-This is Beta 0.016, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
+This is Beta 0.017, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.016 · Updated 2026-11-23 01:23 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*

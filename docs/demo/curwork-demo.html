@@ -11,7 +11,7 @@
    IDEA a screen recording of a real CurWork session, chaptered like a training video
    PICTURE the CurWork window itself, playing the session, with the cursor doing each step
    COLOUR white ground, deep ink #051c2c, one working blue #2251ff, Windows-light mock inside
-   TYPE Inter Tight 700 for titles, Inter for text, Segoe UI inside the mock
+   TYPE Inter Tight 700 for titles, Inter for text, Segoe UI inside the mock (it shows the Windows version)
    LAYOUT laptop: player left, chapter list right; phone: title, player (zooms to each action), captions, chapters */
 :root{color-scheme:light dark;--bg:light-dark(#ffffff,#08131d);--ink:light-dark(#051c2c,#e6edf5);--mut:light-dark(#4a5a68,#a9b7c4);--rule:light-dark(#d9e0e6,#22313f);--acc:light-dark(#2251ff,#7d97ff);--pan:light-dark(#f4f6f9,#0f1e2b);--on:light-dark(#ffffff,#08131d)}
 :root[data-theme=light]{color-scheme:light}
@@ -84,12 +84,17 @@ td:last-child{white-space:nowrap}
 .busy .act{color:#a0a0a0;background:#f5f5f5}
 .good{color:#1b7f3b}
 .bad{color:#b42318}
-.cols{flex:1;display:grid;grid-template-columns:5fr 6fr;gap:8px;min-height:0}
-.right{display:flex;flex-direction:column;gap:8px;min-height:0}
+.hd2{height:20px;flex:none;margin-top:-4px}
+.tabs{display:flex;gap:2px;align-items:flex-end;height:30px;flex:none;border-bottom:1px solid #c6c6c6}
+.tabs span{padding:5px 14px;border:1px solid #c6c6c6;border-bottom:0;border-radius:4px 4px 0 0;background:#e9e9e9;color:#333}
+.tabs span.on{background:#fff;font-weight:600;position:relative;top:1px;padding-bottom:6px}
+.pane{flex:1;display:none;flex-direction:column;gap:8px;min-height:0;background:#fff;border:1px solid #c6c6c6;border-top:0;margin-top:-8px;padding:10px}
+.pane.on{display:flex}
+.two2{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0}
+.vsep{width:1px;height:24px;background:#c6c6c6;margin:0 6px}
 fieldset{margin:0;border:1px solid #cfcfcf;border-radius:4px;padding:6px 8px 8px;display:flex;flex-direction:column;gap:6px;min-height:0}
 legend{font-weight:700;font-size:13px;padding:0 4px}
 legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid #c9c9c9;border-radius:3px;padding:0 5px;margin-left:4px;background:#fdfdfd;font-size:11px}
-.s1,.s3{flex:1}
 .row{display:flex;align-items:center;gap:6px}
 .tv{flex:1;background:#fff;border:1px solid #c6c6c6;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .th,.tr{display:grid;grid-template-columns:minmax(0,1fr) 80px 130px;align-items:center;height:22px;padding-right:4px}
@@ -111,13 +116,13 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
 .combo::after{content:"\25BE";position:absolute;right:6px;top:3px;color:#555}
 .grow{flex:1}
 .hl{background:#fff4c2;outline:2px solid #e8b400;border-radius:3px}
-.bt{flex:none;display:flex;flex-direction:column;gap:6px}
+.bt{flex:none}
 .st{width:340px;white-space:nowrap;overflow:hidden}
 .pb{flex:1;height:14px;border:1px solid #bcbcbc;background:#e6e6e6;border-radius:2px;overflow:hidden;position:relative}
 .pb i{position:absolute;inset:0 auto 0 0;width:0;background:#06b025}
 .pb.ind i{width:22%;animation:ind 1.1s linear infinite}
 @keyframes ind{from{left:-22%}to{left:100%}}
-.log{height:112px;background:#fff;border:1px solid #c6c6c6;font:11.5px/16px Consolas,"Cascadia Mono",ui-monospace,monospace;padding:3px 6px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.log{min-height:0;background:#fff;border:1px solid #c6c6c6;font:11.5px/16px Consolas,"Cascadia Mono",ui-monospace,monospace;padding:3px 6px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
 .log div{white-space:nowrap;overflow:hidden}
 .ov{position:absolute;background:#fff;border:1px solid #8e98a2;border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.4);overflow:hidden}
 .ov[hidden],.dd[hidden],.tip[hidden]{display:none}
@@ -158,11 +163,15 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
 @media (max-width:760px){.steps{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.steps div:nth-child(2){border-right:0;margin-right:0}.two{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.steps{grid-template-columns:minmax(0,1fr)}.steps div{border-right:0;margin-right:0;border-bottom:1px solid var(--rule)}.cap p{font-size:17px}.ctl button{padding:0 12px}.chs{grid-template-columns:minmax(0,1fr)}td:last-child{white-space:normal}}
 @media (prefers-reduced-motion:reduce){.pb.ind i{animation:none;width:100%;opacity:.5}.rip{display:none}}
+body.still header,body.still .ctl,body.still .note,body.still .side,body.still .recap{display:none}
+body.still .band{padding:0;max-width:none}body.still .player{display:block;padding:0}
+body.still .vp{width:1200px;height:800px;aspect-ratio:auto;border-radius:0;border:0}
+body.still .cap{width:1200px;height:124px;min-height:0;padding:12px 24px;background:#ffffff}body.still .cap p{color:#051c2c}
 </style>
 </head>
 <body>
 <header class="band">
-  <p class="stamp"><b>DRAFT - For Internal Use (FPT)</b> · Demo version 1.0 for CurWork Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar</p>
+  <p class="stamp"><b>DRAFT - For Internal Use (FPT)</b> · Demo version 2.0 for CurWork Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar</p>
   <h1>A biller's CurWork session, start to finish</h1>
   <p class="lede">One customer's month goes from S3, through your usual macros, and back to S3, and nothing is left on the laptop at the end. It takes under two minutes to watch.</p>
 </header>
@@ -188,18 +197,18 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
 </main>
 
 <section class="band recap">
-  <h2>The four steps in the CurWork window</h2>
+  <h2>The four steps: three tabs and one button</h2>
   <div class="steps">
-    <div><h3>1. Download files from S3</h3><p>Open the customer folder and the month, select it, then click <b>Download selected</b>. The files go into the In folder.</p></div>
-    <div><h3>2. Run your macros as usual</h3><p>Use <b>Copy path</b> to paste the In folder into the macro's file box. Save results to the Out folder.</p></div>
-    <div><h3>3. Save results in S3</h3><p>Check the result type and the folder line under it, then click <b>Save all new or changed in S3</b>. Green means the file is saved in S3.</p></div>
-    <div><h3>4. When you're done</h3><p>Click <b>Finish and clean up</b>. CurWork saves today's log in S3 and empties In and Out.</p></div>
+    <div><h3>1. Download from S3</h3><p>On the first tab, open the customer folder and the month, select it, then click <b>Download selected</b>. The files go into the In folder.</p></div>
+    <div><h3>2. Work in Excel</h3><p>On the second tab, use <b>Copy path</b> to paste the In folder into the macro's file box. Save results to the Out folder.</p></div>
+    <div><h3>3. Save in S3</h3><p>On the third tab, check the result type and the folder line under it, then click <b>Save all new or changed in S3</b>. Green means the file is saved in S3.</p></div>
+    <div><h3>4. Finish and clean up</h3><p>Click <b>4. Finish and clean up</b> at the bottom right, on any tab. CurWork saves today's log in S3 and empties In and Out.</p></div>
   </div>
   <div class="two">
     <div>
       <h3>When something goes wrong</h3>
       <ul>
-        <li>Press <b>F1</b>, or click the small <b>?</b> next to any step, for help on that step.</li>
+        <li>Press <b>F1</b>, or click <b>? Help for this step</b> on any tab, for help on that step.</li>
         <li>Point at any button or box to see a short tip about what it does.</li>
         <li>If CurWork says a file is open in Excel, save and close it, then try again.</li>
         <li>If a file with the same name is already in S3, CurWork asks before replacing it.</li>
@@ -222,48 +231,67 @@ legend i{font-style:normal;font-weight:400;display:inline-block;border:1px solid
       </div>
     </div>
   </div>
-  <p class="src">Source: CurWork Beta 0.014 window layout, messages and tips (curwork.py, curwork_help.py). Some screens are simplified. The browser and Excel windows are generic examples. Windows testing hasn't been done yet. It's waiting for approval.</p>
+  <p class="src">Source: CurWork Beta 0.017 window layout, messages and tips (curwork.py, curwork_help.py). Some screens are simplified. The browser and Excel windows are generic examples. Windows testing hasn't been done yet. It's waiting for approval.</p>
 </section>
 
 <template id="tpl">
 <div class="desk"></div>
 <div class="win">
-  <div class="tb"><img alt="" src="ICON_DATA"><span>CurWork – Beta 0.014 (DRAFT - For Internal Use)</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
+  <div class="tb"><img alt="" src="ICON_DATA"><span>CurWork – Beta 0.017 (DRAFT - For Internal Use)</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
   <div class="mb">Help</div>
   <div class="app" id="app">
-    <div class="hd"><span class="ttl">CurWork</span><span class="hint">bucket: example-cur-bucket &nbsp; | &nbsp; region: us-east-1</span><span class="sp"></span><span id="who" class="hint">Checking sign-in...</span><span style="width:4px"></span><button>Help</button><button>About</button><button>Settings</button><button id="signBtn" class="big">Sign in</button></div>
-    <div class="cols">
-      <fieldset class="s1"><legend>1. Download files from S3<i>?</i></legend>
-        <span class="hint">Open a customer folder, select files or a whole month, then click Download.</span>
-        <div class="tv" id="treeBox"><div class="th"><span>Name</span><span>Size</span><span>Last changed</span></div><div id="tree"></div></div>
-        <div class="row"><button class="act">Refresh</button><span class="sp"></span><button id="dlBtn" class="big act">Download selected &#8594;</button></div>
-        <div class="row"><span>Pinned:</span><span class="combo grow">&nbsp;</span><button class="act">Go</button><button>Pin selected folder</button></div>
-      </fieldset>
-      <div class="right">
-        <fieldset><legend>2. Run your macros as usual<i>?</i></legend>
-          <span class="hint">In the macro menu, pick files from the In folder and save results to the Out folder.</span>
-          <div class="grid2">
-            <span>In (files from S3):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\In</span><button>Open</button><button id="inCopy">Copy path</button>
-            <span>Out (your results):</span><span class="ent">C:\Users\biller\AppData\Local\CurWork\Out</span><button>Open</button><button>Copy path</button>
-          </div>
-          <span class="hint" id="counts">In: 0 file(s) &nbsp; | &nbsp; Out: 0 file(s), 0 not saved in S3 yet</span>
+    <div class="hd"><span class="ttl">CurWork</span><span class="sp"></span><button>Help</button><button>About</button><button>Settings</button><button id="signBtn" class="big">Sign in</button></div>
+    <div class="row hd2"><span class="hint">Bucket: example-cur-bucket &nbsp; | &nbsp; Region: us-east-1</span><span class="sp"></span><span id="who" class="hint">Checking sign-in...</span></div>
+    <div class="tabs"><span id="tab0" class="on">1. Download from S3</span><span id="tab1">2. Work in Excel</span><span id="tab2">3. Save in S3</span><span id="tab3">Activity</span><span id="tab4">Settings</span></div>
+    <div class="pane on" id="pane0">
+      <div class="row"><span class="hint grow">Open a customer folder, select files or a whole month, then click Download selected.</span><button>? Help for this step</button></div>
+      <div class="two2">
+        <fieldset><legend>Files in S3</legend>
+          <div class="tv" id="treeBox"><div class="th"><span>Name</span><span>Size</span><span>Last changed</span></div><div id="tree"></div></div>
+          <div class="row"><button class="act">Refresh</button><button>Pin selected folder</button></div>
         </fieldset>
-        <fieldset class="s3"><legend>3. Save results in S3<i>?</i></legend>
-          <div class="tv out" id="outBox"><div class="th"><span>File in Out folder</span><span>Size</span><span>Status</span></div><div id="outTree"></div></div>
-          <div class="row"><span>Result type:</span><span class="combo" id="stageBox" style="width:150px">Priced</span><span style="width:6px"></span><span>Customer / month folder:</span><span class="combo grow" id="folderBox">&nbsp;</span></div>
-          <span class="hint" id="dest">Results will be saved in:&nbsp; s3://example-cur-bucket/priced/</span>
-          <div class="row"><button class="act">Refresh list</button><button class="act">Save selected in S3</button><span class="sp"></span><button id="upAll" class="big act">Save all new or changed in S3 &#8593;</button></div>
-        </fieldset>
-        <fieldset><legend>4. When you're done<i>?</i></legend>
-          <div class="row"><span class="hint grow">Checks that nothing is still open in Excel or waiting to be saved in S3, saves today's log in S3, then empties In and Out on this laptop.</span><button id="finBtn" class="big act">Finish and clean up</button></div>
+        <fieldset><legend>Already in your In folder</legend>
+          <div class="tv" id="inDlBox"><div class="th"><span>File in In folder</span><span>Size</span><span>State</span></div><div id="inDl"></div></div>
+          <div class="row"><button>Open In folder</button></div>
         </fieldset>
       </div>
+      <div class="row"><span>Pinned:</span><span class="combo" style="width:200px">&nbsp;</span><button class="act">Go</button><span class="sp"></span><button id="dlBtn" class="big act">Download selected &#8595;</button><button id="next1">Next: 2. Work in Excel &#8594;</button></div>
     </div>
-    <div class="bt">
-      <div class="row"><span class="st" id="status">Ready.</span><div class="pb" id="pb"><i id="pbar"></i></div><button id="stop" disabled style="color:#a0a0a0">Stop</button></div>
-      <div class="log" id="log"></div>
-      <div class="row"><span class="hint">Tip: point at any button or box to see what it does. Press F1 for Help.</span><span class="sp"></span><button>Open log folder</button></div>
+    <div class="pane" id="pane1">
+      <div class="row"><span class="hint grow">In the macro menu, pick files from the In folder and save results to the Out folder. Use Copy path to paste a folder into the macro's file box.</span><button>? Help for this step</button></div>
+      <div class="two2">
+        <fieldset><legend>In folder: files from S3</legend>
+          <div class="tv"><div class="th"><span>File in In folder</span><span>Size</span><span>State</span></div><div id="inList"></div></div>
+          <div class="row"><span class="ent grow">C:\Users\biller\AppData\Local\CurWork\In</span><button>Open</button><button id="inCopy">Copy path</button></div>
+        </fieldset>
+        <fieldset><legend>Out folder: your results</legend>
+          <div class="tv" id="outViewBox"><div class="th"><span>File in Out folder</span><span>Size</span><span>Status</span></div><div id="outView"></div></div>
+          <div class="row"><span class="ent grow">C:\Users\biller\AppData\Local\CurWork\Out</span><button>Open</button><button>Copy path</button></div>
+        </fieldset>
+      </div>
+      <div class="row"><span class="hint" id="counts">In: 0 file(s) &nbsp; | &nbsp; Out: 0 file(s), 0 not saved in S3 yet</span><span class="sp"></span><button id="next2">Next: 3. Save in S3 &#8594;</button></div>
     </div>
+    <div class="pane" id="pane2">
+      <div class="row"><span class="hint grow">Pick the result type and the customer and month folder, check where the files will be saved, then save them.</span><button>? Help for this step</button></div>
+      <fieldset class="grow"><legend>Out folder: your results</legend>
+        <div class="tv" id="outBox"><div class="th"><span>File in Out folder</span><span>Size</span><span>Status</span></div><div id="outTree"></div></div>
+        <div class="row"><button class="act">Refresh list</button><button class="act">Save selected in S3</button></div>
+      </fieldset>
+      <fieldset><legend>Where the results are saved in S3</legend>
+        <div class="row"><span>Result type:</span><span class="combo" id="stageBox" style="width:150px">Priced</span><span style="width:6px"></span><span>Customer / month folder:</span><span class="combo grow" id="folderBox">&nbsp;</span></div>
+        <span class="hint" id="dest">Results will be saved in:&nbsp; s3://example-cur-bucket/priced/</span>
+      </fieldset>
+      <div class="row"><span class="sp"></span><button id="upAll" class="big act">Save all new or changed in S3 &#8593;</button></div>
+    </div>
+    <div class="pane" id="pane3">
+      <div class="row"><span class="hint grow">Everything CurWork does is listed here and saved in today's log file.</span><button>? Help for this step</button></div>
+      <fieldset class="grow"><legend>Activity log</legend>
+        <div class="log grow" id="log"></div>
+        <div class="row"><button>Open log folder</button></div>
+      </fieldset>
+      <div class="row"><span class="hint">Tip: point at any button or box to see what it does. Press F1 for Help.</span></div>
+    </div>
+    <div class="row bt"><span class="st" id="status">Ready.</span><div class="pb" id="pb"><i id="pbar"></i></div><button id="stop" disabled style="color:#a0a0a0">Stop</button><span class="vsep"></span><button id="finBtn" class="big act">4. Finish and clean up</button></div>
   </div>
 </div>
 <div class="ov" id="browser" hidden>
@@ -378,7 +406,7 @@ function st(t) { $('status').textContent = t.length < 60 ? t : t.slice(0, 57) + 
 function log(msg) {
   const s = 9 * 3600 + 30 * 60 + 5 + lt; lt += 6;
   const ts = [s / 3600 | 0, (s / 60 | 0) % 60, s % 60].map(n => String(n).padStart(2, '0')).join(':');
-  const d = document.createElement('div'); d.textContent = ts + '  ' + msg; const L = $('log'); L.appendChild(d); while (L.children.length > 6) L.firstChild.remove();
+  const d = document.createElement('div'); d.textContent = ts + '  ' + msg; const L = $('log'); L.appendChild(d); while (L.children.length > 24) L.firstChild.remove();
 }
 function busy(on, ind) {
   $('app').classList.toggle('busy', on);
@@ -399,8 +427,15 @@ const TREE = [
   () => R('t-c', 0, 'converted', 'd', 1) + R('t-a', 1, 'agency-a', 'd', 1) + R('t-a09', 2, '2026-09', 'd', 0) + R('t-a10', 2, '2026-10', 'd', 1) +
         R('t-f1', 3, 'agency-a-credits-2026-10.xlsx', 'f', 0, '3.2 MB', '2026-11-03 09:12') + R('t-f2', 3, 'agency-a-cur-2026-10.xlsx', 'f', 0, '96.4 MB', '2026-11-03 09:14') + R('t-b', 1, 'agency-b', 'd', 0)
 ];
-const outRow = (tag, status) => `<div class="tr ${tag}" id="o1"><span class="nm">agency-a-priced-2026-10.xlsx</span><span class="r">41.7 MB</span><span>${status}</span></div>`;
+const outRow = (tag, status, id) => `<div class="tr ${tag}" id="${id}"><span class="nm">agency-a-priced-2026-10.xlsx</span><span class="r">41.7 MB</span><span>${status}</span></div>`;
 function page(html) { $('bp').innerHTML = html; }
+function tab(n) {
+  for (let i = 0; i < 5; i++) $('tab' + i).classList.toggle('on', i === n);
+  for (let i = 0; i < 4; i++) $('pane' + i).classList.toggle('on', i === n);
+}
+const inRows = state => ['agency-a-credits-2026-10.xlsx|3.2 MB', 'agency-a-cur-2026-10.xlsx|96.4 MB'].map(f => {
+  const [n, z] = f.split('|'); return `<div class="tr"><span class="nm">${n}</span><span class="r">${z}</span><span>${state}</span></div>`; }).join('');
+function outRows(tag, status) { $('outTree').innerHTML = outRow(tag, status, 'o1'); $('outView').innerHTML = outRow(tag, status, 'v1'); }
 
 const CH = [
   ['Open CurWork', 'Start it and see where you stand'],
@@ -414,10 +449,10 @@ const B = [
   {c: 0, len: 4200, t: 'Start CurWork from the shortcut your admin gave you. The title bar shows the version, and that this is a draft for internal use.', run: async () => {
     focus(null); busy(true, true); st('Checking sign-in...');
     await wait(1600);
-    log(`CurWork 0.014-beta started by biller. Bucket: ${BKT}  Work folder: C:\\Users\\biller\\AppData\\Local\\CurWork`);
+    log(`CurWork 0.017-beta started by biller. Bucket: ${BKT}  Work folder: C:\\Users\\biller\\AppData\\Local\\CurWork`);
     await wait(2200);
   }},
-  {c: 0, len: 5200, t: "CurWork checks whether you're already signed in. You aren't yet, so the top right turns red and asks you to sign in.", run: async () => {
+  {c: 0, len: 5200, t: "CurWork checks whether you're already signed in. You aren't yet, so the line under the buttons turns red and asks you to sign in.", run: async () => {
     busy(false); who('Not signed in - click Sign in', 'bad'); st("Click 'Sign in' to start.");
     focus('who'); await moveTo('who'); tipOn('who', TIP.who); await wait(2800); tipOff();
   }},
@@ -441,7 +476,7 @@ const B = [
     page('<div class="ok">&#10003;</div><h4>Request approved</h4><p>You can close this window and go back to CurWork.</p>');
     await wait(1600);
   }},
-  {c: 1, len: 6200, t: "Back in CurWork, the top right turns green and shows who you're signed in as, and your role. The left side now lists the customer folders you're allowed to open.", run: async () => {
+  {c: 1, len: 6200, t: "Back in CurWork, the line under the buttons turns green and shows who you're signed in as, and your role. The Files in S3 list now shows the customer folders you're allowed to open.", run: async () => {
     $('browser').hidden = true; focus(null);
     busy(false); who('Signed in: biller@example.com (CUR_Biller)', 'good'); $('signBtn').textContent = 'Sign in again';
     log('Signed in as biller@example.com (CUR_Biller)'); st('Loading folder...');
@@ -458,16 +493,18 @@ const B = [
     await click('t-a10', .3); $('t-a10').classList.add('sel'); await wait(600);
     focus('dlBtn'); await moveTo('dlBtn'); tipOn('dlBtn', TIP.dl); await wait(2000); tipOff();
   }},
-  {c: 2, len: 7400, t: 'Click Download selected. The files go into the In folder on this laptop. CurWork also fills in the folder your results will go to later.', run: async () => {
+  {c: 2, len: 7400, t: 'Click Download selected. The files go into the In folder on this laptop, and the list on the right shows them. CurWork also fills in the folder your results will go to later.', run: async () => {
     await click('dlBtn'); busy(true); log('Downloading 2 file(s), 99.6 MB...');
     st('Downloading agency-a-credits-2026-10.xlsx'); await prog(0, 4, 500);
     st('Downloading agency-a-cur-2026-10.xlsx'); await prog(4, 100, 3200);
     busy(false); $('pbar').style.width = '100%';
     log('Done: 2 file(s) are in ' + IN); st('Downloaded 2 file(s). Run your macros next.');
-    counts(2, 0, 0); dest('agency-a/2026-10/'); focus('counts');
+    counts(2, 0, 0); dest('agency-a/2026-10/');
+    $('inDl').innerHTML = inRows('Downloaded'); $('inList').innerHTML = inRows('Downloaded'); focus('inDlBox');
     await wait(2600);
   }},
-  {c: 3, len: 5400, t: "Step 2 is the work you already do. Copy path puts the In folder's location on the clipboard, ready to paste into the macro's file box.", run: async () => {
+  {c: 3, len: 5400, t: "Click Next to go to the 2. Work in Excel tab. This is the work you already do. Copy path puts the In folder's location on the clipboard, ready to paste into the macro's file box.", run: async () => {
+    focus('next1'); await click('next1'); tab(1); await wait(500);
     focus('inCopy'); await moveTo('inCopy'); tipOn('inCopy', TIP.copy); await wait(1700); tipOff();
     await click('inCopy'); st('Copied: ' + IN); await wait(1800);
   }},
@@ -478,15 +515,16 @@ const B = [
     await click('xrun'); $('xst').textContent = 'Running...';
     await tween($('xbar'), {width: '100%'}, 2600, 'linear');
     $('xst').textContent = 'Saved to Out.';
-    $('outTree').innerHTML = outRow('open', 'Open in Excel'); counts(2, 1, 1);
+    outRows('open', 'Open in Excel'); counts(2, 1, 1);
     await wait(1500);
   }},
-  {c: 3, len: 6400, t: "While the result is still open in Excel, CurWork marks it Open in Excel and won't save it in S3. Close Excel and it changes to Not saved in S3.", run: async () => {
-    focus('outBox'); await moveTo('o1', .3); await wait(1800);
-    await click('xClose'); $('excel').hidden = true; await wait(1100);
-    $('outTree').innerHTML = outRow('pending', 'Not saved in S3'); await wait(2400);
+  {c: 3, len: 6400, t: "While the result is still open in Excel, the Out folder list marks it Open in Excel, and CurWork won't save it in S3. Close Excel and it changes to Not saved in S3.", run: async () => {
+    await click('xClose'); $('excel').hidden = true; await wait(600);
+    focus('outViewBox'); await moveTo('v1', .3); await wait(1200);
+    outRows('pending', 'Not saved in S3'); await wait(2400);
   }},
-  {c: 4, len: 6800, t: 'Check the result type and the customer / month folder. The line under them shows exactly where in S3 your files will go.', run: async () => {
+  {c: 4, len: 6800, t: 'Click Next to go to the 3. Save in S3 tab. Check the result type and the customer / month folder. The line under them shows exactly where in S3 your files will go.', run: async () => {
+    focus('next2'); await click('next2'); tab(2); await wait(500);
     focus('stageBox'); await click('stageBox');
     const p = pos($('stageBox')), dd = $('dd'); dd.style.left = p.x + 'px'; dd.style.top = (p.y + p.h) + 'px'; dd.hidden = false;
     await wait(1100); await click('ddP'); dd.hidden = true;
@@ -500,10 +538,10 @@ const B = [
     await prog(0, 100, 3000);
     busy(false); $('pbar').style.width = '100%';
     log('Done: 1 file(s) saved in S3.'); st('Saved 1 file(s) in S3.');
-    $('outTree').innerHTML = outRow('done', 'Saved in S3'); counts(2, 1, 0);
+    outRows('done', 'Saved in S3'); counts(2, 1, 0);
     await wait(2400);
   }},
-  {c: 5, len: 7200, t: "When you're done, click Finish and clean up. CurWork checks that nothing is still open or waiting to be saved in S3, and saves today's log in S3 for support.", run: async () => {
+  {c: 5, len: 7200, t: "When you're done, click 4. Finish and clean up at the bottom right. It's there on every tab. CurWork checks that nothing is still open or waiting to be saved in S3, and saves today's log in S3 for support.", run: async () => {
     focus('finBtn'); await moveTo('finBtn'); tipOn('finBtn', TIP.fin); await wait(2400); tipOff();
     await click('finBtn'); busy(true, true); st('Cleaning up...');
     await wait(1600);
@@ -512,12 +550,13 @@ const B = [
   }},
   {c: 5, len: 6400, t: 'Then it empties the In and Out folders. No customer billing files are left on the laptop.', run: async () => {
     busy(false); $('pbar').style.width = '0%';
-    $('outTree').innerHTML = ''; counts(0, 0, 0); dest(''); st('All clean. Nothing is left in In or Out.');
+    $('outTree').innerHTML = ''; $('outView').innerHTML = ''; $('inDl').innerHTML = ''; $('inList').innerHTML = '';
+    counts(0, 0, 0); dest(''); st('All clean. Nothing is left in In or Out.');
     $('msg').hidden = false; focus('msg'); await wait(2200);
     await click('msgOk'); $('msg').hidden = true; focus(null); await wait(1800);
   }},
-  {c: 5, len: 5600, t: "That's the whole session: sign in, download, run your macros, save in S3, finish. If you forget to finish, CurWork reminds you about leftover files the next time it starts.", run: async () => {
-    focus('counts'); await moveTo('counts', .2); await wait(3800); focus(null);
+  {c: 5, len: 5600, t: "That's the whole session: sign in, download, run your macros, save in S3, finish. The Activity tab lists everything CurWork did. If you forget to finish, CurWork reminds you about leftover files the next time it starts.", run: async () => {
+    await click('tab3'); tab(3); focus('log'); await wait(3800); focus(null);
   }}
 ];
 const TOTAL = B.reduce((a, b) => a + b.len, 0);
@@ -583,8 +622,16 @@ document.addEventListener('keydown', e => {
 });
 const ro = new ResizeObserver(() => applyCam(false)); ro.observe(vp);
 const ICON = 'data:image/png;base64,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';
-playing = !RM; setPlaying(playing);
-go(0);
+const shot = new URLSearchParams(location.search).get('shot');
+if (shot !== null) {          // still pictures for the README animation: the end of one step, with its caption
+  document.body.classList.add('still');
+  (async () => { instant = true; reset(); const k = Math.min(B.length - 1, +shot);
+    for (let i = 0; i <= k; i++) await B[i].run();
+    $('tip').hidden = true; showCap(k); cam = {x: W / 2, y: H / 2, z: 1}; applyCam(false); })();
+} else {
+  playing = !RM; setPlaying(playing);
+  go(0);
+}
 requestAnimationFrame(frame);
 }
 </script>

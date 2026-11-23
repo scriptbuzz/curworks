@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-23 01:23 UTC - modified by: mbitar
+CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - help text - Updated 2026-11-23 01:38 UTC - Modified by: mbitar
 
 All of CurWork's help in one place: the short tips that appear when you point at a control, and the topics
 in the Help window. Keeping the words here (not scattered through the window code) means the help and the
@@ -59,7 +59,7 @@ TIPS: dict[str, str] = {
     "s_pins": "Your pinned folders. Select some and click Remove selected to unpin them.",
     "s_remove_pins": "Unpin the folders selected in the list.",
     "s_reset": "Put the window size and column widths back to normal when you click Save.",
-    "s_saved_in": "The file on this computer where your preferences are kept. Only you use it.",
+    "s_saved_in": "The file on this computer where your preferences are kept.",
     "in_list": "The files in your In folder. Downloaded means it came from S3 unchanged. A file marked new or "
                "changed is probably a result saved in the wrong folder: move it to Out so it isn't lost at clean-up.",
     "out_view": "The files in your Out folder and whether each one is saved in S3 yet. Save them on the "
@@ -81,12 +81,12 @@ TIPS: dict[str, str] = {
 TOPICS: list[tuple[str, str, str]] = [
     ("quick_start", "Quick start", """\
 # Quick start
-CurWork downloads CUR workbooks from S3 to this computer, lets you run your usual Excel macros on them, saves the results in S3, and then cleans up.
-- 1. Sign in. Click Sign in at the top right and finish signing in in your browser.
-- 2. Download files. On the 1. Download from S3 tab, open a customer, select a month folder (or single files), and click Download selected. They go to your In folder.
-- 3. Run your macros as usual. The 2. Work in Excel tab shows your In and Out folders. Open the files from the In folder. Save the results to the Out folder.
-- 4. Save results in S3. On the 3. Save in S3 tab, check the result type and the customer/month folder, then click Save all new or changed in S3.
-- 5. Finish. Click 4. Finish and clean up at the bottom right when you're done for the day.
+CurWork downloads CUR (AWS Cost and Usage Report) workbooks from S3 to this computer, lets you run your usual Excel macros on them, saves the results in S3, and then cleans up.
+First, click Sign in at the top right. Then finish signing in in the browser window that opens. After that, each step has its own tab:
+- 1. Download from S3: open a customer, select a month folder (or single files), and click Download selected. The files go to your In folder.
+- 2. Work in Excel: this tab shows your In and Out folders. Run your macros as usual: open the files from the In folder and save the results to the Out folder.
+- 3. Save in S3: check the result type and the customer/month folder, then click Save all new or changed in S3.
+- 4. Finish and clean up: click this button at the bottom right when you're done for the day. It's there on every tab.
 Tip: point at any button or box to see what it does. Press F1 to open this Help at any time.
 """),
     ("sign_in", "Signing in", """\
@@ -131,7 +131,7 @@ Before you save, check the two boxes under the list:
 - Customer / month folder: for example agency-a/2026-10. It's filled in when you download a month folder.
 The line under the boxes shows exactly where in S3 the results will be saved. Then click Save all new or changed in S3, or select files and click Save selected in S3.
 # If a file is already in S3
-CurWork asks whether to Replace it, Skip it, or Stop. Replacing is safe: S3 keeps the old copy as an earlier version.
+CurWork asks whether to Replace, Replace all, Skip, Skip all or Stop. If your admin has turned on version history for the bucket, S3 keeps the old copy as an earlier version, so replacing is safe.
 """),
     ("step4", "Step 4: Finish and clean up", """\
 # Step 4: Finish and clean up
@@ -181,7 +181,7 @@ If you're stuck, see Getting help.
 # Getting help
 When you contact support:
 - Open About and click Copy details. Paste it into your message. It has the version numbers and file locations, and no passwords or keys.
-- Click Open log folder (at the bottom right, or in About) and attach today's log file.
+- Click Open log folder on the Activity tab (or in About) and attach today's log file.
 - Say what you were doing and what message you saw. A screenshot helps.
 Don't attach customer workbooks unless support asks for them.
 """),

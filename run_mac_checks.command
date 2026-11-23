@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - Mac check script - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - Mac check script - updated 2026-11-23 01:38 UTC - modified by: mbitar
 # Double-click to run. It checks Python, Tk and the AWS CLI, sets up CurWork's Python environment,
 # runs the automated tests, and saves everything to mac_check_results.txt next to this file.
 # It reads no passwords and changes nothing outside the CurWork-app folder.

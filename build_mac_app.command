@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - Mac app build - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - Mac app build - updated 2026-11-23 01:38 UTC - modified by: mbitar
 # Builds CurWork.app (for testing on this Mac) so CurWork shows up with its own name and icon in the Dock,
 # the app switcher (Cmd+Tab), Finder and Spotlight. Uses PyInstaller from CurWork's own .venv.
 # It also builds CurWork Admin.app, the separate app admins use to change the settings in Parameter Store.
@@ -25,11 +25,11 @@ NEW="$WORK/dist/CurWork.app"; PLIST="$NEW/Contents/Info.plist"
 
 echo; echo "== App details (Info.plist)"
 plutil -replace CFBundleDisplayName        -string "CurWork" "$PLIST" &&
-plutil -replace CFBundleShortVersionString -string "0.016" "$PLIST" &&
-plutil -replace CFBundleVersion            -string "0.016" "$PLIST" &&
+plutil -replace CFBundleShortVersionString -string "0.017" "$PLIST" &&
+plutil -replace CFBundleVersion            -string "0.017" "$PLIST" &&
 plutil -replace LSApplicationCategoryType  -string "public.app-category.business" "$PLIST" &&
 plutil -replace NSHighResolutionCapable    -bool true "$PLIST" &&
-plutil -replace NSHumanReadableCopyright   -string "Beta 0.016 - DRAFT - For Internal Use" "$PLIST" || fail "Info.plist update"
+plutil -replace NSHumanReadableCopyright   -string "Beta 0.017 - DRAFT - For Internal Use" "$PLIST" || fail "Info.plist update"
 echo "  Info.plist updated"
 
 echo; echo "== Sign for this Mac (ad-hoc) and check the signature"
@@ -71,10 +71,10 @@ ADMIN_APP="$TOOL/CurWork Admin.app"; AWORK="$(mktemp -d -t curwork-admin-build)"
   --distpath "$AWORK/dist" --workpath "$AWORK/build" --specpath "$AWORK" "$TOOL/curwork_admin.py" || fail "PyInstaller build of CurWork Admin"
 APLIST="$AWORK/dist/CurWork Admin.app/Contents/Info.plist"
 plutil -replace CFBundleDisplayName        -string "CurWork Admin" "$APLIST" &&
-plutil -replace CFBundleShortVersionString -string "0.016" "$APLIST" &&
-plutil -replace CFBundleVersion            -string "0.016" "$APLIST" &&
+plutil -replace CFBundleShortVersionString -string "0.017" "$APLIST" &&
+plutil -replace CFBundleVersion            -string "0.017" "$APLIST" &&
 plutil -replace NSHighResolutionCapable    -bool true "$APLIST" &&
-plutil -replace NSHumanReadableCopyright   -string "Beta 0.016 - DRAFT - For Internal Use" "$APLIST" || fail "CurWork Admin Info.plist update"
+plutil -replace NSHumanReadableCopyright   -string "Beta 0.017 - DRAFT - For Internal Use" "$APLIST" || fail "CurWork Admin Info.plist update"
 codesign --force --sign - "$AWORK/dist/CurWork Admin.app" || fail "codesign of CurWork Admin"
 codesign --verify --deep --strict "$AWORK/dist/CurWork Admin.app" && echo "  PASS  signature is valid" || fail "CurWork Admin signature check"
 pkill -f "CurWork Admin.app/Contents/MacOS/CurWork Admin" 2>/dev/null

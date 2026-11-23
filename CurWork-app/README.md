@@ -1,8 +1,8 @@
 # CurWork
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.016** · Updated 2026-11-23 01:23 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
 
-CurWork is a small Windows app for the billing team. It copies converted CUR workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then sends the results back to S3 and cleans up the laptop. **The VBA code doesn't change.**
+CurWork is a small Windows app for the billing team. It copies converted AWS Cost and Usage Report (CUR) workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then saves the results in S3 and cleans up the laptop. **The VBA code doesn't change.**
 
 **Admins, IT and security reviewers:** start with `ADMIN_AND_SECURITY_GUIDE.md`. It covers AWS setup, building, deployment, settings, security controls, the NIST SP 800-53 mapping, risks and open decisions.
 
@@ -23,7 +23,7 @@ One window with four steps:
 1. **Download files from S3:** open a customer folder, select files or a whole month, click **Download selected**. Files land in `In`. **Pin selected folder** and **Go** jump straight to folders you use often.
 2. **Run your macros as usual:** in the macro menu, pick files from `In` and save results to `Out`. **Open** and **Copy path** buttons make this quick.
 3. **Save results in S3:** the list shows every file in `Out` with a status (*Not saved in S3*, *Saved in S3*, *Changed since saved*, *Open in Excel*). Pick the result type and click **Save all new or changed in S3**. The customer/month folder is filled in from the download, and recent folders are in the drop-down.
-4. **Finish and clean up:** stops if anything is still open in Excel, left in `In` or not saved in S3. Otherwise it saves the day's log in S3 and empties `In` and `Out`.
+4. **Finish and clean up:** stops if a file is still open in Excel, and asks first if `In` has new or changed files or `Out` has results not saved in S3. Then it saves the day's log in S3 and empties `In` and `Out`.
 
 **Settings** (top right) holds each user's own preferences: recent and pinned folders, whether to remember the last result type, and the window layout. It also shows the admin settings, read-only.
 
@@ -45,9 +45,6 @@ Built-in safety:
 | File | What it's for |
 |---|---|
 | `curwork.py` | The app window (tkinter) |
-| `curwork_test.env.example` | Template for the private test settings (`curwork_test.env`, never committed) |
-| `tools/check_no_aws_details.sh`, `.githooks/` | Blocks commits and pushes that contain AWS account numbers, sign-in URLs, emails, keys or private values |
-| `.gitignore` | Keeps secrets, personal settings, test output, build output and local working files out of Git. Also skips the 116 MB test workbook (over GitHub's 100 MB limit). |
 | `curwork_admin.py` | The CurWork Admin Settings app: AWS admins use it to view and change the managed settings in AWS Parameter Store. Only the AWS admin role can save. It's built as its own app (`CurWork Admin.app` on a Mac, `CurWorkAdmin.exe` on Windows), and CurWork itself is built without it. |
 | `curwork_style.py` | All fonts, colours, spacing and list sizes in one place. Both apps use it, so every window looks the same. |
 | `curwork_settings_form.py` | The settings form both apps share: the same tabs, names and explanations. The admin app shows it editable; CurWork's Settings tab shows it read-only. It has no code that saves anything. |
@@ -62,11 +59,13 @@ Built-in safety:
 | `requirements.txt` | Runtime package (boto3) as a version range, for running from source |
 | `requirements-lock.txt` | Runtime packages at exact versions with SHA-256 hashes, used by the build |
 | `requirements-dev.txt` | Build and test tools (not shipped) |
-| `build_exe.ps1` | Builds `CurWork.exe` with its icon (tests, vulnerability check, SBOM, build) |
+| `build_exe.ps1` | Builds `CurWork.exe` and `CurWorkAdmin.exe` with their icon (tests, vulnerability check, SBOM, build, self-tests) |
 | `tests/test_core.py` | Unit tests for the settings, S3, sign-in and work-folder logic (mocked S3) |
 | `tests/test_gui.py` | Window tests: drives the real CurWork window through sign-in, browse, small and multipart downloads, upload, refusals, About, Settings, Finish and `--self-test`, and checks CurWork's calls fit the biller policy. Needs a display (xvfb-run on Linux). |
+| `tests/test_admin.py` | Tests for the settings kept in AWS Parameter Store and the admin app's save rules (mocked AWS) |
+| `tests/test_layout.py` | Layout tests: no control is cut off on any tab at the normal and the smallest window size, the file lists match, and fonts and colours come only from `curwork_style.py` |
 | `assets/` | App icon: `curwork.ico` (Windows), `curwork.icns` (Mac app), PNGs for the window and Dock |
-| `mac-test-kit/` | Double-click scripts and made-up sample workbooks for testing on a Mac against a real AWS test bucket (see its README). Not for billers. |
+| Repository root (`../`) | The Mac test scripts, the made-up sample workbooks, the Git checks that keep AWS details out of GitHub, and the `.gitignore` file. Start with `CurWork_Test_Menu.command`. Not for billers. |
 
 ## Building the exe
 
@@ -83,7 +82,7 @@ The app uses [boto3](https://aws.amazon.com/sdk-for-python/) (the AWS SDK for Py
 
 ## Testing
 
-Run the tests from the CurWork folder (commands at the end of this section). They use a mocked S3, so no AWS account is needed. One test needs a POSIX (Mac or Linux) account that isn't root; it's skipped on Windows and when run as root.
+Run the tests from the CurWork folder (commands at the end of this section). They use a mocked S3, so no AWS account is needed. One test needs a normal (not administrator) Mac or Linux account; it's skipped on Windows and when run as an administrator (root).
 
 ```powershell
 py -3.12 -m pip install -r requirements.txt -r requirements-dev.txt
@@ -92,7 +91,7 @@ py -3.12 -m pytest -q
 
 ## Testing on a Mac (real AWS)
 
-The app is built for Windows, but the code runs on a Mac for testing. The `mac-test-kit/` folder has double-click scripts that do the setup; its README explains the folder layout.
+The app is built for Windows, but the code runs on a Mac for testing. The test scripts in the repository root do the setup; start with `CurWork_Test_Menu.command`, and see [MAC_HAND_TEST.md](../MAC_HAND_TEST.md) for the hand test.
 
 **Test plan (biller test sign-in):** run `CurWork_Test_Menu.command` and follow the numbers. Run option 8 (**Run all automated tests**) before any hand testing; test by hand only when it ends with "All automated tests passed".
 1. Check this Mac: Python, Tk and the AWS CLI; sets up `.venv`; runs the automated tests.
@@ -117,6 +116,7 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 
 | Version | Date (UTC) | Changes | Modified by |
 |---|---|---|---|
+| Beta 0.017 | 2026-11-23 01:38 | Documentation review. The guides now describe the tabbed window, the Settings tab, the separate admin app and the laptop file that holds only sign-in settings. Outdated folder names, test counts and the 30-day claim were corrected. The Help quick start numbers now match the tabs, and the Help text about replacing files and the log folder matches the app. The animated demo and its README loop show the tabbed window. The diagrams carry an updated date and the retention wording. | mbitar |
 | Beta 0.016 | 2026-11-23 01:23 | The file lists look the same on every tab: each list is in a titled box, with the same columns and widths and its own buttons under it. Lists side by side are always the same width. Each tab has its main buttons in the same place at the bottom. All fonts, colours and spacing now come from one place (curwork_style.py), and they're made from the computer's own system font, so CurWork and CurWork Admin look the same on a Mac and on Windows. CurWork now opens at 1040 by 700 pixels. A window size saved by the older layout is ignored once. | mbitar |
 | Beta 0.015 | 2026-11-23 00:55 | The main window now has one tab per step: 1. Download from S3, 2. Work in Excel and 3. Save in S3, plus Activity and Settings. The file lists fill the window. The Download tab also lists what's already in the In folder, and the Work tab lists the In and Out folders. Sign-in, Help and the 4. Finish and clean up button stay visible on every tab. Settings is now a tab, not a separate window. Its admin part shows the same form as the CurWork Admin Settings app, with the same tabs and names, read-only, and it scrolls when the window is short. The admin settings app is now built as its own app (CurWork Admin.app, CurWorkAdmin.exe), and CurWork is built without its code. Both apps have a self-test that the build runs. | mbitar |
 | Beta 0.014 | 2026-11-23 00:16 | The CurWork Admin Settings app is easier to use. Settings are grouped on four tabs. After Load, the bucket, encryption key and S3 folders are drop-downs filled from what exists in AWS, and you can still type a name. File types are checkboxes, numbers have arrows and limits, result types are a small table, and where preferences are saved is a plain choice of two places. Each setting shows a one-line explanation, its default and a **Use default** button. Changes are marked, and a value that can't be saved is explained in red under the setting before anything is saved. | mbitar |
@@ -152,4 +152,4 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 | 1.0.0 (code) | 2026-11-22 11:33 | First release | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.016 · Updated 2026-11-23 01:23 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*

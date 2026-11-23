@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
+CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
 
 Drives the real CurWork window (tkinter) against a mocked S3 (moto), the way a biller would:
 sign-in check, browse, download (small and multipart), upload, refused uploads, the AWS refusal message,
@@ -569,7 +569,7 @@ def test_about_and_settings_windows(world):
     dlg = curwork.AboutDialog(world.root, a)
     world.pump(0.3)
     text = dlg.text()
-    for word in ("Beta 0.016", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
+    for word in ("Beta 0.017", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
         assert word in text
     assert "secret" not in text.lower()
     dlg.copy()

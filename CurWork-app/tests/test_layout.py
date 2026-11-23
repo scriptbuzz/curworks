@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.016 - DRAFT - For Internal Use - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork tests - Beta 0.017 - DRAFT - For Internal Use - updated 2026-11-23 01:38 UTC - modified by: mbitar
 """Layout check: no control is cut off or squeezed on any tab, at the normal and the smallest window size."""
 import tkinter as tk
 from tkinter import ttk

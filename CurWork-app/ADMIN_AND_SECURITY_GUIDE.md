@@ -1,8 +1,8 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.016** · Updated 2026-11-23 01:23 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
 
-This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
+This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it. The app guide ([README.md](README.md)) and the main [README](../README.md) cover daily use.
 
 ## 1. Who does what
 
@@ -16,7 +16,7 @@ This guide is for the people who set up, run and review CurWork: the AWS admin, 
 Three layers decide what a biller can do. The strongest is in AWS, so nothing on the laptop can get past it:
 
 1. **The AWS permission set.** The hard limit. Whatever happens on the laptop, a biller can only read and write what the permission set allows.
-2. **The admin settings file** (`curwork_admin_settings.json`, protected). Which bucket, folders, encryption and sign-in the app uses.
+2. **The laptop settings file** (`curwork_admin_settings.json`, protected). It holds only how to sign in, the Region, the FIPS switch and the use notice. Everything else, such as the bucket, folders and encryption key, is kept in AWS Parameter Store (`/curwork/admin-settings`).
 3. **The user preferences file** (`curwork_user_settings.json`, unprotected). Recent and pinned folders, result type, window layout. It can't change layers 1 or 2.
 
 ## 2. Before you start
@@ -58,7 +58,7 @@ Keep `s3:ListBucket` on the output folders. The app lists the destination to che
 
 ## 4. Build and sign (build owner)
 
-1. Fill in `curwork_admin_settings.json` (section 6). The app won't start until `bucket` is set.
+1. Fill in the sign-in settings in `curwork_admin_settings.json` (section 6). Save the bucket and the other settings in AWS with the CurWork Admin Settings app. CurWork refuses a laptop file that holds the bucket or other settings that belong in AWS.
 2. On the Windows build machine, run `build_exe.ps1` from the CurWork folder (command below). If any step fails, the build stops. It:
    - creates a clean build environment,
    - installs the runtime packages from `requirements-lock.txt` (exact versions, checked against SHA-256 hashes),
@@ -66,8 +66,8 @@ Keep `s3:ListBucket` on the output folders. The app lists the destination to che
    - runs the tests,
    - checks every installed package for known vulnerabilities with pip-audit,
    - writes a software bill of materials (`sbom-runtime.cdx.json`, CycloneDX format),
-   - builds `dist\CurWork.exe` and copies the admin settings file and the SBOM next to it.
-3. Sign `CurWork.exe` with the company code-signing certificate.
+   - builds `dist\CurWork.exe` (without the admin code) and `dist\CurWorkAdmin.exe`, copies the laptop settings file and the SBOM next to them, and runs both self-tests.
+3. Sign both `.exe` files with the company code-signing certificate. Give billers `CurWork.exe` only.
 4. Keep the SBOM with the release.
 
 To update a package: change `requirements.txt`, regenerate `requirements-lock.txt` with `pip-compile --generate-hashes`, then rebuild.
@@ -95,8 +95,9 @@ Build command (PowerShell, from the CurWork folder):
 
 | File | What's in it | Who controls it |
 |---|---|---|
-| `curwork_admin_settings.json` (protected) | Bucket, Region, AWS profile and sign-in, input and output folders, FIPS, KMS key, work folder, log folder, file types, use notice | The admin |
-| `curwork_user_settings.json` (unprotected) | Remember last result type, last result type, recent folders, how many to keep, pinned folders, window size and position, column widths | Each user, in the app's **Settings** window |
+| `curwork_admin_settings.json` (protected) | Sign-in details, AWS profile, Region, FIPS switch, AWS CLI path, use notice and the Parameter Store name | The admin |
+| Parameter Store `/curwork/admin-settings` | Bucket, encryption key, folders, result types, file types, work folder, log folder and the other managed settings | The AWS admin role, with the CurWork Admin Settings app |
+| `curwork_user_settings.json` (unprotected) | Remember last result type, last result type, recent folders, how many to keep, pinned folders, window size and position, column widths | Each user, on the **Settings** tab under **My preferences** |
 
 How the app protects the split:
 - It reads only the preference keys from the user file. Any other key, such as `bucket`, is ignored and noted in the log.
@@ -181,7 +182,7 @@ CurWork's own **Settings** tab shows the same form read-only, with the same tabs
 | `recent_limit` | `10` | How many recent folders to keep (0 to 25; 0 turns it off) |
 | `pinned_folders` | empty | Pinned S3 folders (up to 25, only inside the browse folders) |
 | `window_geometry` | empty | Window size and position, moved back on screen if a monitor was removed |
-| `column_widths` | empty | Column widths in the two lists |
+| `column_widths` | empty | Column widths of the Files in S3 list and the Out folder list on the 3. Save in S3 tab |
 
 ## 7. Day-to-day admin tasks
 
@@ -224,14 +225,14 @@ CurWork's own **Settings** tab shows the same form read-only, with the same tabs
 **Checks run in this review (2026-11-22)**
 - pip-audit: no known vulnerabilities in the runtime or build packages.
 - bandit (Python security scanner): no medium or high findings. The low findings are expected: the app starts the AWS CLI and the folder viewer with fixed arguments and no shell.
-- 60 automated tests pass, plus 1 that needs a non-root Mac or Linux account. Window tests drive the real window through sign-in, browse, small and multipart downloads, upload, refusals, About, Settings, Finish and the self-test, and check CurWork's calls fit inside the biller policy (the mock checks actions and resources, not conditions; the real AWS tests check the conditions).
+- At the time of this review, 60 automated tests passed, plus 1 that needs a normal (not administrator) Mac or Linux account. The current count is in the test results from the test menu. Window tests drive the real window through sign-in, browse, small and multipart downloads, upload, refusals, About, Settings, Finish and the self-test, and check CurWork's calls fit inside the biller policy (the mock checks actions and resources, not conditions; the real AWS tests check the conditions).
 - Fixed in this review:
   - The check for an existing result now uses a listing. With the prefix-limited permission set, the old check (HeadObject) could get "access denied" instead of "not found" for a new file.
   - The build script now stops when tests or pip-audit fail.
   - Runtime packages are locked to exact versions with hashes, and the build writes an SBOM.
   - Settings files have a size limit and a safer save.
-- Mac test (2026-11-22): the Mac check passed (Python 3.12.13, Tk 9.0.3, AWS CLI 2.35.14). A test bucket with all samples (including a 116 MB, 3.2-million-row workbook) passed 11 of 11 checks. CurWork signs in with a test permission set, **CurWorkBillerTest**, built from `iam/biller_permission_set_policy.json` and limited to test buckets, so the test checks the real least-privilege access (NIST SP 800-53 AC-6). The first test role, AWSReadOnlyAccess, turned out to carry only AWS's ViewOnlyAccess policy, which can list but not read S3 files. The admin profile is used only to create the test bucket and permission set. Scripts are in `mac-test-kit/`.
-- Not yet done: the app run against AWS on the Mac; a run on a Windows biller laptop with real Excel; a test with the real biller permission set. The updated build script hasn't been run on Windows yet.
+- Mac test (2026-11-22): the Mac check passed (Python 3.12.13, Tk 9.0.3, AWS CLI 2.35.14). A test bucket with all samples (including a 116 MB, 3.2-million-row workbook) passed 11 of 11 checks. CurWork signs in with a test permission set, **CurWorkBillerTest**, built from `iam/biller_permission_set_policy.json` and limited to test buckets, so the test checks the real least-privilege access (NIST SP 800-53 AC-6). The first test role, AWSReadOnlyAccess, turned out to carry only AWS's ViewOnlyAccess policy, which can list but not read S3 files. The admin profile is used only to create the test bucket and permission set. The test scripts are in the repository root; start with `CurWork_Test_Menu.command`.
+- Not yet done: a run on a Windows biller laptop with real Excel, and a test with the real biller permission set. The updated build script hasn't been run on Windows yet.
 
 **NIST SP 800-53 Rev. 5 mapping**
 
@@ -244,7 +245,7 @@ CurWork's own **Settings** tab shows the same form read-only, with the same tabs
 | AU-2, AU-3, AU-12 Audit events | CloudTrail data events for every S3 read and write, sent to the SIEM; local log with actions and file names | AWS + app | Met |
 | AU-9 Protect audit data | Billers can edit local logs, so CloudTrail is the official record | AWS | By design |
 | AU-10 Non-repudiation | Identity comes from Identity Center and CloudTrail; the Windows user name in logs and S3 metadata is for convenience only | AWS | By design |
-| CM-5, CM-6 Config control | Admin settings in Program Files; user preferences can't change them. The built app only reads the admin settings installed next to it and ignores `--config` and `CURWORK_CONFIG` (config lock). IT still has to make the install folder read-only for billers. | IT + app | Met (app); IT to confirm folder permissions |
+| CM-5, CM-6 Config control | Sign-in settings in Program Files; all other admin settings in Parameter Store, which only the AWS admin role can change. User preferences can't change either. The built app only reads the admin settings installed next to it and ignores `--config` and `CURWORK_CONFIG` (config lock). IT still has to make the install folder read-only for billers. | IT + app | Met (app); IT to confirm folder permissions |
 | CM-7, SI-7 Least function, integrity | No `aws.exe` from the current folder; fixed arguments, no shell. Billers' copy of CurWork is built without the admin settings app, and its read-only Settings tab has no save code | App | Met |
 | CM-14, SI-7(15) Signed software | Sign the exe before deployment; allow only the signed app | IT | Process |
 | IA-2 MFA | Entra sign-in with MFA through Identity Center | Entra + AWS | Met |
@@ -280,6 +281,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-23 01:38 | Beta 0.017 | Review for accuracy: the laptop settings file is described as sign-in only, the Parameter Store settings have their own row, the Windows build makes both apps, old copies are kept for the admin's retention period, and the testing status is current. | mbitar |
 | 2026-11-23 01:23 | Beta 0.016 | One shared style for CurWork and CurWork Admin: the same fonts, colours and spacing in every window, and matching file lists on every tab. CurWork opens at a smaller size. No change to settings or security. | mbitar |
 | 2026-11-23 00:55 | Beta 0.015 | Steps as tabs in the main window, with full-size file lists and a Settings tab instead of a Settings window. Billers see the admin settings read-only in the same form, with the same tabs and names, as the CurWork Admin Settings app. The admin app is built as its own app, and CurWork is built without its code (NIST SP 800-53 CM-7, least functionality). | mbitar |
 | 2026-11-23 00:16 | Beta 0.014 | Admin settings app redesign. Drop-downs list the buckets, customer-managed encryption keys and top-level folders the admin's sign-in can see (`s3:ListAllMyBuckets`, `s3:ListBucket`, `kms:ListAliases`; read-only). Every value is checked in plain words next to its setting with CurWork's own rules before saving, so nothing CurWork would refuse can be saved (NIST SP 800-53 CM-6, SI-10). | mbitar |
@@ -296,4 +298,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.016 · Updated 2026-11-23 01:23 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*

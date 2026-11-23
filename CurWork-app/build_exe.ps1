@@ -1,4 +1,4 @@
-# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:23 UTC - modified by: mbitar
+# CurWork Beta 0.017 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 01:38 UTC - modified by: mbitar
 # Builds dist\CurWork.exe (for billers) and dist\CurWorkAdmin.exe (for admins) on a Windows build machine.
 # CurWork.exe is built without the admin code, so billers' copy can't change any settings.
 # Run from this folder in PowerShell:  .\build_exe.ps1

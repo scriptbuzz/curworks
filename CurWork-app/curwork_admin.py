@@ -4,9 +4,9 @@ Systems Manager Parameter Store (bucket, folders, encryption, file rules, work f
 the buckets, encryption keys and folders that exist in AWS, and each setting shows its default and any
 problem in plain words before anything is saved.
 
-Version:     Beta 0.016
+Version:     Beta 0.017
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 01:23 UTC
+Updated:     2026-11-23 01:38 UTC
 Modified by: mbitar
 
 Who can change the settings is decided by AWS, not by this window: billers' permissions can only read
