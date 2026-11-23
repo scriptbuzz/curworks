@@ -1,6 +1,6 @@
 # Third-party notices
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
 
 CurWork belongs to FPT (see the [LICENSE](LICENSE)), but it's built on the open source parts listed below. Their authors own them, and each one keeps its own license. The versions are the ones locked in `CurWork-app/requirements-lock.txt` today. If the lock file changes, check this list again.
 
@@ -29,4 +29,4 @@ These tools are used to build and test CurWork. They aren't shipped inside it, e
 Each package includes its full license text, and you can also read it on the package's page at https://pypi.org. Before CurWork goes to anyone outside the test group, check every package's current license and include the notices it asks for.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.013 · Updated 2026-11-22 23:56 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*

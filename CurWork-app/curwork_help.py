@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-22 23:56 UTC - modified by: mbitar
+CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-23 00:16 UTC - modified by: mbitar
 
 All of CurWork's help in one place: the short tips that appear when you point at a control, and the topics
 in the Help window. Keeping the words here (not scattered through the window code) means the help and the

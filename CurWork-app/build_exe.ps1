@@ -1,4 +1,4 @@
-# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 23:56 UTC - modified by: mbitar
+# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:16 UTC - modified by: mbitar
 # Builds dist\CurWork.exe on a Windows build machine (not on biller laptops).
 # Run from this folder in PowerShell:  .\build_exe.ps1
 #

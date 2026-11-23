@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
+CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
 
 Drives the real CurWork window (tkinter) against a mocked S3 (moto), the way a biller would:
 sign-in check, browse, download (small and multipart), upload, refused uploads, the AWS refusal message,
@@ -334,16 +334,15 @@ def test_admin_settings_window_loads_edits_and_saves(world, monkeypatch):
     def wait():
         end = time.time() + 20
         world.pump(0.2)
-        while app.busy and time.time() < end:
+        while (app.busy or app.pending_lookups) and time.time() < end:
             world.pump(0.1)
         world.pump(0.2)
 
     assert str(app.save_btn.cget("state")) == "disabled", "nothing can be saved before Load"
     app.load()
     wait()
-    assert app.version == 1 and app.inputs["bucket"].get() == BUCKET
-    app.inputs["bucket"].delete(0, "end")
-    app.inputs["bucket"].insert(0, "new-bucket")
+    assert app.version == 1 and app.get_form()["bucket"] == BUCKET
+    app.set_field("bucket", "new-bucket")
     app.save()
     wait()
     assert asked and "new-bucket" in asked[0] and not any(m.startswith("ERROR") for m in asked)
@@ -397,18 +396,12 @@ class _AdminWindow:
     def wait(self):
         end = time.time() + 20
         self.world.pump(0.2)
-        while self.app.busy and time.time() < end:
+        while (self.app.busy or self.app.pending_lookups) and time.time() < end:
             self.world.pump(0.1)
         self.world.pump(0.2)
 
     def set(self, key, text):
-        w = self.app.inputs[key]
-        if isinstance(w, tk.Text):
-            w.delete("1.0", "end")
-            w.insert("1.0", text)
-        else:
-            w.delete(0, "end")
-            w.insert(0, text)
+        self.app.set_field(key, text)
 
     def version(self):
         return self.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Version"]
@@ -471,12 +464,78 @@ def test_admin_window_creates_the_parameter_from_the_local_file(world, monkeypat
     w.wait()
     assert "doesn't exist yet" in w.app.status_lbl.cget("text")
     w.app.fill_from_local()
-    assert w.app.inputs["bucket"].get() == BUCKET
+    assert w.app.get_form()["bucket"] == BUCKET
     w.app.save()
     w.wait()
     saved = json.loads(w.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Value"])
     assert saved["bucket"] == BUCKET and "aws_profile" not in saved, "only managed settings are copied"
     assert "Saved version 1" in w.app.status_lbl.cget("text")
+    w.win.destroy()
+
+
+def test_admin_window_fills_its_drop_downs_from_aws(world, monkeypatch):
+    kms = boto3.client("kms", region_name="us-east-1")
+    key_id = kms.create_key(Description="CurWork test key")["KeyMetadata"]["KeyId"]
+    kms.create_alias(AliasName="alias/curwork-test", TargetKeyId=key_id)
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    w.app.load()
+    w.wait()
+    f = w.app.fields
+    assert BUCKET in f["bucket"].widget.cget("values"), "buckets the admin can see are listed"
+    assert "converted/" in f["browse_roots"].pick.cget("values"), "the bucket's top-level folders are listed"
+    assert "converted/" in f["output_stages"].folder_pick.cget("values")
+    labels = list(f["kms_key_id"].widget.cget("values"))
+    assert labels[0] == "Use the bucket's own key" and f"alias/curwork-test  ({key_id})" in labels
+    f["kms_key_id"].var.set(f"alias/curwork-test  ({key_id})")      # what picking it in the list does
+    assert w.app.get_form()["kms_key_id"] == key_id, "the key ID is saved, not the label"
+    w.app.save()
+    w.wait()
+    assert json.loads(w.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Value"])["kms_key_id"] == key_id
+    w.win.destroy()
+
+
+def test_admin_window_shows_problems_next_to_each_field_and_marks_changes(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/"}})
+    w.app.load()
+    w.wait()
+    a = w.app
+    assert not a.errors and not a.changed_keys, "a loaded form starts clean"
+    w.set("max_concurrency", "40")
+    assert "from 1 to 32" in a.hint_lbls["max_concurrency"].cget("text")
+    assert "needs a fix" in a.notebook.tab(a.tab_frames[2][0], "text")
+    assert "(changed)" in a.name_lbls["max_concurrency"].cget("text")
+    a.use_default("max_concurrency")
+    assert a.get_form()["max_concurrency"] == "8" and "max_concurrency" not in a.errors
+    assert "Default: 8." in a.hint_lbls["max_concurrency"].cget("text")
+    w.set("bucket", "Bad_Name")
+    a.save()
+    w.wait()
+    assert w.kinds("showerror") and "lowercase letters" in w.kinds("showerror")[-1] and w.version() == 1
+    w.win.destroy()
+
+
+def test_admin_window_checkboxes_and_plain_choices_keep_the_stored_values(world, monkeypatch):
+    w = _AdminWindow(world, monkeypatch, {"bucket": BUCKET, "output_stages": {"Priced": "priced/", "Split": "split/"}})
+    w.app.load()
+    w.wait()
+    f = w.app.fields
+    w.set("upload_extensions", ".xlsx, csv, .pdf")
+    assert f["upload_extensions"].checks[".xlsx"].get() and f["upload_extensions"].checks[".csv"].get()
+    assert not f["upload_extensions"].checks[".zip"].get() and f["upload_extensions"].other_var.get() == ".pdf"
+    assert w.app.get_form()["upload_extensions"] == ".xlsx, .csv, .pdf"
+    w.set("user_settings_location", "work_folder")
+    assert f["user_settings_location"].var.get() == "In each biller's work folder"
+    assert w.app.get_form()["user_settings_location"] == "work_folder"
+    assert list(f["default_stage"].widget.cget("values")) == ["Priced", "Split"], "the start choice lists the result types"
+    stages = f["output_stages"]
+    stages.name_var.set("Reports"); stages.folder_var.set("reports")
+    stages.add()
+    assert w.app.get_form()["output_stages"].splitlines()[-1] == "Reports = reports/"
+    w.app.save()
+    w.wait()
+    saved = json.loads(w.ssm.get_parameter(Name="/curwork/admin-settings")["Parameter"]["Value"])
+    assert saved["upload_extensions"] == [".xlsx", ".csv", ".pdf"] and saved["user_settings_location"] == "work_folder"
+    assert saved["output_stages"]["Reports"] == "reports/"
     w.win.destroy()
 
 
@@ -510,7 +569,7 @@ def test_about_and_settings_windows(world):
     dlg = curwork.AboutDialog(world.root, a)
     world.pump(0.3)
     text = dlg.text()
-    for word in ("Beta 0.013", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
+    for word in ("Beta 0.014", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
         assert word in text
     assert "secret" not in text.lower()
     dlg.copy()

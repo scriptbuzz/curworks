@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -159,7 +159,11 @@ python curwork_admin.py --profile <admin profile>
 ```
 
 - **Sign in** opens the browser for the admin sign-in. **Load from AWS** reads the current version.
-- The form checks every value with the same rules CurWork uses before anything is saved. **Save in AWS** lists each change and asks you to confirm it.
+- The settings are grouped on four tabs: **Files in S3**, **Result types**, **What billers can do** and **On each laptop**.
+- After Load, the bucket, the encryption key and the S3 folders are drop-downs filled from what exists in AWS. The app lists the buckets and the customer-managed encryption keys your sign-in can see, and the top-level folders in the chosen bucket. Listing needs `s3:ListAllMyBuckets`, `s3:ListBucket` and `kms:ListAliases`, which the AWS admin role already has. If a list can't be read, the app says so and you can still type the name.
+- File types are checkboxes, with a box for any other types. Number settings have up and down arrows and limits. Result types are a small table with **Add or update** and **Remove selected**. Where preferences are saved is a choice of two places in plain words.
+- Each setting shows a one-line explanation and its default under it, and has a **Use default** button. A changed setting is marked "(changed)", and so is its tab.
+- A value that can't be saved is explained in red under the setting, and its tab is marked "needs a fix". The app checks every value with the same rules CurWork uses, so nothing that CurWork would refuse can be saved. **Save in AWS** lists each change and asks you to confirm it.
 - If another admin saved a newer version after you clicked Load from AWS, nothing is saved. Load their version first, then make your change again.
 - **Copy from this laptop's settings file** copies the settings kept in AWS out of an older `curwork_admin_settings.json` that still holds them. Use it once to move an older install to Parameter Store, then remove those settings from the laptop file. To create the parameter from scratch, fill in the form and click **Save in AWS**.
 - **History** lists every saved version, when it was saved and who saved it.
@@ -274,6 +278,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-23 00:16 | Beta 0.014 | Admin settings app redesign. Drop-downs list the buckets, customer-managed encryption keys and top-level folders the admin's sign-in can see (`s3:ListAllMyBuckets`, `s3:ListBucket`, `kms:ListAliases`; read-only). Every value is checked in plain words next to its setting with CurWork's own rules before saving, so nothing CurWork would refuse can be saved (NIST SP 800-53 CM-6, SI-10). | mbitar |
 | 2026-11-22 23:57 | Beta 0.013 | Smallest possible laptop file (NIST SP 800-53 CM-5, CM-6): `curwork_admin_settings.json` may only hold the sign-in settings, the Region, the FIPS switch and the use notice, and CurWork refuses it otherwise. Parameter Store is now required, and also holds the work folder (`work_dir`) and the preferences location (`user_settings_location`). CurWork switches to the admin's work folder right after sign-in and moves today's log with it, so one log holds the whole session (AU-9). | mbitar |
 | 2026-11-22 23:33 | Beta 0.012 | Plain wording: CurWork and the admin settings app now say "save in S3" instead of "send" or "upload". The admin app's buttons are now **Load from AWS**, **Save in AWS** and **Copy from this laptop's settings file**. The program folder is now `CurWork-app`. New tests prove that billers can only read the settings kept in AWS and that only an admin can save them (NIST SP 800-53 AC-3, AC-6, CM-5). | mbitar |
 | 2026-11-22 22:44 | Beta 0.011 | Managed settings (NIST SP 800-53 AC-3, CM-5, AU-12): the settings that decide where data goes can live in AWS Parameter Store. Billers can only read them, only the AWS admin role can change them, and the new CurWork Admin Settings app is how admins change them. | mbitar |
@@ -287,4 +292,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.013 · Updated 2026-11-22 23:56 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*

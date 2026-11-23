@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - automated tests - updated 2026-11-22 23:56 UTC - modified by: mbitar
+# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - automated tests - updated 2026-11-23 00:16 UTC - modified by: mbitar
 # Runs every automated check before you test by hand, and saves one PASS/FAIL report:
 #   1. Script checks: every .command file parses and can run.
 #   2. Code tests: CurWork's unit tests, then each window test in its own process (windows flash up briefly;

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - AWS details check - updated 2026-11-22 23:56 UTC - modified by: mbitar
+# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - AWS details check - updated 2026-11-23 00:16 UTC - modified by: mbitar
 # Blocks a commit or push if any file holds AWS account numbers, sign-in URLs, email addresses, access keys,
 # private keys, or any value from your private curwork_test.env. Used by .githooks/pre-commit and pre-push,
 # and by the automated tests. Usage:

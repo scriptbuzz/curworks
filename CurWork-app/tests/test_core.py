@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.013 - DRAFT - For Internal Use - updated 2026-11-22 23:56 UTC - modified by: mbitar
+# CurWork tests - Beta 0.014 - DRAFT - For Internal Use - updated 2026-11-23 00:16 UTC - modified by: mbitar
 """Tests for curwork_core using a mocked S3 (moto). Run: python -m pytest -q"""
 import os
 import sys

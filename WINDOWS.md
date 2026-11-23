@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -136,7 +136,7 @@ Go through these and note anything that looks wrong:
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.013 (DRAFT - For Internal Use)" |
+| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.014 (DRAFT - For Internal Use)" |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green |
 | 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar, then the 116 MB file appears in **In** |
 | 4 | Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
@@ -181,4 +181,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.013 · Updated 2026-11-22 23:56 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
