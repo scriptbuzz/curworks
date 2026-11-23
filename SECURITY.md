@@ -1,12 +1,12 @@
 # Security policy
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 02:14 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 02:25 UTC · Modified by: mbitar
 
 CurWork is FPT's private software. It moves cost data for federal agency customers between Amazon S3 and billers' laptops, so we designed it around security from the first day instead of adding security later. This document explains how to report a security problem, and then describes every security control in CurWork: who can do what, how the data is protected at each step, what is built into the app, what admins and IT must set up, how we test it, and which risks are still open.
 
 The [README](README.md) gives a short overview, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the step-by-step setup.
 
-**Contents:** [Report a problem](#if-you-find-a-security-problem) · [At a glance](#security-at-a-glance) · [Sign-in and access](#sign-in-and-access) · [Data protection](#where-the-data-is-and-what-protects-it) · [Built into the app](#built-into-the-app) · [Settings](#who-controls-the-settings) · [Code and supply chain](#keeping-the-code-and-its-parts-safe) · [Testing](#how-we-test-security) · [Setup outside the app](#what-must-be-set-up-outside-the-app) · [NIST mapping](#nist-sp-800-53-mapping) · [Open risks](#risks-that-are-still-open)
+**Contents:** [Report a problem](#if-you-find-a-security-problem) · [Architecture](#how-the-parts-fit-together) · [At a glance](#security-at-a-glance) · [Sign-in and access](#sign-in-and-access) · [Data protection](#where-the-data-is-and-what-protects-it) · [Built into the app](#built-into-the-app) · [Settings](#who-controls-the-settings) · [Code and supply chain](#keeping-the-code-and-its-parts-safe) · [Testing](#how-we-test-security) · [Setup outside the app](#what-must-be-set-up-outside-the-app) · [NIST mapping](#nist-sp-800-53-mapping) · [Open risks](#risks-that-are-still-open)
 
 ## If you find a security problem
 
@@ -28,6 +28,12 @@ Only the latest build of Beta 0.017. Fixes go into the next build, so replace ol
 - The animated demo published at scriptbuzz.github.io/curworks. It uses made-up sample data only.
 
 Please also report problems you find in AWS, Python or other parts CurWork uses, and we'll pass them on to whoever makes them.
+
+## How the parts fit together
+
+Exhibit 4 shows how the billers' and the admin's laptops work with the AWS services CurWork uses. Each pink box describes the security control that protects that part, and the red chips name the matching NIST SP 800-53 control. The numbered steps under the diagram follow one session from sign-in to clean-up.
+
+![Exhibit 4: How CurWork's laptops and AWS services work together. Billers sign in through IAM Identity Center and the company sign-in, CurWork reads its settings from Parameter Store, downloads from and saves to an S3 bucket encrypted with a KMS key, and CloudTrail records every call. Pink boxes describe the security control that protects each part, with its NIST control number.](docs/diagrams/exhibit4-aws-architecture.svg)
 
 ## Security at a glance
 
@@ -214,4 +220,4 @@ There is no delete permission. A biller can't remove a file, and when a biller r
 This document describes how we built and tested an early internal version of CurWork. It isn't a certification or approval under NIST, FedRAMP or any other program.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 02:14 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 02:25 UTC · Modified by: mbitar*

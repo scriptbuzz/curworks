@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:49 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 02:25 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -67,6 +67,10 @@ CurWork handles cost data for federal agency customers, so we designed it around
 Here's what that means in practice. The last column lists the matching controls from NIST SP 800-53 Rev. 5, the US government's security control catalog. We also followed the AWS Well-Architected Framework (Security Pillar) and the CIS AWS Foundations Benchmark for the S3 and sign-in settings. The [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details.
 
 ![Exhibit 2: What a biller can and can't do. Billers can list and download from converted, list, download and save files in the results and logs folders, and can't delete anything or touch the rest of the bucket. Public access is blocked, only TLS 1.2 or newer is allowed, files are encrypted with SSE-KMS, and old copies are kept for the admin's retention period.](docs/diagrams/exhibit2-access.svg)
+
+Exhibit 4 shows the AWS services behind the four steps, which security control protects each part, and the NIST SP 800-53 control it meets. [SECURITY.md](SECURITY.md) explains each control in detail.
+
+![Exhibit 4: How CurWork's laptops and AWS services work together. Billers sign in through IAM Identity Center and the company sign-in, CurWork reads its settings from Parameter Store, downloads from and saves to an S3 bucket encrypted with a KMS key, and CloudTrail records every call. Pink boxes describe the security control that protects each part, with its NIST control number.](docs/diagrams/exhibit4-aws-architecture.svg)
 
 | What we wanted | What CurWork does | NIST controls |
 |---|---|---|
@@ -109,7 +113,7 @@ THIRD_PARTY_NOTICES.md         The licences of the software CurWork uses
 run_windows_tests.ps1          Runs all the automated tests on Windows
 CurWork_Test_Menu.command      The Mac test menu (start here to test)
 *.command                      The test scripts the menu runs
-tools/                         Helper scripts used by the tests
+tools/                         Helper scripts for the tests, and the script that draws Exhibit 4 from the official AWS icons
 sample-data/                   Made-up cost report workbooks (no real customer data)
 curwork_test.env.example       Template for your private test settings
 .githooks/                     The checks that stop AWS details being uploaded
@@ -199,4 +203,4 @@ Your account number, sign-in address and profile names are only stored in `curwo
 This is Beta 0.017, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:49 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 02:25 UTC · Modified by: mbitar*
