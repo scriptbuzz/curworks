@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.015 - DRAFT - For Internal Use - updated 2026-11-23 00:55 UTC - modified by: mbitar
+# CurWork tests - Beta 0.016 - DRAFT - For Internal Use - updated 2026-11-23 01:23 UTC - modified by: mbitar
 """Tests for the managed admin settings in AWS Parameter Store (mocked with moto):
 how CurWork reads them, the admin app's form and saves, and the biller policy (read, never write)."""
 import json

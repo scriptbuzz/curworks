@@ -4,9 +4,9 @@ Systems Manager Parameter Store (bucket, folders, encryption, file rules, work f
 the buckets, encryption keys and folders that exist in AWS, and each setting shows its default and any
 problem in plain words before anything is saved.
 
-Version:     Beta 0.015
+Version:     Beta 0.016
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 00:55 UTC
+Updated:     2026-11-23 01:23 UTC
 Modified by: mbitar
 
 Who can change the settings is decided by AWS, not by this window: billers' permissions can only read
@@ -34,6 +34,7 @@ import boto3
 import botocore.exceptions as bexc
 
 import curwork_core as core
+import curwork_style as ui_style
 from curwork_settings_form import (  # the form both windows share; names re-exported for the tests
     BUCKET_KEY_LABEL, BUCKET_NAME, COMMON_EXTENSIONS, FIELDS, HINTS, LABELS, LOCATION_LABELS, TABS,  # noqa: F401
     SettingsForm, kms_label, kms_value, managed_to_form)  # noqa: F401
@@ -251,6 +252,7 @@ class AdminApp:
         self.root = root
         self.store = store
         self.local = local_settings
+        ui_style.apply(root)      # the same fonts and colours as CurWork
         self.loaded: dict | None = None
         self.version: int | None = None
         self.can_save = False
@@ -270,9 +272,9 @@ class AdminApp:
         f = ttk.Frame(self.root, padding=14)
         f.pack(fill="both", expand=True)
         f.columnconfigure(1, weight=1)
-        ttk.Label(f, text=APP_TITLE, font=("TkDefaultFont", 15, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+        ttk.Label(f, text=APP_TITLE, style="Title.TLabel").grid(row=0, column=0, columnspan=3, sticky="w")
         ttk.Label(f, text="Only a sign-in with the AWS admin role can save. Billers can only read these settings.",
-                  foreground="#555").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+                  style="Hint.TLabel").grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
 
         self.profile_var = tk.StringVar(value=self.store.profile)
         self.param_var = tk.StringVar(value=self.store.parameter)
@@ -295,7 +297,7 @@ class AdminApp:
         self.load_btn.pack(fill="x", pady=4)
         self.status_lbl = ttk.Label(f, text="Sign in with the admin profile, then click Load from AWS.", wraplength=720)
         self.status_lbl.grid(row=5, column=0, columnspan=3, sticky="w", pady=(8, 6))
-        self.lookup_lbl = ttk.Label(f, text="", foreground="#555", wraplength=720)
+        self.lookup_lbl = ttk.Label(f, text="", style="Hint.TLabel", wraplength=720)
         self.lookup_lbl.grid(row=6, column=0, columnspan=3, sticky="w", pady=(0, 6))
         self.lookup_lbl.grid_remove()      # shown only while it has something to say
 
@@ -306,7 +308,7 @@ class AdminApp:
         self.fields, self.name_lbls, self.hint_lbls = self.form.fields, self.form.name_lbls, self.form.hint_lbls
         self.notebook, self.tab_frames = self.form.notebook, self.form.tab_frames
 
-        self.form_err_lbl = ttk.Label(f, text="", foreground="#B00020", wraplength=720)
+        self.form_err_lbl = ttk.Label(f, text="", style="Error.TLabel", wraplength=720)
         self.form_err_lbl.grid(row=9, column=0, columnspan=3, sticky="w", pady=(6, 0))
         self.form_err_lbl.grid_remove()
         actions = ttk.Frame(f)

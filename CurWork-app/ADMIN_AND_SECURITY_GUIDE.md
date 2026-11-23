@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.016** · Updated 2026-11-23 01:23 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -280,6 +280,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-23 01:23 | Beta 0.016 | One shared style for CurWork and CurWork Admin: the same fonts, colours and spacing in every window, and matching file lists on every tab. CurWork opens at a smaller size. No change to settings or security. | mbitar |
 | 2026-11-23 00:55 | Beta 0.015 | Steps as tabs in the main window, with full-size file lists and a Settings tab instead of a Settings window. Billers see the admin settings read-only in the same form, with the same tabs and names, as the CurWork Admin Settings app. The admin app is built as its own app, and CurWork is built without its code (NIST SP 800-53 CM-7, least functionality). | mbitar |
 | 2026-11-23 00:16 | Beta 0.014 | Admin settings app redesign. Drop-downs list the buckets, customer-managed encryption keys and top-level folders the admin's sign-in can see (`s3:ListAllMyBuckets`, `s3:ListBucket`, `kms:ListAliases`; read-only). Every value is checked in plain words next to its setting with CurWork's own rules before saving, so nothing CurWork would refuse can be saved (NIST SP 800-53 CM-6, SI-10). | mbitar |
 | 2026-11-22 23:57 | Beta 0.013 | Smallest possible laptop file (NIST SP 800-53 CM-5, CM-6): `curwork_admin_settings.json` may only hold the sign-in settings, the Region, the FIPS switch and the use notice, and CurWork refuses it otherwise. Parameter Store is now required, and also holds the work folder (`work_dir`) and the preferences location (`user_settings_location`). CurWork switches to the admin's work folder right after sign-in and moves today's log with it, so one log holds the whole session (AU-9). | mbitar |
@@ -295,4 +296,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.016 · Updated 2026-11-23 01:23 UTC · Modified by: mbitar*

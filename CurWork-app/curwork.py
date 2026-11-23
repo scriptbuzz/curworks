@@ -3,9 +3,9 @@ CurWork: a simple window for billers to get CUR workbooks from Amazon S3,
 run the existing VBA macros on local copies, send the results back to S3,
 and leave nothing behind on the laptop.
 
-Version:     Beta 0.015
+Version:     Beta 0.016
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 00:55 UTC
+Updated:     2026-11-23 01:23 UTC
 Modified by: mbitar
 
 Run:  python curwork.py            (or the packaged CurWork.exe)
@@ -29,12 +29,12 @@ import time
 import tkinter as tk
 import traceback
 from pathlib import Path
-from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 
 import curwork_core as core
 import curwork_settings_form as settings_form
+import curwork_style as ui_style
 import curwork_help as helptext
 
 log = core.log
@@ -224,7 +224,7 @@ class Tooltip:
                 tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w, "help", "noActivates")
             except tk.TclError:
                 pass
-        tk.Label(tw, text=self.text, justify="left", wraplength=340, background="#fffbe6", foreground="#1f1f1f",
+        tk.Label(tw, text=self.text, justify="left", wraplength=340, background=ui_style.TIP_BG, foreground=ui_style.TIP_FG,
                  relief="solid", borderwidth=1, padx=8, pady=5, font="TkTooltipFont").pack()
         tw.update_idletasks()
         x = self.widget.winfo_rootx() + 12
@@ -284,9 +284,8 @@ class HelpWindow(tk.Toplevel):
         text_frame.grid(row=1, column=1, sticky="nsew")
         text_frame.columnconfigure(0, weight=1)
         text_frame.rowconfigure(0, weight=1)
-        base = tkfont.nametofont("TkTextFont")
-        self._h_font = base.copy()
-        self._h_font.configure(size=base.cget("size") + 3, weight="bold")
+        base = ui_style.font("normal")
+        self._h_font = ui_style.font("heading")
         self.text = tk.Text(text_frame, wrap="word", padx=14, pady=10, relief="flat", borderwidth=0,
                             font=base, cursor="arrow", spacing1=2, spacing3=4)
         self.text.grid(row=0, column=0, sticky="nsew")
@@ -295,7 +294,7 @@ class HelpWindow(tk.Toplevel):
         self.text.configure(yscrollcommand=tsb.set)
         self.text.tag_configure("h", font=self._h_font, spacing1=10, spacing3=6)
         self.text.tag_configure("bullet", lmargin1=12, lmargin2=28)
-        self.text.tag_configure("hit", background="#fff3b0", foreground="#1f1f1f")
+        self.text.tag_configure("hit", background=ui_style.SEARCH_HIT, foreground=ui_style.TIP_FG)
 
         bottom = ttk.Frame(body)
         bottom.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
@@ -399,9 +398,7 @@ class AboutDialog(tk.Toplevel):
                   style="Hint.TLabel").pack(anchor="w")
         ttk.Label(info, text=APP_DESCRIPTION, wraplength=560, justify="left").pack(anchor="w", pady=(8, 0))
 
-        bold = tkfont.nametofont("TkDefaultFont").copy()
-        bold.configure(weight="bold")
-        self._bold = bold
+        bold = ui_style.font("bold")
         cols = ("value",)
         table = ttk.Treeview(body, columns=cols, show="tree headings", selectmode="browse", height=18)
         table.heading("#0", text="Item")
@@ -476,7 +473,7 @@ class ExistsDialog(tk.Toplevel):
         self.transient(parent)
         self.result = "cancel"
         ttk.Label(self, text="This file is already in S3:", padding=(16, 14, 16, 2)).pack(anchor="w")
-        ttk.Label(self, text=key, font=("Segoe UI", 9, "bold"), padding=(16, 0, 16, 8), wraplength=520).pack(anchor="w")
+        ttk.Label(self, text=key, style="Bold.TLabel", padding=(16, 0, 16, 8), wraplength=520).pack(anchor="w")
         ttk.Label(
             self,
             text="Replacing it is safe: S3 keeps the old copy as an earlier version, as long as your admin "
@@ -507,9 +504,6 @@ class SettingsPanel(ttk.Frame):
         super().__init__(parent)
         self.app = app
         self._dirty = False
-        bold = tkfont.nametofont("TkDefaultFont").copy()
-        bold.configure(weight="bold")
-        self._bold = bold  # keep a reference so Tk doesn't drop the font
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.inner = ttk.Notebook(self)
@@ -529,17 +523,16 @@ class SettingsPanel(ttk.Frame):
     # ---- My preferences: label column on the left, controls on the right
     def _build_mine(self, tab) -> None:
         tip = lambda w, key: add_tip(self.tips, w, key)  # noqa: E731
-        bold = self._bold
         tab.columnconfigure(0, weight=1)
         mine = ttk.Frame(tab)
         mine.grid(row=0, column=0, sticky="new")
         mine.columnconfigure(1, weight=1)
-        ttk.Label(mine, text="Result type", font=bold).grid(row=0, column=0, sticky="w", **self.PAD)
+        ttk.Label(mine, text="Result type", style="Bold.TLabel").grid(row=0, column=0, sticky="w", **self.PAD)
         self.remember_var = tk.BooleanVar()
         tip(ttk.Checkbutton(mine, text="Start with the last result type I used", variable=self.remember_var),
             "s_remember").grid(row=0, column=1, columnspan=2, sticky="w", pady=4)
 
-        ttk.Label(mine, text="Recent folders", font=bold).grid(row=1, column=0, sticky="w", **self.PAD)
+        ttk.Label(mine, text="Recent folders", style="Bold.TLabel").grid(row=1, column=0, sticky="w", **self.PAD)
         rec = ttk.Frame(mine)
         rec.grid(row=1, column=1, sticky="w", pady=4)
         ttk.Label(rec, text="Keep").pack(side="left")
@@ -552,19 +545,19 @@ class SettingsPanel(ttk.Frame):
         tip(ttk.Button(mine, text="Clear recent folders", width=20, command=self._clear_recent),
             "s_clear_recent").grid(row=1, column=2, sticky="e", padx=(8, 0), pady=4)
 
-        ttk.Label(mine, text="Pinned folders", font=bold).grid(row=2, column=0, sticky="nw", padx=(0, 12), pady=(8, 4))
+        ttk.Label(mine, text="Pinned folders", style="Bold.TLabel").grid(row=2, column=0, sticky="nw", padx=(0, 12), pady=(8, 4))
         self.pins = tip(tk.Listbox(mine, height=6, selectmode="extended", exportselection=False, activestyle="none"),
                         "s_pins")
         self.pins.grid(row=2, column=1, sticky="ew", pady=(8, 4))
         tip(ttk.Button(mine, text="Remove selected", width=20, command=self._remove_pins),
             "s_remove_pins").grid(row=2, column=2, sticky="ne", padx=(8, 0), pady=(8, 4))
 
-        ttk.Label(mine, text="Window layout", font=bold).grid(row=3, column=0, sticky="w", **self.PAD)
+        ttk.Label(mine, text="Window layout", style="Bold.TLabel").grid(row=3, column=0, sticky="w", **self.PAD)
         self.reset_var = tk.BooleanVar(value=False)
         tip(ttk.Checkbutton(mine, text="Reset window size and column widths when I save", variable=self.reset_var),
             "s_reset").grid(row=3, column=1, columnspan=2, sticky="w", pady=4)
 
-        ttk.Label(mine, text="Saved in", font=bold).grid(row=4, column=0, sticky="nw", padx=(0, 12), pady=(8, 0))
+        ttk.Label(mine, text="Saved in", style="Bold.TLabel").grid(row=4, column=0, sticky="nw", padx=(0, 12), pady=(8, 0))
         self.saved_in_lbl = tip(ttk.Label(mine, text="", style="Hint.TLabel", wraplength=620, justify="left"), "s_saved_in")
         self.saved_in_lbl.grid(row=4, column=1, columnspan=2, sticky="w", pady=(8, 0))
 
@@ -582,7 +575,7 @@ class SettingsPanel(ttk.Frame):
         tab.rowconfigure(1, weight=1)
         self.admin_note = ttk.Label(tab, text="", style="Hint.TLabel", wraplength=900, justify="left")
         self.admin_note.grid(row=0, column=0, sticky="w", pady=(0, 8))
-        tab.bind("<Configure>", lambda e: self.admin_note.configure(wraplength=max(300, e.width - 24)), add="+")
+        ui_style.wrap_to(self.admin_note, tab, longest=900)
         self.admin_form = settings_form.SettingsForm(tab, editable=False)
         self.admin_form.frame.grid(row=1, column=0, sticky="nsew")
         add_tip(self.tips, self.admin_form.notebook, "s_admin")
@@ -601,7 +594,7 @@ class SettingsPanel(ttk.Frame):
                   style="Hint.TLabel", wraplength=640, justify="left", name="laptop_note").grid(
             row=99, column=0, columnspan=2, sticky="w", pady=(10, 0))
         note = laptop.nametowidget("laptop_note")
-        laptop.bind("<Configure>", lambda e: note.configure(wraplength=min(640, max(240, e.width - 24))), add="+")
+        ui_style.wrap_to(note, laptop, longest=640)
         add_tip(self.tips, ttk.Button(tab, text="Copy admin settings", command=self._copy_admin),
                 "s_copy_admin").grid(row=2, column=0, sticky="w", pady=(8, 0))
 
@@ -656,7 +649,7 @@ class SettingsPanel(ttk.Frame):
 
     @staticmethod
     def _short_version(text: str) -> str:
-        """'Admin settings for CurWork Beta 0.015 - DRAFT - ... - updated 2026-11-22 14:32 UTC - modified by: x' -> short form."""
+        """'Admin settings for CurWork Beta 0.016 - DRAFT - ... - updated 2026-11-23 01:23 UTC - modified by: x' -> short form."""
         if not text:
             return "not stated"
         ver = re.search(r"Beta [0-9.]+|\b\d+\.\d+(?:\.\d+)?\b", text)
@@ -785,7 +778,7 @@ class CurWorkApp:
         root.report_callback_exception = self._on_tk_error
 
         root.title(f"{APP_NAME} \u2013 {core.RELEASE_LABEL} ({core.STATUS})")
-        root.minsize(980, 640)
+        root.minsize(*ui_style.MAIN_MIN)
         self._apply_geometry()
         self._build_ui()
         self._apply_column_widths()
@@ -813,28 +806,8 @@ class CurWorkApp:
         self._schedule("refresh", self.OUT_REFRESH_MS, self._auto_refresh_out)
 
     # ------------------------------------------------------------------ UI
-    def _hint_color(self) -> str:
-        """Color for grey hint text. On a Mac, use the system's secondary label color, which
-        stays readable in both Light and Dark Mode. Elsewhere, #6b6b6b keeps at least 4.5:1
-        contrast on the standard light window background (WCAG 2.2 SC 1.4.3)."""
-        if self.root.tk.call("tk", "windowingsystem") == "aqua":
-            try:
-                self.root.winfo_rgb("systemSecondaryLabelColor")
-                return "systemSecondaryLabelColor"
-            except tk.TclError:
-                pass
-        return "#6b6b6b"
-
     def _build_ui(self) -> None:
-        style = ttk.Style(self.root)
-        style.configure("Title.TLabel", font=("Segoe UI", 13, "bold"))
-        style.configure("Step.TLabelframe.Label", font=("Segoe UI", 10, "bold"))
-        style.configure("Good.TLabel", foreground="#1b7f3b")
-        style.configure("Bad.TLabel", foreground="#b42318")
-        style.configure("Hint.TLabel", foreground=self._hint_color())
-        style.configure("Big.TButton", padding=(10, 6))
-        style.configure("Help.TButton", padding=(2, 0))
-        style.configure("Steps.TNotebook.Tab", padding=(14, 6))
+        ui_style.apply(self.root)
         self.tips: dict[str, Tooltip] = {}
         tip = lambda w, key: add_tip(self.tips, w, key)  # noqa: E731
 
@@ -864,7 +837,10 @@ class CurWorkApp:
         # One tab per step, plus the activity log and Settings ------------
         self.tabs = ttk.Notebook(outer, style="Steps.TNotebook")
         self.tabs.grid(row=1, column=0, sticky="nsew")
-        tab_dl, tab_work, tab_save, tab_log, tab_set = (ttk.Frame(self.tabs, padding=10) for _ in range(5))
+        tab_dl, tab_work, tab_save, tab_log, tab_set = (ttk.Frame(self.tabs, padding=ui_style.PAD) for _ in range(5))
+        for frame in (tab_dl, tab_work, tab_save, tab_log):
+            frame.columnconfigure(0, weight=1)
+            frame.rowconfigure(1, weight=1)
         for frame, title in ((tab_dl, "1. Download from S3"), (tab_work, "2. Work in Excel"),
                              (tab_save, "3. Save in S3"), (tab_log, "Activity"), (tab_set, "Settings")):
             self.tabs.add(frame, text=f"  {title}  ")
@@ -872,122 +848,87 @@ class CurWorkApp:
             tab_dl, tab_work, tab_save, tab_log, tab_set
         self.tabs.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
+        # Every step tab has the same three rows: what to do here, the lists in titled boxes, and a
+        # row of buttons at the bottom. Each list has its own buttons under it, inside its box.
+        G = ui_style.GAP
+
         # Tab 1: S3 browser, and what's already in the In folder ----------
-        tab_dl.columnconfigure(0, weight=1)
-        tab_dl.rowconfigure(1, weight=1)
         self._tab_head(tab_dl, "Open a customer folder, select files or a whole month, then click Download selected.",
                        "step1", "Download files from S3")
-        panes = ttk.PanedWindow(tab_dl, orient="horizontal")
-        panes.grid(row=1, column=0, sticky="nsew")
-        left = ttk.Frame(panes)
-        left.columnconfigure(0, weight=1)
-        left.rowconfigure(0, weight=1)
-        panes.add(left, weight=3)
-        self.tree = tip(ttk.Treeview(left, columns=("size", "modified"), selectmode="extended"), "tree")
-        self.tree.heading("#0", text="Name")
-        self.tree.heading("size", text="Size")
-        self.tree.heading("modified", text="Last changed")
-        self.tree.column("#0", width=320, stretch=True)
-        self.tree.column("size", width=90, anchor="e", stretch=False)
-        self.tree.column("modified", width=140, stretch=False)
-        self.tree.grid(row=0, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(left, orient="vertical", command=self.tree.yview)
-        sb.grid(row=0, column=1, sticky="ns")
-        self.tree.configure(yscrollcommand=sb.set)
-        self.tree.tag_configure("folder", font=("Segoe UI", 9, "bold"))
+        panes = self._two_columns(tab_dl)
+        s3_box, self.tree, s3_foot = self._list_box(panes, "Files in S3", "tree", ("Name", "Size", "Last changed"),
+                                                    cols=("size", "modified"), selectmode="extended")
+        in_box1, self.in_tree_dl, in_foot1 = self._list_box(panes, "Already in your In folder", "in_list",
+                                                            ("File in In folder", "Size", "State"))
+        s3_box.grid(row=0, column=0, sticky="nsew", padx=(0, G // 2))
+        in_box1.grid(row=0, column=1, sticky="nsew", padx=(G // 2, 0))
         self.tree.bind("<<TreeviewOpen>>", self._on_tree_open)
-        b1 = ttk.Frame(left)
-        b1.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        tip(self._btn(b1, "Refresh", self.load_roots), "refresh").pack(side="left")
-        self.dl_btn = tip(self._btn(b1, "Download selected  →", self.download_selected, style="Big.TButton"), "download")
-        self.dl_btn.pack(side="right")
-        pin = ttk.Frame(left)
-        pin.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        pin.columnconfigure(1, weight=1)
-        ttk.Label(pin, text="Pinned:").grid(row=0, column=0, sticky="w")
+        tip(self._btn(s3_foot, "Refresh", self.load_roots), "refresh").pack(side="left")
+        tip(ttk.Button(s3_foot, text="Pin selected folder", command=self.pin_selected), "pin").pack(
+            side="left", padx=(ui_style.SMALL_GAP, 0))
+        tip(ttk.Button(in_foot1, text="Open In folder", command=lambda: open_folder(self._work_path("in"))),
+            "open").pack(side="left")
+        foot1 = self._tab_foot(tab_dl)
+        ttk.Label(foot1, text="Pinned:").pack(side="left")
         self.pin_var = tk.StringVar()
-        self.pin_box = tip(ttk.Combobox(pin, textvariable=self.pin_var, values=self.prefs.pinned_folders,
-                                        state="readonly"), "pinned")
-        self.pin_box.grid(row=0, column=1, sticky="ew", padx=4)
-        tip(self._btn(pin, "Go", self.go_to_pinned), "go").grid(row=0, column=2)
-        tip(ttk.Button(pin, text="Pin selected folder", command=self.pin_selected), "pin").grid(row=0, column=3, padx=(6, 0))
-
-        right = ttk.LabelFrame(panes, text="  Already in your In folder  ", padding=8)
-        panes.add(right, weight=2)
-        self.in_tree_dl = self._file_list(right, "in_list", ("File in In folder", "Size", "State"))
-        rb = ttk.Frame(right)
-        rb.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        tip(ttk.Button(rb, text="Open In folder", command=lambda: open_folder(self._work_path("in"))), "open").pack(side="left")
-        tip(ttk.Button(rb, text="Next: 2. Work in Excel  →", command=lambda: self.tabs.select(self.tab_work)),
+        self.pin_box = tip(ttk.Combobox(foot1, textvariable=self.pin_var, values=self.prefs.pinned_folders,
+                                        state="readonly", width=24), "pinned")
+        self.pin_box.pack(side="left", padx=4)
+        tip(self._btn(foot1, "Go", self.go_to_pinned), "go").pack(side="left")
+        tip(ttk.Button(foot1, text="Next: 2. Work in Excel  →", command=lambda: self.tabs.select(self.tab_work)),
             "next_step").pack(side="right")
+        self.dl_btn = tip(self._btn(foot1, "Download selected  ↓", self.download_selected, style="Big.TButton"),
+                          "download")
+        self.dl_btn.pack(side="right", padx=(0, G))
 
         # Tab 2: the In and Out folders the macros use ---------------------
-        tab_work.columnconfigure(0, weight=1)
-        tab_work.rowconfigure(3, weight=1)
         self._tab_head(tab_work, "In the macro menu, pick files from the In folder and save results to the Out folder. "
                                  "Use Copy path to paste a folder into the macro's file box.", "step2", "Run your macros")
-        paths = ttk.Frame(tab_work)
-        paths.grid(row=1, column=0, sticky="ew")
-        paths.columnconfigure(1, weight=1)
+        wpanes = self._two_columns(tab_work)
+        in_box2, self.in_tree, in_foot2 = self._list_box(wpanes, "In folder: files from S3", "in_list",
+                                                         ("File in In folder", "Size", "State"))
+        out_box2, self.out_view, out_foot2 = self._list_box(wpanes, "Out folder: your results", "out_view",
+                                                            ("File in Out folder", "Size", "Status"))
+        in_box2.grid(row=0, column=0, sticky="nsew", padx=(0, G // 2))
+        out_box2.grid(row=0, column=1, sticky="nsew", padx=(G // 2, 0))
         self._path_entries: dict[str, ttk.Entry] = {}
-        for r, (label, key) in enumerate((("In (files from S3):", "in"), ("Out (your results):", "out"))):
-            ttk.Label(paths, text=label).grid(row=r, column=0, sticky="w", pady=2)
-            e = ttk.Entry(paths)
+        for key, foot in (("in", in_foot2), ("out", out_foot2)):
+            foot.columnconfigure(0, weight=1)
+            e = ttk.Entry(foot)
             self._path_entries[key] = e
             self.tips[f"{key}_path"] = Tooltip(e, helptext.TIPS[f"{key}_path"])
-            e.grid(row=r, column=1, sticky="ew", padx=6)
+            e.grid(row=0, column=0, sticky="ew", padx=(0, G))
             # The work folder can change after sign-in, so look the folder up when the button is clicked.
-            b_open = ttk.Button(paths, text="Open", command=lambda k=key: open_folder(self._work_path(k)))
-            b_open.grid(row=r, column=2, padx=(0, 4))
-            b_copy = ttk.Button(paths, text="Copy path", command=lambda k=key: self._copy(self._work_path(k)))
-            b_copy.grid(row=r, column=3)
+            b_open = ttk.Button(foot, text="Open", command=lambda k=key: open_folder(self._work_path(k)))
+            b_open.grid(row=0, column=1, padx=(0, 4))
+            b_copy = ttk.Button(foot, text="Copy path", command=lambda k=key: self._copy(self._work_path(k)))
+            b_copy.grid(row=0, column=2)
             self.tips[f"open_{key}"] = Tooltip(b_open, helptext.TIPS["open"])
             self.tips[f"copy_path_{key}"] = Tooltip(b_copy, helptext.TIPS["copy_path"])
         self._show_work_paths()
-        self.in_count_lbl = tip(ttk.Label(tab_work, text="", style="Hint.TLabel"), "counts")
-        self.in_count_lbl.grid(row=2, column=0, sticky="w", pady=(6, 6))
-        wpanes = ttk.PanedWindow(tab_work, orient="horizontal")
-        wpanes.grid(row=3, column=0, sticky="nsew")
-        in_box = ttk.LabelFrame(wpanes, text="  In folder: files from S3  ", padding=8)
-        out_box = ttk.LabelFrame(wpanes, text="  Out folder: your results  ", padding=8)
-        wpanes.add(in_box, weight=1)
-        wpanes.add(out_box, weight=1)
-        self.in_tree = self._file_list(in_box, "in_list", ("File in In folder", "Size", "State"))
-        self.out_view = self._file_list(out_box, "out_view", ("File in Out folder", "Size", "Status"))
-        nb2 = ttk.Frame(tab_work)
-        nb2.grid(row=4, column=0, sticky="ew", pady=(8, 0))
-        tip(ttk.Button(nb2, text="Next: 3. Save in S3  →", command=lambda: self.tabs.select(self.tab_save)),
+        foot2 = self._tab_foot(tab_work)
+        self.in_count_lbl = tip(ttk.Label(foot2, text="", style="Hint.TLabel"), "counts")
+        self.in_count_lbl.pack(side="left")
+        tip(ttk.Button(foot2, text="Next: 3. Save in S3  →", command=lambda: self.tabs.select(self.tab_save)),
             "next_step").pack(side="right")
 
         # Tab 3: save results in S3 ----------------------------------------
-        tab_save.columnconfigure(0, weight=1)
-        tab_save.rowconfigure(1, weight=1)
         self._tab_head(tab_save, "Pick the result type and the customer and month folder, check where the files will "
                                  "be saved, then save them.", "step3", "Save results in S3")
-        lst = ttk.Frame(tab_save)
-        lst.grid(row=1, column=0, sticky="nsew")
-        lst.columnconfigure(0, weight=1)
-        lst.rowconfigure(0, weight=1)
-        self.out_tree = tip(ttk.Treeview(lst, columns=("size", "status"), selectmode="extended", height=8), "out_list")
-        self.out_tree.heading("#0", text="File in Out folder")
-        self.out_tree.heading("size", text="Size")
-        self.out_tree.heading("status", text="Status")
-        self.out_tree.column("#0", width=420, stretch=True)
-        self.out_tree.column("size", width=90, anchor="e", stretch=False)
-        self.out_tree.column("status", width=170, stretch=False)
-        for tree in (self.out_tree, self.out_view):
-            tree.tag_configure("pending", foreground="#9a6700")
-            tree.tag_configure("done", foreground="#1b7f3b")
-            tree.tag_configure("open", foreground="#b42318")
-        self.in_tree.tag_configure("changed", foreground="#b42318")
-        self.in_tree_dl.tag_configure("changed", foreground="#b42318")
-        self.out_tree.grid(row=0, column=0, sticky="nsew")
-        osb = ttk.Scrollbar(lst, orient="vertical", command=self.out_tree.yview)
-        osb.grid(row=0, column=1, sticky="ns")
-        self.out_tree.configure(yscrollcommand=osb.set)
+        body3 = ttk.Frame(tab_save)
+        body3.grid(row=1, column=0, sticky="nsew")
+        body3.columnconfigure(0, weight=1)
+        body3.rowconfigure(0, weight=1)
+        out_box3, self.out_tree, out_foot3 = self._list_box(body3, "Out folder: your results", "out_list",
+                                                            ("File in Out folder", "Size", "Status"),
+                                                            selectmode="extended")
+        out_box3.grid(row=0, column=0, sticky="nsew")
+        tip(self._btn(out_foot3, "Refresh list", self.refresh_out), "refresh_out").pack(side="left")
+        tip(self._btn(out_foot3, "Save selected in S3", lambda: self.upload(selected_only=True)),
+            "upload_selected").pack(side="left", padx=ui_style.SMALL_GAP)
 
-        dest = ttk.Frame(tab_save)
-        dest.grid(row=2, column=0, sticky="ew", pady=(8, 2))
+        dest = ttk.LabelFrame(body3, text="  Where the results are saved in S3  ", padding=ui_style.PAD)
+        dest.grid(row=1, column=0, sticky="ew", pady=(G, 0))
         dest.columnconfigure(3, weight=1)
         ttk.Label(dest, text="Result type:").grid(row=0, column=0, sticky="w")
         start_stage = self.s.default_stage
@@ -1002,32 +943,34 @@ class CurWorkApp:
         self.folder_var = tk.StringVar(value=self.work.load_state().get("context", ""))
         self.folder_box = tip(ttk.Combobox(dest, textvariable=self.folder_var, values=self.prefs.recent_folders), "folder")
         self.folder_box.grid(row=0, column=3, sticky="ew", padx=(4, 0))
-        self.dest_lbl = tip(ttk.Label(tab_save, text="", style="Hint.TLabel"), "dest")
-        self.dest_lbl.grid(row=3, column=0, sticky="w")
+        self.dest_lbl = tip(ttk.Label(dest, text="", style="Hint.TLabel"), "dest")
+        self.dest_lbl.grid(row=1, column=0, columnspan=4, sticky="w", pady=(G, 0))
         self.stage_var.trace_add("write", lambda *_: (self._update_dest_preview(), self._remember_stage()))
         self.folder_var.trace_add("write", lambda *_: self._update_dest_preview())
         self._update_dest_preview()
-        b3 = ttk.Frame(tab_save)
-        b3.grid(row=4, column=0, sticky="ew", pady=(8, 0))
-        tip(self._btn(b3, "Refresh list", self.refresh_out), "refresh_out").pack(side="left")
-        tip(self._btn(b3, "Save selected in S3", lambda: self.upload(selected_only=True)), "upload_selected").pack(side="left", padx=6)
-        tip(self._btn(b3, "Save all new or changed in S3  ↑", lambda: self.upload(selected_only=False),
+        foot3 = self._tab_foot(tab_save)
+        tip(self._btn(foot3, "Save all new or changed in S3  ↑", lambda: self.upload(selected_only=False),
                       style="Big.TButton"), "upload_all").pack(side="right")
 
         # Activity: the full log ------------------------------------------
-        tab_log.columnconfigure(0, weight=1)
-        tab_log.rowconfigure(1, weight=1)
-        ttk.Label(tab_log, text="Everything CurWork does is listed here and saved in today's log file.",
-                  style="Hint.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 6))
-        self.logbox = ScrolledText(tab_log, height=7, state="disabled", font=("Consolas", 10), wrap="word")
+        self._tab_head(tab_log, "Everything CurWork does is listed here and saved in today's log file.",
+                       "problems", "When something goes wrong")
+        log_box = ttk.LabelFrame(tab_log, text="  Activity log  ", padding=ui_style.PAD)
+        log_box.grid(row=1, column=0, sticky="nsew")
+        log_box.columnconfigure(0, weight=1)
+        log_box.rowconfigure(0, weight=1)
+        self.logbox = ScrolledText(log_box, height=ui_style.LIST_ROWS, state="disabled", font=ui_style.font("mono"),
+                                   wrap="word")
         self.tips["log"] = Tooltip(self.logbox, helptext.TIPS["log"])
-        self.logbox.grid(row=1, column=0, sticky="nsew")
-        self.logbox.tag_configure("warn", foreground="#9a6700")
-        self.logbox.tag_configure("err", foreground="#b42318")
-        lrow = ttk.Frame(tab_log)
-        lrow.grid(row=2, column=0, sticky="ew", pady=(8, 0))
-        tip(ttk.Button(lrow, text="Open log folder", command=lambda: open_folder(self.work.log_dir)), "log_folder").pack(side="right")
-        ttk.Label(lrow, text="Tip: point at any button or box to see what it does. Press F1 for Help.",
+        self.logbox.grid(row=0, column=0, sticky="nsew")
+        self.logbox.tag_configure("warn", foreground=ui_style.WARN)
+        self.logbox.tag_configure("err", foreground=ui_style.BAD)
+        log_foot = ttk.Frame(log_box)
+        log_foot.grid(row=1, column=0, sticky="ew", pady=(G, 0))
+        tip(ttk.Button(log_foot, text="Open log folder", command=lambda: open_folder(self.work.log_dir)),
+            "log_folder").pack(side="left")
+        foot4 = self._tab_foot(tab_log)
+        ttk.Label(foot4, text="Tip: point at any button or box to see what it does. Press F1 for Help.",
                   style="Hint.TLabel").pack(side="left")
 
         # Settings: my preferences, and the admin settings (read-only) -----
@@ -1058,29 +1001,52 @@ class CurWorkApp:
         head = ttk.Frame(tab)
         head.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         head.columnconfigure(0, weight=1)
-        lbl = ttk.Label(head, text=text, style="Hint.TLabel", wraplength=900, justify="left")
+        lbl = ttk.Label(head, text=text, style="Hint.TLabel", wraplength=ui_style.WRAP, justify="left")
         lbl.grid(row=0, column=0, sticky="w")
         q = ttk.Button(head, text="? Help for this step", style="Help.TButton", command=lambda: self.open_help(topic))
         q.grid(row=0, column=1, sticky="e", padx=(8, 0))
-        head.bind("<Configure>", lambda e: lbl.configure(wraplength=max(300, e.width - q.winfo_reqwidth() - 16)))
+        ui_style.wrap_to(lbl, head, margin=q.winfo_reqwidth() + 16, longest=900)
         self.tips[f"step_help_{topic}"] = Tooltip(q, f"Help for this step ({name}).")
 
-    def _file_list(self, parent, tip_key: str, headings: tuple[str, str, str]) -> ttk.Treeview:
-        """A file list that fills its box: name, size and state."""
-        parent.columnconfigure(0, weight=1)
-        parent.rowconfigure(0, weight=1)
-        tree = add_tip(self.tips, ttk.Treeview(parent, columns=("size", "state"), selectmode="browse"), tip_key)
+    def _list_box(self, parent, title: str, tip_key: str, headings: tuple[str, str, str],
+                  cols: tuple[str, str] = ("size", "state"), selectmode: str = "browse"):
+        """A file list in a titled box, with the same columns, widths and colours as every other list.
+        Returns the box, the list and the row under the list for its buttons."""
+        box = ttk.LabelFrame(parent, text=f"  {title}  ", padding=ui_style.PAD)
+        box.columnconfigure(0, weight=1)
+        box.rowconfigure(0, weight=1)
+        tree = add_tip(self.tips, ttk.Treeview(box, columns=cols, selectmode=selectmode, height=ui_style.LIST_ROWS),
+                       tip_key)
         tree.heading("#0", text=headings[0])
-        tree.heading("size", text=headings[1])
-        tree.heading("state", text=headings[2])
-        tree.column("#0", width=260, stretch=True)
-        tree.column("size", width=80, anchor="e", stretch=False)
-        tree.column("state", width=150, stretch=False)
+        tree.heading(cols[0], text=headings[1])
+        tree.heading(cols[1], text=headings[2])
+        tree.column("#0", width=ui_style.NAME_WIDTH, minwidth=120, stretch=True)
+        tree.column(cols[0], width=ui_style.SIZE_WIDTH, minwidth=60, anchor="e", stretch=False)
+        tree.column(cols[1], width=ui_style.STATE_WIDTH, minwidth=80, stretch=False)
         tree.grid(row=0, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(parent, orient="vertical", command=tree.yview)
+        sb = ttk.Scrollbar(box, orient="vertical", command=tree.yview)
         sb.grid(row=0, column=1, sticky="ns")
         tree.configure(yscrollcommand=sb.set)
-        return tree
+        ui_style.tag_states(tree)
+        foot = ttk.Frame(box)
+        foot.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(ui_style.GAP, 0))
+        return box, tree, foot
+
+    @staticmethod
+    def _two_columns(tab) -> ttk.Frame:
+        """Two lists side by side, always the same width."""
+        body = ttk.Frame(tab)
+        body.grid(row=1, column=0, sticky="nsew")
+        body.rowconfigure(0, weight=1)
+        for col in (0, 1):
+            body.columnconfigure(col, weight=1, uniform="lists")
+        return body
+
+    def _tab_foot(self, tab) -> ttk.Frame:
+        """The row of buttons at the bottom of a tab, in the same place on every tab."""
+        foot = ttk.Frame(tab)
+        foot.grid(row=2, column=0, sticky="ew", pady=(ui_style.GAP, 0))
+        return foot
 
     def _on_tab_changed(self, _event=None) -> None:
         if str(self.tabs.select()) == str(self.tab_settings):
@@ -1682,19 +1648,28 @@ class CurWorkApp:
                 messagebox.showerror(APP_TITLE, str(e), parent=self.root)
             return False
 
+    def _default_geometry(self) -> None:
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        w, h = ui_style.MAIN_SIZE
+        self.root.geometry(f"{min(w, sw - 40)}x{min(h, sh - 80)}")
+
     def _apply_geometry(self) -> None:
         m = core._GEOMETRY.match(self.prefs.window_geometry or "")
-        if not m:
-            self.root.geometry("1180x780")
+        # A size saved by the older one-window layout (no widths saved under the list names used now) is
+        # ignored, so the tabbed window opens at its own size the first time.
+        if not m or not any(k.split(".")[0] in self.LIST_NAMES for k in self.prefs.column_widths):
+            self._default_geometry()
             return
         w, h, x, y = (int(g) for g in m.groups())
         sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-        w, h = min(max(w, 980), sw), min(max(h, 640), sh)
+        w, h = min(max(w, ui_style.MAIN_MIN[0]), sw), min(max(h, ui_style.MAIN_MIN[1]), sh)
         x, y = min(max(x, 0), max(0, sw - 200)), min(max(y, 0), max(0, sh - 120))  # keep it on screen
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
+    LIST_NAMES = ("s3list", "outlist")     # names the column widths are saved under
+
     def _tree_columns(self):
-        return (("tree", self.tree, ("#0", "size", "modified")), ("out_tree", self.out_tree, ("#0", "size", "status")))
+        return (("s3list", self.tree, ("#0", "size", "modified")), ("outlist", self.out_tree, ("#0", "size", "status")))
 
     def _apply_column_widths(self) -> None:
         for name, tree, cols in self._tree_columns():
@@ -1709,9 +1684,8 @@ class CurWorkApp:
                 geo = self.root.geometry()
                 if core._GEOMETRY.match(geo):
                     self.prefs.window_geometry = geo
-            for name, tree, cols in self._tree_columns():
-                for col in cols:
-                    self.prefs.column_widths[f"{name}.{col}"] = int(tree.column(col, "width"))
+            self.prefs.column_widths = {f"{name}.{col}": int(tree.column(col, "width"))   # drops older names
+                                        for name, tree, cols in self._tree_columns() for col in cols}
         except tk.TclError:
             return
         self._save_prefs()
@@ -1794,7 +1768,7 @@ class CurWorkApp:
         self._about = AboutDialog(self.root, self)
 
     def apply_prefs(self, reset_layout: bool) -> None:
-        """Called by the Settings window after the user saves."""
+        """Called by the Settings tab after the user saves."""
         self.pin_box.configure(values=self.prefs.pinned_folders)
         if self.pin_var.get() not in self.prefs.pinned_folders:
             self.pin_var.set("")
@@ -1802,10 +1776,9 @@ class CurWorkApp:
         if reset_layout:
             self.prefs.window_geometry = ""
             self.prefs.column_widths = {}
-            self.root.geometry("1180x780")
-            defaults = {"tree": (260, 80, 130), "out_tree": (300, 80, 150)}
-            for name, tree, cols in self._tree_columns():
-                for col, width in zip(cols, defaults[name]):
+            self._default_geometry()
+            for _name, tree, cols in self._tree_columns():
+                for col, width in zip(cols, (ui_style.NAME_WIDTH, ui_style.SIZE_WIDTH, ui_style.STATE_WIDTH)):
                     tree.column(col, width=width)
         if self.prefs.remember_result_type:
             self._remember_stage()

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - download check - updated 2026-11-23 00:55 UTC - modified by: mbitar
+# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - download check - updated 2026-11-23 01:23 UTC - modified by: mbitar
 # Finds out why a download is refused. Read-only: it creates and changes nothing in AWS.
 #   1. With the admin profile: lists the policies on the biller test role CurWork uses.
 #   2. With $CURWORK_PROFILE (the sign-in CurWork uses): tries list, head and get on one sample file.

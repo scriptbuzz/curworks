@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-23 00:55 UTC - modified by: mbitar
+# CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-23 01:23 UTC - modified by: mbitar
 # Creates a NEW test bucket in the test account (CURWORK_ACCOUNT in curwork_test.env), set up the way the Admin and Security Guide describes,
 # uploads the made-up sample workbooks, and points CurWork's admin settings file at the bucket.
 # The admin profile (CURWORK_ADMIN_PROFILE) is used ONLY for this setup. CurWork itself signs in with the CurWorkBillerTest permission
@@ -80,7 +80,7 @@ d = json.load(open(p, encoding="utf-8-sig"))
 d = {k: v for k, v in d.items() if k in core.LOCAL_KEYS or k in ("_version", "_help")
      or (k.startswith("_") and k.endswith("_help") and k[1:-5] in core.LOCAL_KEYS)}
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-d["_version"] = f"Admin settings for CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
+d["_version"] = f"Admin settings for CurWork Beta 0.016 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
 E = os.environ
 d["region"], d["aws_profile"] = region, E["CURWORK_PROFILE"]
 d["settings_parameter"] = d.get("settings_parameter") or core.DEFAULT_PARAMETER

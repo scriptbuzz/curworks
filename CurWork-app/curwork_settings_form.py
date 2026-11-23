@@ -1,9 +1,9 @@
 """
 CurWork settings form: the tabbed form for the settings kept in AWS Parameter Store.
 
-Version:     Beta 0.015
+Version:     Beta 0.016
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 00:55 UTC
+Updated:     2026-11-23 01:23 UTC
 Modified by: mbitar
 
 Two windows show the same form, so admins and billers see the same tabs, names and explanations:
@@ -20,6 +20,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 import curwork_core as core
+import curwork_style as ui_style
 
 # The form: (key, name shown, kind). kind is text, list, stages or int. The text each field holds is the
 # same in both windows: lists are comma-separated and result types are one "Name = folder/" per line.
@@ -63,7 +64,6 @@ LOCATION_LABELS = {"tool_folder": "Next to CurWork (or the work folder, if bille
                    "work_folder": "In each biller's work folder"}
 BUCKET_KEY_LABEL = "Use the bucket's own key"
 BUCKET_NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
-HINT_COLOR, ERROR_COLOR = "#555", "#B00020"
 
 
 def managed_to_form(managed: dict) -> dict[str, str]:
@@ -268,14 +268,16 @@ class ExtensionsField(Field):
             box = ttk.Checkbutton(frame, text=ext, variable=var)
             if not editable:
                 box.state(["disabled"])
-            box.grid(row=0, column=i, sticky="w", padx=(0, 10))
+            box.grid(row=0, column=i, sticky="w", padx=(0, ui_style.GAP))
             self.checks[ext] = var
-        ttk.Label(frame, text="Other types (separate them with commas)").grid(
-            row=1, column=0, columnspan=4, sticky="w", pady=(6, 0))
+        other = ttk.Frame(frame)        # its own row, so the box for other types never makes the row wider
+        other.grid(row=1, column=0, columnspan=len(COMMON_EXTENSIONS), sticky="ew", pady=(ui_style.SMALL_GAP, 0))
+        other.columnconfigure(1, weight=1)
+        ttk.Label(other, text="Other types (separate them with commas)").grid(row=0, column=0, sticky="w")
         self.other_var = tk.StringVar()
         self.other_var.trace_add("write", lambda *_: self.changed())
-        ttk.Entry(frame, textvariable=self.other_var, state="normal" if editable else "readonly").grid(
-            row=1, column=4, columnspan=3, sticky="ew", pady=(6, 0))
+        ttk.Entry(other, textvariable=self.other_var, width=12, state="normal" if editable else "readonly").grid(
+            row=0, column=1, sticky="ew", padx=(ui_style.SMALL_GAP, 0))
 
     def get(self) -> str:
         other = [e.strip() for e in self.other_var.get().split(",") if e.strip()]
@@ -368,11 +370,10 @@ class SettingsForm:
         if self._default_buttons and key != "_version":
             ttk.Button(parent, text="Use default", command=lambda k=key: self.use_default(k)).grid(
                 row=row, column=2, sticky="ne", padx=(10, 0), pady=(6, 0))
-        hint = ttk.Label(parent, text="", foreground=HINT_COLOR, wraplength=600, justify="left")
+        hint = ttk.Label(parent, text="", style="Hint.TLabel", wraplength=ui_style.WRAP, justify="left")
         hint.grid(row=row + 1, column=1, columnspan=2, sticky="w", pady=(2, 4))
         # Narrow windows: wrap the explanation to the space there is, so no line is cut off.
-        parent.bind("<Configure>", lambda e, h=hint: h.configure(
-            wraplength=min(600, max(240, e.width - h.winfo_x() - 24))), add="+")
+        ui_style.wrap_to(hint, parent)
         self.fields[key], self.name_lbls[key], self.hint_lbls[key] = field, name, hint
 
     # ---- values
@@ -440,10 +441,10 @@ class SettingsForm:
         errs, changed = errs or {}, changed or set()
         for key, hint in self.hint_lbls.items():
             if key in errs:
-                hint.configure(text=errs[key], foreground=ERROR_COLOR)
+                hint.configure(text=errs[key], style="Error.TLabel")
             else:
                 default = "" if key == "_version" else f" Default: {self.default_text(key)}."
-                hint.configure(text=HINTS[key] + default, foreground=HINT_COLOR)
+                hint.configure(text=HINTS[key] + default, style="Hint.TLabel")
             self.name_lbls[key].configure(text=LABELS[key] + ("  (changed)" if key in changed else ""))
         for tab, title, keys in self.tab_frames:
             mark = " - needs a fix" if any(k in errs for k in keys) else (" (changed)" if any(k in changed for k in keys) else "")
