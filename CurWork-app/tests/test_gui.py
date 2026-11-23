@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
+CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
 
 Drives the real CurWork window (tkinter) against a mocked S3 (moto), the way a biller would:
 sign-in check, browse, download (small and multipart), upload, refused uploads, the AWS refusal message,
@@ -569,15 +569,18 @@ def test_about_and_settings_windows(world):
     dlg = curwork.AboutDialog(world.root, a)
     world.pump(0.3)
     text = dlg.text()
-    for word in ("Beta 0.014", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
+    for word in ("Beta 0.015", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
         assert word in text
     assert "secret" not in text.lower()
     dlg.copy()
     assert world.root.clipboard_get() == text
     dlg.destroy()
-    s = curwork.SettingsDialog(world.root, a)
+    a.open_settings()
     world.pump(0.3)
-    s.destroy()
+    assert str(a.tabs.select()) == str(a.tab_settings)
+    form = a.settings_panel.admin_form
+    assert form.get_form()["bucket"] == BUCKET          # same form as the admin app, filled from the settings in use
+    assert all(f.pick is None for f in form.fields.values() if isinstance(f, curwork.settings_form.ListField))
 
 
 def test_biller_policy_allows_curwork_and_blocks_the_rest(tmp_path, monkeypatch):
@@ -660,18 +663,31 @@ def test_about_opens_without_blocking_and_closes(world):
     assert world.dialogs.errors() == []
 
 
-def test_settings_opens_without_blocking_and_closes(world):
+def test_settings_is_a_tab_and_steps_are_tabs(world):
     a = world.app
+    names = [a.tabs.tab(t, "text").strip() for t in a.tabs.tabs()]
+    assert names == ["1. Download from S3", "2. Work in Excel", "3. Save in S3", "Activity", "Settings"]
     started = time.time()
-    a.open_settings()                  # returns right away: Settings isn't modal
+    a.open_settings()                  # selects the tab right away
     assert time.time() - started < 2
     world.pump(0.3)
-    first = a._settings
-    a.open_settings()                  # a second click brings the same window forward
-    assert a._settings is first
-    curwork.close_window(first)
+    assert str(a.tabs.select()) == str(a.tab_settings)
+    inner = [a.settings_panel.inner.tab(t, "text").strip() for t in a.settings_panel.inner.tabs()]
+    assert inner == ["My preferences", "Admin settings (read-only)"]
+    admin_tabs = [a.settings_panel.admin_form.notebook.tab(t, "text") for t in a.settings_panel.admin_form.notebook.tabs()]
+    assert admin_tabs[-1] == "Sign-in and this laptop"
+    assert admin_tabs[:-1] == [name for name, _ in curwork.settings_form.TABS]   # same tabs as the admin app
+
+
+def test_in_folder_lists_show_downloaded_files(world):
+    a = world.app
+    a.work.in_dir.mkdir(parents=True, exist_ok=True)
+    (a.work.in_dir / "agency-a.xlsx").write_bytes(b"x")
+    a.refresh_out()
     world.pump(0.2)
-    assert not first.winfo_exists()
+    for tree in (a.in_tree, a.in_tree_dl):
+        rows = [(tree.item(i, "text"), *tree.item(i, "values")) for i in tree.get_children()]
+        assert any("agency-a.xlsx" in " ".join(map(str, r)) for r in rows), rows
 
 
 def test_replace_prompt_closes_and_returns(world, monkeypatch):
@@ -695,12 +711,11 @@ def test_tips_cover_every_control(world):
     a.open_settings()
     a.open_help()
     world.pump(0.3)
-    attached = {t.text for t in list(a.tips.values()) + list(a._settings.tips.values()) + list(a._help.tips.values())}
+    attached = {t.text for t in list(a.tips.values()) + list(a.settings_panel.tips.values()) + list(a._help.tips.values())}
     missing = [key for key, text in curwork_help.TIPS.items() if text not in attached]
     assert not missing, f"tips not attached to anything: {missing}"
     for key in ("sign_in", "download", "upload_all", "finish", "folder", "stage", "help"):
         assert key in a.tips
-    curwork.close_window(a._settings)
     a._help.close()
 
 
@@ -776,3 +791,16 @@ def test_self_test_saves_report_file(tmp_path):
                           "--report", str(out)], capture_output=True, text=True, timeout=120, env=env)
     assert run.returncode != 0
     assert json.loads(out.read_text(encoding="utf-8"))["passed"] is False
+
+
+def test_admin_app_self_test_passes_without_aws(world, tmp_path, capsys):
+    """The built admin app runs this during the build. It must pass without signing in or calling AWS."""
+    import curwork_admin
+    report = tmp_path / "admin_report.json"
+    root = tk.Toplevel(world.root)          # a second Tk would clash with the test window
+    store = curwork_admin.AdminStore("/curwork/admin-settings", "us-east-1")
+    import dataclasses
+    local = dataclasses.replace(world.app.s, source_path=tmp_path / "curwork_admin_settings.json")
+    assert curwork_admin.self_test(root, store, local, str(report)) == 0
+    result = json.loads(report.read_text())
+    assert result["passed"] and len(result["checks"]) == 5

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - Mac test menu - updated 2026-11-23 00:16 UTC - modified by: mbitar
+# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - Mac test menu - updated 2026-11-23 00:55 UTC - modified by: mbitar
 # One place to run every Mac test script, in the order they're meant to run. Under each option it says
 # when to use it, exactly what it does, and what it changes. Each script still asks before it changes anything.
 HERE="$(cd "$(dirname "$0")" && pwd)"; cd "$HERE" || exit 1
@@ -49,7 +49,7 @@ while true; do
   BUCKET=$( [ -f test_bucket.txt ] && cut -d' ' -f1 test_bucket.txt || echo "none yet" )
   APP=$( [ -d CurWork-app/CurWork.app ] && echo "built" || echo "not built yet" )
   echo "${B}CurWork - Mac test menu${N}"
-  echo "${D}DRAFT - For Internal Use · Beta 0.014 · Mac testing only; never give to billers.${N}"
+  echo "${D}DRAFT - For Internal Use · Beta 0.015 · Mac testing only; never give to billers.${N}"
   echo "Test bucket: $BUCKET"
   echo "CurWork.app: $APP"
   echo "Run them top to bottom. Run 8 before testing by hand. 11 starts over."

@@ -2,9 +2,9 @@
 CurWork core: moves CUR workbooks between Amazon S3 and a local work folder
 so the billing VBA macros can run on local files with no code changes.
 
-Version:     Beta 0.014
+Version:     Beta 0.015
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 00:16 UTC
+Updated:     2026-11-23 00:55 UTC
 Modified by: mbitar
 
 This module has no GUI code, so it can be tested on its own.
@@ -33,8 +33,8 @@ import botocore.exceptions as bexc
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config as BotoConfig
 
-VERSION = "0.014-beta"            # no spaces: used in the S3 user agent and metadata
-RELEASE_LABEL = "Beta 0.014"
+VERSION = "0.015-beta"            # no spaces: used in the S3 user agent and metadata
+RELEASE_LABEL = "Beta 0.015"
 STATUS = "DRAFT - For Internal Use"
 BUILD_DATE = "2026-11-22 18:04 UTC"
 MODIFIED_BY = "mbitar"

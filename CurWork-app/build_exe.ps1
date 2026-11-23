@@ -1,5 +1,6 @@
-# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:16 UTC - modified by: mbitar
-# Builds dist\CurWork.exe on a Windows build machine (not on biller laptops).
+# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:55 UTC - modified by: mbitar
+# Builds dist\CurWork.exe (for billers) and dist\CurWorkAdmin.exe (for admins) on a Windows build machine.
+# CurWork.exe is built without the admin code, so billers' copy can't change any settings.
 # Run from this folder in PowerShell:  .\build_exe.ps1
 #
 # Every step must succeed. In Windows PowerShell, "$ErrorActionPreference = Stop" does NOT stop
@@ -24,7 +25,8 @@ Invoke-Step "Install build and test tools" { & $py -m pip install -r requirement
 Invoke-Step "Run the tests" { & $py -m pytest -q }
 Invoke-Step "Check every installed package for known vulnerabilities" { & $py -m pip_audit --strict }
 Invoke-Step "Write the software bill of materials (runtime packages)" { & $py -m pip_audit --require-hashes -r requirements-lock.txt -f cyclonedx-json -o sbom-runtime.cdx.json }
-Invoke-Step "Build CurWork.exe" { & $py -m PyInstaller --noconfirm --onefile --windowed --name CurWork --icon assets\curwork.ico --add-data "assets;assets" curwork.py }
+Invoke-Step "Build CurWork.exe" { & $py -m PyInstaller --noconfirm --onefile --windowed --name CurWork --icon assets\curwork.ico --add-data "assets;assets" --exclude-module curwork_admin curwork.py }
+Invoke-Step "Build CurWorkAdmin.exe" { & $py -m PyInstaller --noconfirm --onefile --windowed --name CurWorkAdmin --icon assets\curwork.ico --exclude-module curwork curwork_admin.py }
 
 # The admin settings file is never stored in Git. Use the real one if it's here; otherwise copy the
 # example so the self-test can run, and say clearly that it must be replaced before handing CurWork out.
@@ -52,8 +54,21 @@ foreach ($c in $result.checks) {
 }
 if ($proc.ExitCode -ne 0 -or -not $result.passed) { throw "The built CurWork.exe failed its self-test. The build stopped." }
 
-Write-Host "Built dist\CurWork.exe with curwork_admin_settings.json and sbom-runtime.cdx.json. Self-test passed."
+Write-Host "== Self-test of dist\CurWorkAdmin.exe (window and form only; it doesn't sign in or call AWS)"
+$areport = Join-Path (Resolve-Path dist) "admin_self_test_report.json"
+Remove-Item $areport -ErrorAction SilentlyContinue
+$aproc = Start-Process -FilePath "dist\CurWorkAdmin.exe" -ArgumentList "--self-test", "--report", "`"$areport`"" -Wait -PassThru
+if (-not (Test-Path $areport)) { throw "The admin self-test didn't write a report. The build stopped." }
+$aresult = Get-Content $areport -Raw | ConvertFrom-Json
+foreach ($c in $aresult.checks) {
+    if ($c.ok) { $tag = "PASS" } else { $tag = "FAIL" }
+    Write-Host ("  {0}  {1}" -f $tag, $c.check)
+}
+if ($aproc.ExitCode -ne 0 -or -not $aresult.passed) { throw "The built CurWorkAdmin.exe failed its self-test. The build stopped." }
+
+Write-Host "Built dist\CurWork.exe and dist\CurWorkAdmin.exe with curwork_admin_settings.json and sbom-runtime.cdx.json. Both self-tests passed."
+Write-Host "Give billers CurWork.exe only. CurWorkAdmin.exe is for admins."
 if ($usingExample) {
     Write-Warning "dist\curwork_admin_settings.json is only the EXAMPLE (no sign-in details). Replace it with the real admin settings file before anyone uses this build."
 }
-Write-Host "Sign CurWork.exe with the company code-signing certificate before handing it out."
+Write-Host "Sign both .exe files with the company code-signing certificate before handing them out."

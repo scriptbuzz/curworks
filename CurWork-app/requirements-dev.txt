@@ -1,4 +1,4 @@
-# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:16 UTC - modified by: mbitar
+# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:55 UTC - modified by: mbitar
 # Build and test tools only. Not shipped to laptops.
 pyinstaller>=6
 pytest>=8

@@ -1,6 +1,6 @@
 # Security policy
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
 
 CurWork is FPT's private software, and we built it with security first. The [README](README.md) explains how, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the details.
 
@@ -13,7 +13,7 @@ CurWork is FPT's private software, and we built it with security first. The [REA
 
 ## Which versions get fixes
 
-Only the latest build of Beta 0.014. Fixes go into the next build, so replace older builds rather than patching them.
+Only the latest build of Beta 0.015. Fixes go into the next build, so replace older builds rather than patching them.
 
 ## What this covers
 
@@ -28,4 +28,4 @@ The CurWork app, its settings files, the AWS permission policies in `CurWork-app
 These are our design promises for an early internal version. They aren't an official certification under NIST, FedRAMP or any other program.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*

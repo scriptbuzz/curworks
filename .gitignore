@@ -1,4 +1,4 @@
-# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:16 UTC - modified by: mbitar
+# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - updated 2026-11-23 00:55 UTC - modified by: mbitar
 # Keeps secrets, personal settings, test output and build output out of the repository.
 
 # ---- Secrets and credentials (never commit these) ----
@@ -57,6 +57,7 @@ build/
 dist/
 *.spec
 CurWork.app/
+CurWork Admin.app/
 *.exe
 sbom-runtime.cdx.json
 *.zip

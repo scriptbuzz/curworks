@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -83,8 +83,8 @@ The build script does all of this, and stops at the first step that fails:
 3. Runs all the automated tests (the CurWork windows flash up briefly; don't click them).
 4. Checks every package for known security holes with `pip-audit`.
 5. Writes a list of everything inside the build (`sbom-runtime.cdx.json`).
-6. Builds `dist\CurWork.exe` with its icon.
-7. Runs the new `CurWork.exe` in self-test mode and stops if any check fails.
+6. Builds `dist\CurWork.exe` with its icon, without the admin code. It also builds `dist\CurWorkAdmin.exe`, the admin settings app.
+7. Runs both new apps in self-test mode and stops if any check fails.
 
 It finishes with `dist\CurWork.exe`, `dist\curwork_admin_settings.json` and the SBOM. If you see a yellow warning that the admin settings file is only the example, that's expected on a test PC: part 5 replaces it.
 
@@ -136,7 +136,7 @@ Go through these and note anything that looks wrong:
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.014 (DRAFT - For Internal Use)" |
+| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.015 (DRAFT - For Internal Use)" |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green |
 | 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar, then the 116 MB file appears in **In** |
 | 4 | Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
@@ -152,7 +152,8 @@ Go through these and note anything that looks wrong:
 This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details. In short:
 
 - Build on a clean build PC, not a biller laptop.
-- Sign `CurWork.exe` with the company code-signing certificate.
+- Sign `CurWork.exe` and `CurWorkAdmin.exe` with the company code-signing certificate.
+- Give billers `CurWork.exe` only. `CurWorkAdmin.exe` is for admins.
 - Put `CurWork.exe` and the real `curwork_admin_settings.json` together in a folder billers can read but not change, for example `C:\Program Files\CurWork`.
 - Make sure the AWS CLI is installed on each laptop. CurWork adds the billers' AWS sign-in profile itself the first time they click **Sign in**.
 - Billers' files go to `%LOCALAPPDATA%\CurWork`. That folder isn't synced to OneDrive, which is why it's the default.
@@ -181,4 +182,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*

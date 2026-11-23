@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-23 00:16 UTC - modified by: mbitar
+# CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-23 00:55 UTC - modified by: mbitar
 # Finds EVERYTHING the CurWork test created, even after a crash, lists it, and deletes only what you pick:
 #   S3:      buckets named curwork-test-* or tagged Purpose=CurWork-test, in any Region (with every file
 #            version and unfinished upload)

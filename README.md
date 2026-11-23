@@ -4,7 +4,7 @@
 
 <!-- These badges are fixed images. Update the numbers here when they change. -->
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.014-0B2545?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.015-0B2545?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-draft%2C%20internal%20use-B54708?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-proprietary%20(FPT)-5F6B7A?style=flat-square">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-1F4E89?logo=python&logoColor=white&style=flat-square">
@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -126,12 +126,12 @@ Some files are never uploaded to GitHub. The `.gitignore` file keeps them out:
 The [animated demo](docs/demo/curwork-demo.html) plays these steps from start to finish. It uses made-up sample data.
 
 1. Start CurWork and click **Sign in**. Finish signing in in your browser.
-2. **Step 1:** open a customer folder, pick a month or some files, and click **Download selected**.
-3. **Step 2:** run your macros as usual. Open the files from the **In** folder and save the results to the **Out** folder.
-4. **Step 3:** check the result type and the customer/month folder, then click **Save all new or changed in S3**.
-5. **Step 4:** close the files in Excel and click **Finish and clean up**.
+2. On the **1. Download from S3** tab, open a customer folder, pick a month or some files, and click **Download selected**.
+3. On the **2. Work in Excel** tab, see your **In** and **Out** folders. Run your macros as usual: open the files from **In** and save the results to **Out**.
+4. On the **3. Save in S3** tab, check the result type and the customer/month folder, then click **Save all new or changed in S3**.
+5. Close the files in Excel and click **4. Finish and clean up** at the bottom right of the window.
 
-If you're not sure what something does, point at it to see a tip, click the **?** next to a step, or press **F1** for Help. The full guide is [CurWork-app/README.md](CurWork-app/README.md).
+If you're not sure what something does, point at it to see a tip, click **? Help for this step** on a tab, or press **F1** for Help. The full guide is [CurWork-app/README.md](CurWork-app/README.md).
 
 ## For admins
 
@@ -189,7 +189,7 @@ Your account number, sign-in address and profile names are only stored in `curwo
 
 ## Where things stand
 
-This is Beta 0.014, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
+This is Beta 0.015, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*

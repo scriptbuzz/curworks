@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.014 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-23 00:16 UTC - modified by: mbitar
+CurWork Beta 0.015 - DRAFT - For Internal Use (FPT) - help text - updated 2026-11-23 00:55 UTC - modified by: mbitar
 
 All of CurWork's help in one place: the short tips that appear when you point at a control, and the topics
 in the Help window. Keeping the words here (not scattered through the window code) means the help and the
@@ -60,11 +60,17 @@ TIPS: dict[str, str] = {
     "s_remove_pins": "Unpin the folders selected in the list.",
     "s_reset": "Put the window size and column widths back to normal when you click Save.",
     "s_saved_in": "The file on this computer where your preferences are kept. Only you use it.",
-    "s_admin": "Settings your admin controls, such as the bucket and folders. You can read them here, but "
-               "not change them. Click a row to see its full value.",
+    "in_list": "The files in your In folder. Downloaded means it came from S3 unchanged. A file marked new or "
+               "changed is probably a result saved in the wrong folder: move it to Out so it isn't lost at clean-up.",
+    "out_view": "The files in your Out folder and whether each one is saved in S3 yet. Save them on the "
+                "3. Save in S3 tab.",
+    "next_step": "Go to the next step's tab. You can also click the tabs at the top, or press Ctrl (Command on "
+                 "a Mac) and the tab's number.",
+    "s_admin": "Settings your admin controls, such as the bucket and folders. They use the same tabs and names "
+               "as the CurWork Admin Settings app. You can read them here, but not change them.",
     "s_copy_admin": "Copy these admin settings as text, for example to send to support.",
-    "s_save": "Save your preferences and close this window.",
-    "s_cancel": "Close without saving changes.",
+    "s_save": "Save your preferences on this computer.",
+    "s_cancel": "Put your preferences back the way they were when you last saved them.",
     # Help window
     "h_search": "Type a word to find topics, for example save, Excel or permission.",
 }
@@ -77,10 +83,10 @@ TOPICS: list[tuple[str, str, str]] = [
 # Quick start
 CurWork downloads CUR workbooks from S3 to this computer, lets you run your usual Excel macros on them, saves the results in S3, and then cleans up.
 - 1. Sign in. Click Sign in at the top right and finish signing in in your browser.
-- 2. Download files. In step 1, open a customer, select a month folder (or single files), and click Download selected. They go to your In folder.
-- 3. Run your macros as usual. Open the files from the In folder. Save the results to the Out folder.
-- 4. Save results in S3. In step 3, check the result type and the customer/month folder, then click Save all new or changed in S3.
-- 5. Finish. In step 4, click Finish and clean up when you're done for the day.
+- 2. Download files. On the 1. Download from S3 tab, open a customer, select a month folder (or single files), and click Download selected. They go to your In folder.
+- 3. Run your macros as usual. The 2. Work in Excel tab shows your In and Out folders. Open the files from the In folder. Save the results to the Out folder.
+- 4. Save results in S3. On the 3. Save in S3 tab, check the result type and the customer/month folder, then click Save all new or changed in S3.
+- 5. Finish. Click 4. Finish and clean up at the bottom right when you're done for the day.
 Tip: point at any button or box to see what it does. Press F1 to open this Help at any time.
 """),
     ("sign_in", "Signing in", """\
@@ -93,19 +99,20 @@ CurWork uses your company sign-in. You don't type a password into CurWork.
 """),
     ("step1", "Step 1: Download files from S3", """\
 # Step 1: Download files from S3
-The list on the left shows the folders in S3 that you can use, usually one folder per customer and one per month inside it.
+The list on the left of this tab shows the folders in S3 that you can use, usually one folder per customer and one per month inside it.
 - Open a folder by clicking the arrow next to it.
 - Select a whole month folder to download every file in it, or select single files. Hold Cmd (Mac) or Ctrl (Windows) to select more than one.
 - Click Download selected. The files are copied into your In folder, in the same customer/month folders.
 - When you download a month folder, CurWork fills in the customer/month folder for step 3, so your results go back to the right place.
 - If a file is already in In and you've changed it, CurWork asks before replacing it.
 - For very large downloads, CurWork asks you to confirm first. A progress bar shows how far it's got. Click Stop to cancel.
+- The list on the right shows the files already in your In folder, and whether you've changed them since you downloaded them.
 # Pinned folders
 Pin folders you use often. Select a folder and click Pin selected folder. Later, pick it from Pinned and click Go.
 """),
     ("step2", "Step 2: Run your macros", """\
 # Step 2: Run your macros as usual
-Your macros don't change. Only where the files are is different.
+Your macros don't change. Only where the files are is different. This tab lists the files in your In folder and in your Out folder.
 - In the macro, pick the input files from the In folder. Click Copy path next to In to paste the folder path into the macro's file dialog.
 - Save the results to the Out folder (click Copy path next to Out).
 - Don't save results into In. CurWork warns you if new or changed files appear there.
@@ -128,7 +135,7 @@ CurWork asks whether to Replace it, Skip it, or Stop. Replacing is safe: S3 keep
 """),
     ("step4", "Step 4: Finish and clean up", """\
 # Step 4: Finish and clean up
-Click Finish and clean up at the end of your work. CurWork:
+Click 4. Finish and clean up, at the bottom right of the window, at the end of your work. CurWork:
 - checks that no file is still open in Excel and nothing is waiting to be saved in S3, and asks you first if something is;
 - if files in In look like results saved in the wrong place, offers to move them to Out so you can save them in S3;
 - saves today's log in S3, so support can help if needed;
@@ -137,19 +144,20 @@ Your files stay safe in S3. If you close CurWork without finishing, it reminds y
 """),
     ("settings", "Settings", """\
 # Settings
-Click Settings at the top right (on a Mac also CurWork > Settings…, or Cmd+,).
+Click the Settings tab, or Settings at the top right (on a Mac also CurWork > Settings…, or Cmd+,).
 # My preferences (you can change these)
 - Result type: start with the result type you used last time.
 - Recent folders: how many customer/month folders to remember, or clear them.
 - Pinned folders: remove pins you don't need.
 - Window layout: put the window size and columns back to normal.
 - Saved in: where your preferences are kept on this computer.
+Click Save to keep your changes, or Undo my changes to put them back.
 # Admin settings (read-only)
-The bucket, folders, sign-in and other rules are set by your admin and can't be changed here. Click a row to see its full value. Click Copy admin settings to send them to support.
+The bucket, folders, sign-in and other rules are set by your admin with the CurWork Admin Settings app, and can't be changed here. They're shown with the same tabs and names as in that app, so you and your admin see the same thing. Most of them are read from AWS when you sign in. The Sign-in and this laptop tab shows the few settings kept in the file next to CurWork. Click Copy admin settings to send them to support.
 """),
     ("problems", "When something goes wrong", """\
 # When something goes wrong
-CurWork says what happened in plain words, and the details go into the log at the bottom of the window.
+CurWork says what happened in plain words, and the details go into the log on the Activity tab.
 - "You're not signed in" or "Your sign-in has expired": click Sign in.
 - "AWS said you don't have permission for that": the message says what AWS refused (for example downloading a file). If you think you should be allowed, send the log to your admin.
 - "Can't reach AWS": check your internet or VPN connection, then try again.
@@ -162,7 +170,8 @@ If you're stuck, see Getting help.
     ("keys", "Keyboard shortcuts", """\
 # Keyboard shortcuts
 - F1: open CurWork Help.
-- Esc: close the window in front (Help, About, Settings).
+- Esc: close the window in front (Help or About).
+- Cmd+1 to Cmd+5 (Mac) or Ctrl+1 to Ctrl+5 (Windows): go to the 1. Download, 2. Work, 3. Save, Activity or Settings tab.
 - Cmd+W (Mac) or Ctrl+W (Windows): close the Help or About window.
 - Cmd+, (Mac): open Settings.
 - Cmd or Ctrl + click: select more than one file in a list.

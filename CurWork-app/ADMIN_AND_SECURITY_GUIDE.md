@@ -1,6 +1,6 @@
 # CurWork Admin and Security Guide
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
 
 This guide is for the people who set up, run and review CurWork: the AWS admin, IT (laptop management), the build owner and security reviewers. Billers don't need it; the CurWork Guide and the README cover daily use. The shared online copy of this guide also has an exhibit of the three control layers.
 
@@ -152,11 +152,13 @@ CurWork refuses to start if this file holds any other setting, and the message n
 - The biller permission set may only read parameters under `/curwork/` (`ssm:GetParameter`). It can't change or delete them. Give `ssm:PutParameter` on the parameter only to the AWS admin role.
 - Parameter Store keeps every saved version, and CloudTrail records who saved each one (AU-2, AU-12). The parameter is a Standard-tier `String` with no secrets in it, so it costs nothing and needs no KMS key.
 
-**The CurWork Admin Settings app** (`curwork_admin.py`) is how admins view and change the managed settings. Run it with the AWS admin profile:
+**The CurWork Admin Settings app** is how admins view and change the managed settings. It's its own app: `CurWork Admin.app` on a Mac and `CurWorkAdmin.exe` on Windows, built next to CurWork. Type the AWS admin profile in the app, or start it from the source code with the profile:
 
 ```
 python curwork_admin.py --profile <admin profile>
 ```
+
+CurWork's own **Settings** tab shows the same form read-only, with the same tabs, names and explanations, so a biller and an admin talking about a setting see the same thing. CurWork is built without the admin app's code, and the shared form has no code that saves anything (NIST SP 800-53 CM-7, least functionality). Give billers CurWork only.
 
 - **Sign in** opens the browser for the admin sign-in. **Load from AWS** reads the current version.
 - The settings are grouped on four tabs: **Files in S3**, **Result types**, **What billers can do** and **On each laptop**.
@@ -243,7 +245,7 @@ python curwork_admin.py --profile <admin profile>
 | AU-9 Protect audit data | Billers can edit local logs, so CloudTrail is the official record | AWS | By design |
 | AU-10 Non-repudiation | Identity comes from Identity Center and CloudTrail; the Windows user name in logs and S3 metadata is for convenience only | AWS | By design |
 | CM-5, CM-6 Config control | Admin settings in Program Files; user preferences can't change them. The built app only reads the admin settings installed next to it and ignores `--config` and `CURWORK_CONFIG` (config lock). IT still has to make the install folder read-only for billers. | IT + app | Met (app); IT to confirm folder permissions |
-| CM-7, SI-7 Least function, integrity | No `aws.exe` from the current folder; fixed arguments, no shell | App | Met |
+| CM-7, SI-7 Least function, integrity | No `aws.exe` from the current folder; fixed arguments, no shell. Billers' copy of CurWork is built without the admin settings app, and its read-only Settings tab has no save code | App | Met |
 | CM-14, SI-7(15) Signed software | Sign the exe before deployment; allow only the signed app | IT | Process |
 | IA-2 MFA | Entra sign-in with MFA through Identity Center | Entra + AWS | Met |
 | IA-5 Authenticators | No access keys; temporary credentials and an SSO token cache that expire | AWS CLI | Met |
@@ -278,6 +280,7 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 
 | Date and time (UTC) | Version | Change | Modified by |
 |---|---|---|---|
+| 2026-11-23 00:55 | Beta 0.015 | Steps as tabs in the main window, with full-size file lists and a Settings tab instead of a Settings window. Billers see the admin settings read-only in the same form, with the same tabs and names, as the CurWork Admin Settings app. The admin app is built as its own app, and CurWork is built without its code (NIST SP 800-53 CM-7, least functionality). | mbitar |
 | 2026-11-23 00:16 | Beta 0.014 | Admin settings app redesign. Drop-downs list the buckets, customer-managed encryption keys and top-level folders the admin's sign-in can see (`s3:ListAllMyBuckets`, `s3:ListBucket`, `kms:ListAliases`; read-only). Every value is checked in plain words next to its setting with CurWork's own rules before saving, so nothing CurWork would refuse can be saved (NIST SP 800-53 CM-6, SI-10). | mbitar |
 | 2026-11-22 23:57 | Beta 0.013 | Smallest possible laptop file (NIST SP 800-53 CM-5, CM-6): `curwork_admin_settings.json` may only hold the sign-in settings, the Region, the FIPS switch and the use notice, and CurWork refuses it otherwise. Parameter Store is now required, and also holds the work folder (`work_dir`) and the preferences location (`user_settings_location`). CurWork switches to the admin's work folder right after sign-in and moves today's log with it, so one log holds the whole session (AU-9). | mbitar |
 | 2026-11-22 23:33 | Beta 0.012 | Plain wording: CurWork and the admin settings app now say "save in S3" instead of "send" or "upload". The admin app's buttons are now **Load from AWS**, **Save in AWS** and **Copy from this laptop's settings file**. The program folder is now `CurWork-app`. New tests prove that billers can only read the settings kept in AWS and that only an admin can save them (NIST SP 800-53 AC-3, AC-6, CM-5). | mbitar |
@@ -292,4 +295,4 @@ The design also follows the AWS Well-Architected Framework: the Security pillar 
 | 2026-11-22 13:42 | Beta 0.011 | First version of this guide. Admin and security content moved here from the CurWork Guide and the README. Adds roles, the control-layers exhibit (online copy), deployment, day-to-day tasks, data protection by stage, and the checks and fixes from this review. | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*

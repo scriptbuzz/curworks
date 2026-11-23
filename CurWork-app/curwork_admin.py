@@ -4,9 +4,9 @@ Systems Manager Parameter Store (bucket, folders, encryption, file rules, work f
 the buckets, encryption keys and folders that exist in AWS, and each setting shows its default and any
 problem in plain words before anything is saved.
 
-Version:     Beta 0.014
+Version:     Beta 0.015
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-23 00:16 UTC
+Updated:     2026-11-23 00:55 UTC
 Modified by: mbitar
 
 Who can change the settings is decided by AWS, not by this window: billers' permissions can only read
@@ -20,6 +20,7 @@ Run:  python curwork_admin.py --profile <admin profile>
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import json
 import os
 import queue
@@ -33,44 +34,17 @@ import boto3
 import botocore.exceptions as bexc
 
 import curwork_core as core
+from curwork_settings_form import (  # the form both windows share; names re-exported for the tests
+    BUCKET_KEY_LABEL, BUCKET_NAME, COMMON_EXTENSIONS, FIELDS, HINTS, LABELS, LOCATION_LABELS, TABS,  # noqa: F401
+    SettingsForm, kms_label, kms_value, managed_to_form)  # noqa: F401
 
 APP_TITLE = "CurWork Admin Settings"
 DEFAULT_PARAMETER = core.DEFAULT_PARAMETER
 
-# The form: (key, label, kind). kind is text, list (comma-separated), stages (one "Name = folder/" per line) or int.
-FIELDS = (
-    ("bucket", "S3 bucket", "text"),
-    ("kms_key_id", "Encryption key for saved files (leave blank to use the bucket's own key)", "text"),
-    ("browse_roots", "Folders billers can download from (separate them with commas)", "list"),
-    ("output_stages", "Result types (one per line: Name = folder/)", "stages"),
-    ("default_stage", "Result type picked at start", "text"),
-    ("log_prefix", "Folder where CurWork saves its logs", "text"),
-    ("upload_extensions", "File types billers can save in S3 (separate them with commas)", "list"),
-    ("large_download_warning_mb", "Ask before downloading more than (MB)", "int"),
-    ("max_concurrency", "Files copied at the same time (1 to 32)", "int"),
-    ("work_dir", "Work folder on each laptop (In, Out and logs are kept here)", "text"),
-    ("user_settings_location", "Where each biller's preferences are saved (tool_folder or work_folder)", "text"),
-    ("_version", "Version label", "text"),
-)
-
 
 # --------------------------------------------------------------------------
-# Form values <-> managed settings
+# Form values -> managed settings (saving only)
 # --------------------------------------------------------------------------
-
-def managed_to_form(managed: dict) -> dict[str, str]:
-    """Managed settings (missing keys take CurWork's defaults) as the text shown in each form field."""
-    out = {}
-    for key, _label, kind in FIELDS:
-        value = managed.get(key, core.DEFAULT_CONFIG.get(key, ""))
-        if kind == "list":
-            out[key] = ", ".join(str(v) for v in value)
-        elif kind == "stages":
-            out[key] = "\n".join(f"{name} = {folder}" for name, folder in dict(value).items())
-        else:
-            out[key] = str(value)
-    return out
-
 
 def form_to_managed(form: dict[str, str]) -> dict:
     """The form's text as a managed settings object. Raises CurWorkError with a plain message."""
@@ -227,53 +201,13 @@ class AdminStore:
 # Window
 # --------------------------------------------------------------------------
 
-# The form's plain-language help, shown in grey under each field. Errors replace it in red.
-HINTS = {
-    "bucket": "The S3 bucket that holds the CUR workbooks.",
-    "kms_key_id": "Keep the bucket's own key unless your security team gave you a key for CurWork.",
-    "browse_roots": "Billers can only download from these folders. They must not overlap the result folders.",
-    "log_prefix": "CurWork saves each biller's log in this folder when they click Finish and clean up.",
-    "output_stages": "Billers pick a result type in step 3, and their files are saved in its folder.",
-    "default_stage": "The result type CurWork picks when it starts.",
-    "upload_extensions": "CurWork refuses to save any other type of file in S3.",
-    "large_download_warning_mb": "CurWork asks the biller before downloading more than this many megabytes.",
-    "max_concurrency": "More is faster on a good connection. Fewer is gentler on a slow one.",
-    "work_dir": "In, Out and the logs are kept here. It must not be inside OneDrive, Box or another synced folder.",
-    "user_settings_location": "Where each biller's own preferences, such as pinned folders, are saved.",
-    "_version": "A short note shown in CurWork's About window, such as the date and what changed.",
-}
-TABS = (("Files in S3", ("bucket", "kms_key_id", "browse_roots", "log_prefix")),
-        ("Result types", ("output_stages", "default_stage")),
-        ("What billers can do", ("upload_extensions", "large_download_warning_mb", "max_concurrency")),
-        ("On each laptop", ("work_dir", "user_settings_location")))
-COMMON_EXTENSIONS = (".xlsx", ".xlsm", ".xlsb", ".xls", ".csv", ".txt", ".zip")
-LOCATION_LABELS = {"tool_folder": "Next to CurWork (or the work folder, if billers can't write next to CurWork)",
-                   "work_folder": "In each biller's work folder"}
-BUCKET_KEY_LABEL = "Use the bucket's own key"
-_BUCKET_NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
-LABELS = {key: label for key, label, _kind in FIELDS}
-
-
-def kms_label(alias: str, key_id: str) -> str:
-    return f"{alias}  ({key_id})"
-
-
-def kms_value(text: str) -> str:
-    """The key ID behind what the encryption key drop-down shows."""
-    t = (text or "").strip()
-    if not t or t == BUCKET_KEY_LABEL:
-        return ""
-    m = re.search(r"\(([^()]+)\)\s*$", t)
-    return m.group(1).strip() if m else t
-
-
 def field_errors(form: dict[str, str]) -> dict[str, str]:
     """One plain message per field that can't be saved as it is. "_form" holds a problem between fields."""
     errs: dict[str, str] = {}
     bucket = (form.get("bucket") or "").strip()
     if not bucket:
         errs["bucket"] = "Pick or type the S3 bucket."
-    elif not _BUCKET_NAME.match(bucket):
+    elif not BUCKET_NAME.match(bucket):
         errs["bucket"] = "A bucket name has 3 to 63 lowercase letters, numbers, dots or hyphens."
     if not [r for r in (form.get("browse_roots") or "").split(",") if r.strip()]:
         errs["browse_roots"] = "Add at least one folder billers can download from."
@@ -312,183 +246,6 @@ def field_errors(form: dict[str, str]) -> dict[str, str]:
     return errs
 
 
-class _Field:
-    """One form control. get() and set() use the same text the form always used (see managed_to_form)."""
-
-    def __init__(self, widget: tk.Widget, var: tk.StringVar | None = None):
-        self.widget, self.var = widget, var
-        self._watchers: list = []
-        if var is not None:
-            var.trace_add("write", lambda *_: self.changed())
-
-    def get(self) -> str:
-        return self.var.get()
-
-    def set(self, text: str) -> None:
-        self.var.set(text)
-
-    def watch(self, fn) -> None:
-        self._watchers.append(fn)
-
-    def changed(self) -> None:
-        for fn in self._watchers:
-            fn()
-
-
-class _ChoiceField(_Field):
-    """A drop-down that shows plain labels for stored values (where preferences go, which KMS key)."""
-
-    def __init__(self, parent, to_label, to_value, editable: bool):
-        var = tk.StringVar()
-        super().__init__(ttk.Combobox(parent, textvariable=var, state="normal" if editable else "readonly"), var)
-        self.to_label, self.to_value = to_label, to_value
-
-    def get(self) -> str:
-        return self.to_value(self.var.get())
-
-    def set(self, text: str) -> None:
-        self.var.set(self.to_label(text))
-
-
-class _ListField(_Field):
-    """A list of S3 folders with a drop-down to add one and a button to remove the selected ones."""
-
-    def __init__(self, parent):
-        frame = ttk.Frame(parent)
-        super().__init__(frame)
-        frame.columnconfigure(0, weight=1)
-        self.box = tk.Listbox(frame, height=4, selectmode="extended", exportselection=False)
-        self.box.grid(row=0, column=0, rowspan=3, sticky="nsew")
-        self.pick_var = tk.StringVar()
-        self.pick = ttk.Combobox(frame, textvariable=self.pick_var, width=24)
-        self.pick.grid(row=0, column=1, sticky="ew", padx=(8, 0))
-        ttk.Button(frame, text="Add folder", command=self.add).grid(row=1, column=1, sticky="ew", padx=(8, 0), pady=2)
-        ttk.Button(frame, text="Remove selected", command=self.remove).grid(row=2, column=1, sticky="ew", padx=(8, 0))
-
-    def items(self) -> list[str]:
-        return list(self.box.get(0, "end"))
-
-    def get(self) -> str:
-        return ", ".join(self.items())
-
-    def set(self, text: str) -> None:
-        self.box.delete(0, "end")
-        for part in text.split(","):
-            if part.strip():
-                self.box.insert("end", part.strip())
-        self.changed()
-
-    def add(self) -> None:
-        folder = core._norm_prefix(self.pick_var.get())
-        if folder and folder not in self.items():
-            self.box.insert("end", folder)
-            self.pick_var.set("")
-            self.changed()
-
-    def remove(self) -> None:
-        for i in reversed(self.box.curselection()):
-            self.box.delete(i)
-        self.changed()
-
-
-class _StagesField(_Field):
-    """Result types as a small table: a name billers see and the S3 folder their files are saved in."""
-
-    def __init__(self, parent):
-        frame = ttk.Frame(parent)
-        super().__init__(frame)
-        frame.columnconfigure(0, weight=1)
-        self.tree = ttk.Treeview(frame, columns=("folder",), height=5, selectmode="browse")
-        self.tree.heading("#0", text="Name billers see")
-        self.tree.heading("folder", text="S3 folder")
-        self.tree.column("#0", width=160)
-        self.tree.column("folder", width=140)
-        self.tree.grid(row=0, column=0, rowspan=6, sticky="nsew")
-        self.tree.bind("<<TreeviewSelect>>", self._picked)
-        self.name_var, self.folder_var = tk.StringVar(), tk.StringVar()
-        side = dict(column=1, sticky="ew", padx=(8, 0))
-        ttk.Label(frame, text="Name").grid(row=0, **side)
-        ttk.Entry(frame, textvariable=self.name_var, width=20).grid(row=1, **side)
-        ttk.Label(frame, text="S3 folder").grid(row=2, **side)
-        self.folder_pick = ttk.Combobox(frame, textvariable=self.folder_var, width=18)
-        self.folder_pick.grid(row=3, **side)
-        ttk.Button(frame, text="Add or update", command=self.add).grid(row=4, pady=(6, 2), **side)
-        ttk.Button(frame, text="Remove selected", command=self.remove).grid(row=5, **side)
-
-    def rows(self) -> list[tuple[str, str]]:
-        return [(self.tree.item(i, "text"), self.tree.item(i, "values")[0]) for i in self.tree.get_children()]
-
-    def names(self) -> list[str]:
-        return [name for name, _folder in self.rows()]
-
-    def get(self) -> str:
-        return "\n".join(f"{name} = {folder}" for name, folder in self.rows())
-
-    def set(self, text: str) -> None:
-        self.tree.delete(*self.tree.get_children())
-        for line in text.splitlines():
-            name, sep, folder = line.partition("=")
-            if line.strip():
-                self.tree.insert("", "end", text=name.strip(), values=(folder.strip() if sep else "",))
-        self.changed()
-
-    def _picked(self, _event=None) -> None:
-        sel = self.tree.selection()
-        if sel:
-            self.name_var.set(self.tree.item(sel[0], "text"))
-            self.folder_var.set(self.tree.item(sel[0], "values")[0])
-
-    def add(self) -> None:
-        name, folder = self.name_var.get().strip(), core._norm_prefix(self.folder_var.get())
-        if not name or not folder:
-            messagebox.showinfo(APP_TITLE, "Type a name and pick or type an S3 folder first.", parent=self.widget)
-            return
-        for i in self.tree.get_children():
-            if self.tree.item(i, "text") == name:
-                self.tree.item(i, values=(folder,))
-                break
-        else:
-            self.tree.insert("", "end", text=name, values=(folder,))
-        self.name_var.set("")
-        self.folder_var.set("")
-        self.changed()
-
-    def remove(self) -> None:
-        for i in self.tree.selection():
-            self.tree.delete(i)
-        self.changed()
-
-
-class _ExtensionsField(_Field):
-    """A checkbox for each common file type, and a box for any others."""
-
-    def __init__(self, parent):
-        frame = ttk.Frame(parent)
-        super().__init__(frame)
-        self.checks = {}
-        for i, ext in enumerate(COMMON_EXTENSIONS):
-            var = tk.BooleanVar()
-            var.trace_add("write", lambda *_: self.changed())
-            ttk.Checkbutton(frame, text=ext, variable=var).grid(row=0, column=i, sticky="w", padx=(0, 10))
-            self.checks[ext] = var
-        ttk.Label(frame, text="Other types (separate them with commas)").grid(
-            row=1, column=0, columnspan=4, sticky="w", pady=(6, 0))
-        self.other_var = tk.StringVar()
-        self.other_var.trace_add("write", lambda *_: self.changed())
-        ttk.Entry(frame, textvariable=self.other_var).grid(row=1, column=4, columnspan=3, sticky="ew", pady=(6, 0))
-
-    def get(self) -> str:
-        other = [e.strip() for e in self.other_var.get().split(",") if e.strip()]
-        return ", ".join([e for e, v in self.checks.items() if v.get()] + other)
-
-    def set(self, text: str) -> None:
-        parts = [p.strip().lower() for p in text.split(",") if p.strip()]
-        parts = [p if p.startswith(".") else "." + p for p in parts]
-        for ext, var in self.checks.items():
-            var.set(ext in parts)
-        self.other_var.set(", ".join(p for p in parts if p not in self.checks))
-
-
 class AdminApp:
     def __init__(self, root: tk.Tk, store: AdminStore, local_settings: core.Settings | None = None):
         self.root = root
@@ -500,8 +257,10 @@ class AdminApp:
         self.busy = False
         self.pending_lookups = 0
         self._refresh_job = None
+        self._folders_for = None
+        self.errors: dict = {}
+        self.changed_keys: set = set()
         self._q: queue.Queue = queue.Queue()
-        self.defaults = managed_to_form({})
         root.title(f"{APP_TITLE} - {core.RELEASE_LABEL} ({core.STATUS})")
         self._build()
         root.after(50, self._poll)
@@ -540,25 +299,13 @@ class AdminApp:
         self.lookup_lbl.grid(row=6, column=0, columnspan=3, sticky="w", pady=(0, 6))
         self.lookup_lbl.grid_remove()      # shown only while it has something to say
 
-        self.fields: dict[str, _Field] = {}
-        self.name_lbls: dict[str, ttk.Label] = {}
-        self.hint_lbls: dict[str, ttk.Label] = {}
-        self.notebook = ttk.Notebook(f)
-        self.notebook.grid(row=7, column=0, columnspan=3, sticky="nsew")
+        self.form = SettingsForm(f, editable=True, on_change=self._schedule_refresh)
+        self.form.frame.grid(row=7, column=0, columnspan=3, sticky="nsew")
         f.rowconfigure(7, weight=1)
-        self.tab_frames: list[tuple[ttk.Frame, str, tuple]] = []
-        for title, keys in TABS:
-            tab = ttk.Frame(self.notebook, padding=12)
-            tab.columnconfigure(1, weight=1)
-            self.notebook.add(tab, text=title)
-            self.tab_frames.append((tab, title, keys))
-            for n, key in enumerate(keys):
-                self._add_row(tab, n * 2, key)
+        # The same names the tests and the rest of this class use.
+        self.fields, self.name_lbls, self.hint_lbls = self.form.fields, self.form.name_lbls, self.form.hint_lbls
+        self.notebook, self.tab_frames = self.form.notebook, self.form.tab_frames
 
-        bottom = ttk.Frame(f)
-        bottom.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(10, 0))
-        bottom.columnconfigure(1, weight=1)
-        self._add_row(bottom, 0, "_version")
         self.form_err_lbl = ttk.Label(f, text="", foreground="#B00020", wraplength=720)
         self.form_err_lbl.grid(row=9, column=0, columnspan=3, sticky="w", pady=(6, 0))
         self.form_err_lbl.grid_remove()
@@ -573,49 +320,9 @@ class AdminApp:
 
         self.fields["bucket"].widget.bind("<<ComboboxSelected>>", lambda _e: self._lookup_folders())
         self.fields["bucket"].widget.bind("<FocusOut>", lambda _e: self._lookup_folders())
-        self.fields["output_stages"].watch(self._update_stage_choices)
         self._refresh()
         self.root.update_idletasks()      # never open smaller than the form needs, so nothing is cut off
         self.root.minsize(self.root.winfo_reqwidth(), self.root.winfo_reqheight())
-
-    def _make_field(self, parent, key: str) -> _Field:
-        if key == "kms_key_id":
-            return _ChoiceField(parent, self._kms_to_label, kms_value, editable=True)
-        if key == "user_settings_location":
-            field = _ChoiceField(parent, lambda v: LOCATION_LABELS.get(v, v),
-                                 lambda t: next((k for k, lbl in LOCATION_LABELS.items() if lbl == t), t), editable=False)
-            field.widget.configure(values=list(LOCATION_LABELS.values()))
-            return field
-        if key == "browse_roots":
-            return _ListField(parent)
-        if key == "output_stages":
-            return _StagesField(parent)
-        if key == "upload_extensions":
-            return _ExtensionsField(parent)
-        var = tk.StringVar()
-        if key == "max_concurrency":
-            return _Field(ttk.Spinbox(parent, textvariable=var, from_=1, to=32, increment=1, width=8), var)
-        if key == "large_download_warning_mb":
-            return _Field(ttk.Spinbox(parent, textvariable=var, from_=0, to=1_000_000, increment=256, width=10), var)
-        if key in ("bucket", "log_prefix"):
-            return _Field(ttk.Combobox(parent, textvariable=var), var)
-        if key == "default_stage":
-            return _Field(ttk.Combobox(parent, textvariable=var, state="readonly"), var)
-        return _Field(ttk.Entry(parent, textvariable=var), var)
-
-    def _add_row(self, parent, row: int, key: str) -> None:
-        name = ttk.Label(parent, text=LABELS[key], wraplength=190, justify="left")
-        name.grid(row=row, column=0, sticky="nw", padx=(0, 12), pady=(6, 0))
-        field = self._make_field(parent, key)
-        sticky = "w" if isinstance(field.widget, ttk.Spinbox) else "ew"
-        field.widget.grid(row=row, column=1, sticky=sticky, pady=(6, 0))
-        field.watch(self._schedule_refresh)
-        if key != "_version":
-            ttk.Button(parent, text="Use default", command=lambda k=key: self.use_default(k)).grid(
-                row=row, column=2, sticky="ne", padx=(10, 0), pady=(6, 0))
-        hint = ttk.Label(parent, text="", foreground="#555", wraplength=600, justify="left")
-        hint.grid(row=row + 1, column=1, columnspan=2, sticky="w", pady=(2, 4))
-        self.fields[key], self.name_lbls[key], self.hint_lbls[key] = field, name, hint
 
     @staticmethod
     def _note(lbl: ttk.Label, text: str) -> None:
@@ -626,35 +333,12 @@ class AdminApp:
         else:
             lbl.grid_remove()
 
-    def _kms_to_label(self, value: str) -> str:
-        if not value:
-            return BUCKET_KEY_LABEL
-        for label in self.fields["kms_key_id"].widget.cget("values") if "kms_key_id" in self.fields else ():
-            if kms_value(label) == value:
-                return label
-        return value
-
-    def _default_text(self, key: str) -> str:
-        value = self.defaults.get(key, "")
-        if key == "kms_key_id":
-            return "the bucket's own key"
-        if key == "user_settings_location":
-            return LOCATION_LABELS.get(value, value).split(" (")[0].lower()
-        if key == "output_stages":
-            return ", ".join(line.split(" = ")[0] for line in value.splitlines())
-        return value
-
     # ---- form
     def get_form(self) -> dict[str, str]:
-        return {k: f.get() for k, f in self.fields.items()}
+        return self.form.get_form()
 
     def set_form(self, values: dict[str, str]) -> None:
-        for k, f in self.fields.items():
-            if k == "default_stage":
-                continue
-            f.set(values.get(k, ""))
-        self._update_stage_choices()
-        self.fields["default_stage"].set(values.get("default_stage", ""))
+        self.form.set_form(values)
         self._refresh()
 
     def set_field(self, key: str, text: str) -> None:
@@ -662,17 +346,8 @@ class AdminApp:
         self._refresh()
 
     def use_default(self, key: str) -> None:
-        self.set_field(key, self.defaults.get(key, ""))
-        if key == "output_stages":
-            self.fields["default_stage"].set(self.defaults["default_stage"])
-            self._refresh()
-
-    def _update_stage_choices(self) -> None:
-        names = self.fields["output_stages"].names()
-        box = self.fields["default_stage"]
-        box.widget.configure(values=names)
-        if names and box.get() not in names:
-            box.set(names[0])
+        self.form.use_default(key)
+        self._refresh()
 
     def _schedule_refresh(self) -> None:
         if self._refresh_job is None:
@@ -686,16 +361,7 @@ class AdminApp:
         errs = field_errors(form) if ready else {}
         before = managed_to_form(self.loaded or {}) if ready else form
         changed = {k for k in self.fields if form.get(k, "").strip() != before.get(k, "").strip()}
-        for key, hint in self.hint_lbls.items():
-            if key in errs:
-                hint.configure(text=errs[key], foreground="#B00020")
-            else:
-                default = "" if key == "_version" else f" Default: {self._default_text(key)}."
-                hint.configure(text=HINTS[key] + default, foreground="#555")
-            self.name_lbls[key].configure(text=LABELS[key] + ("  (changed)" if key in changed else ""))
-        for tab, title, keys in self.tab_frames:
-            mark = " - needs a fix" if any(k in errs for k in keys) else (" (changed)" if any(k in changed for k in keys) else "")
-            self.notebook.tab(tab, text=title + mark)
+        self.form.show(errs, changed)
         self._note(self.form_err_lbl, errs.get("_form", ""))
         self.errors, self.changed_keys = errs, changed
 
@@ -749,39 +415,29 @@ class AdminApp:
 
     def _lookup_failed(self, e: BaseException) -> None:
         _kind, msg = core.classify_error(e)
-        self._note(self.lookup_lbl, f"CurWork couldn't list everything in AWS, so some drop-downs may be empty. "
-                                       f"You can still type the names. AWS said: {msg}")
+        self._note(self.lookup_lbl, "CurWork couldn't list everything in AWS, so some drop-downs may be empty. "
+                                    f"You can still type the names. AWS said: {msg}")
 
     def _lookup_all(self) -> None:
         self._note(self.lookup_lbl, "Reading the buckets, encryption keys and folders you can pick from...")
 
-        def got_buckets(names):
-            self.fields["bucket"].widget.configure(values=names)
-
         def got_keys(keys):
-            field = self.fields["kms_key_id"]
-            current = field.get()
-            field.widget.configure(values=[BUCKET_KEY_LABEL] + [kms_label(a, k) for a, k in keys])
-            field.set(current)
+            self.form.set_choices(keys=keys)
             if self.lookup_lbl.cget("text").startswith("Reading"):
                 self._note(self.lookup_lbl, "")
-        self._lookup(self.store.list_buckets, got_buckets)
+        self._lookup(self.store.list_buckets, lambda names: self.form.set_choices(buckets=names))
         self._lookup(self.store.list_kms_keys, got_keys)
         self._lookup_folders()
 
     def _lookup_folders(self) -> None:
         bucket = self.fields["bucket"].get().strip()
-        if not self.can_save or not _BUCKET_NAME.match(bucket) or bucket == getattr(self, "_folders_for", None):
+        if not self.can_save or not BUCKET_NAME.match(bucket) or bucket == self._folders_for:
             return
         self._folders_for = bucket
 
         def got(folders):
-            if self.fields["bucket"].get().strip() != bucket:
-                return
-            for key in ("browse_roots", "output_stages"):
-                pick = self.fields[key].pick if key == "browse_roots" else self.fields[key].folder_pick
-                pick.configure(values=folders)
-            self.fields["log_prefix"].widget.configure(values=folders)
+            if self.fields["bucket"].get().strip() == bucket:
+                self.form.set_choices(folders=folders)
         self._lookup(lambda: self.store.list_folders(bucket), got)
 
     def _sync_store(self) -> None:
@@ -880,6 +536,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--parameter", default="", help=f"Parameter Store name (default {DEFAULT_PARAMETER})")
     parser.add_argument("--region", default="", help="AWS Region of the parameter")
     parser.add_argument("--config", default=None, help=f"Local {core.CONFIG_FILE_NAME} to take defaults from")
+    parser.add_argument("--self-test", action="store_true",
+                        help="Open the window without signing in, check it, print a JSON report and exit")
+    parser.add_argument("--report", metavar="FILE", help="With --self-test: also save the JSON report to FILE")
     args = parser.parse_args(argv)
     try:
         local = core.load_settings(args.config, strict=False)   # an older file can still be copied to AWS
@@ -889,9 +548,40 @@ def main(argv: list[str] | None = None) -> int:
     region = args.region or (local.region if local else "") or "us-east-1"
     store = AdminStore(parameter, region, profile=args.profile, use_fips=bool(local and local.use_fips_endpoint))
     root = tk.Tk(className="CurWorkAdmin")
+    if args.self_test:
+        root.withdraw()
+        return self_test(root, store, local, args.report)
     AdminApp(root, store, local)
     root.mainloop()
     return 0
+
+
+def self_test(root: tk.Tk, store: AdminStore, local, report_file: str | None = None) -> int:
+    """--self-test: build the real window without signing in or calling AWS, check it, print one JSON
+    report and exit (0 = all checks passed)."""
+    import json
+    checks: list[dict] = []
+
+    def check(name: str, ok: bool, detail: str = "") -> None:
+        checks.append({"check": name, "ok": bool(ok), "detail": detail})
+
+    app = AdminApp(root, store, local)
+    root.update()
+    tabs = [app.notebook.tab(t, "text") for t in app.notebook.tabs()]
+    check("Admin window opens", root.winfo_exists(), "")
+    check("The form has the same tabs as the Settings tab in CurWork", tabs == [n for n, _ in TABS], ", ".join(tabs))
+    check("The form can be edited", app.form.editable, "")
+    check("Laptop settings file found next to the app",
+          local is not None and local.source_path is not None, str(local.source_path) if local else "not found")
+    check("Settings are saved in Parameter Store", bool(store.parameter), store.parameter)
+    report = {"app": f"{APP_TITLE} {core.RELEASE_LABEL}", "built_app": bool(getattr(sys, "frozen", False)),
+              "passed": all(c["ok"] for c in checks), "checks": checks}
+    text = json.dumps(report, indent=2)
+    print(text)
+    if report_file:
+        Path(report_file).write_text(text, encoding="utf-8")
+    root.destroy()
+    return 0 if report["passed"] else 1
 
 
 if __name__ == "__main__":

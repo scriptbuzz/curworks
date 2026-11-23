@@ -1,6 +1,6 @@
 # CurWork
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.014** · Updated 2026-11-23 00:16 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.015** · Updated 2026-11-23 00:55 UTC · Modified by: mbitar
 
 CurWork is a small Windows app for the billing team. It copies converted CUR workbooks from Amazon S3 to a local work folder, so the existing VBA macros (pricer, allocator, mapper and the rest) run on local files instead of Box. It then sends the results back to S3 and cleans up the laptop. **The VBA code doesn't change.**
 
@@ -9,12 +9,12 @@ CurWork is a small Windows app for the billing team. It copies converted CUR wor
 ## Quickstart for billers
 
 1. Start CurWork and click **Sign in**. Finish the company sign-in and MFA in the browser. The sign-in line at the top turns green and shows your user name and role.
-2. **Step 1:** open a customer folder, select a month or single files, and click **Download selected**.
-3. **Step 2:** run your macros as usual. Pick files from `In` (use **Copy path**) and save results to `Out`.
-4. **Step 3:** check the result type and the customer/month folder, then click **Save all new or changed in S3**.
-5. **Step 4:** close the files in Excel, then click **Finish and clean up**. When it says the In and Out folders are empty, you're done.
+2. On the **1. Download from S3** tab, open a customer folder, select a month or single files, and click **Download selected**. The list on the right shows what's already in your In folder.
+3. On the **2. Work in Excel** tab, run your macros as usual. Pick files from `In` (use **Copy path**) and save results to `Out`. The tab lists the files in both folders.
+4. On the **3. Save in S3** tab, check the result type and the customer/month folder, then click **Save all new or changed in S3**.
+5. Close the files in Excel, then click **4. Finish and clean up** at the bottom right. It's there on every tab. When it says the In and Out folders are empty, you're done.
 
-Need help? Point at any button or box to see what it does, click the **?** next to a step, or press **F1** (or click **Help**) for the full help with search.
+Need help? Point at any button or box to see what it does, click **? Help for this step** on a tab, or press **F1** (or click **Help**) for the full help with search. The **Activity** tab shows what CurWork did, and the **Settings** tab holds your preferences and, read-only, the settings your admin chose. Cmd+1 to Cmd+5 (Ctrl on Windows) switch tabs.
 
 ## What billers see
 
@@ -48,7 +48,8 @@ Built-in safety:
 | `curwork_test.env.example` | Template for the private test settings (`curwork_test.env`, never committed) |
 | `tools/check_no_aws_details.sh`, `.githooks/` | Blocks commits and pushes that contain AWS account numbers, sign-in URLs, emails, keys or private values |
 | `.gitignore` | Keeps secrets, personal settings, test output, build output and local working files out of Git. Also skips the 116 MB test workbook (over GitHub's 100 MB limit). |
-| `curwork_admin.py` | The CurWork Admin Settings app: AWS admins use it to view and change the managed settings in AWS Parameter Store. Only the AWS admin role can save. |
+| `curwork_admin.py` | The CurWork Admin Settings app: AWS admins use it to view and change the managed settings in AWS Parameter Store. Only the AWS admin role can save. It's built as its own app (`CurWork Admin.app` on a Mac, `CurWorkAdmin.exe` on Windows), and CurWork itself is built without it. |
+| `curwork_settings_form.py` | The settings form both apps share: the same tabs, names and explanations. The admin app shows it editable; CurWork's Settings tab shows it read-only. It has no code that saves anything. |
 | `curwork_help.py` | All help text in one place: the tips shown when you point at a control, and the Help window topics |
 | `curwork_core.py` | S3, sign-in, settings and work-folder logic (no window code, fully tested) |
 | `curwork_admin_settings.json` | **Protected** laptop settings: only what CurWork needs to sign in (the sign-in details, Region, FIPS switch and use notice). Everything else, such as the bucket, folders, encryption key and work folder, is kept in AWS Parameter Store. Not stored in Git (it's in `.gitignore`); the admin hands it out. |
@@ -115,6 +116,7 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 
 | Version | Date (UTC) | Changes | Modified by |
 |---|---|---|---|
+| Beta 0.015 | 2026-11-23 00:55 | The main window now has one tab per step: 1. Download from S3, 2. Work in Excel and 3. Save in S3, plus Activity and Settings. The file lists fill the window. The Download tab also lists what's already in the In folder, and the Work tab lists the In and Out folders. Sign-in, Help and the 4. Finish and clean up button stay visible on every tab. Settings is now a tab, not a separate window. Its admin part shows the same form as the CurWork Admin Settings app, with the same tabs and names, read-only, and it scrolls when the window is short. The admin settings app is now built as its own app (CurWork Admin.app, CurWorkAdmin.exe), and CurWork is built without its code. Both apps have a self-test that the build runs. | mbitar |
 | Beta 0.014 | 2026-11-23 00:16 | The CurWork Admin Settings app is easier to use. Settings are grouped on four tabs. After Load, the bucket, encryption key and S3 folders are drop-downs filled from what exists in AWS, and you can still type a name. File types are checkboxes, numbers have arrows and limits, result types are a small table, and where preferences are saved is a plain choice of two places. Each setting shows a one-line explanation, its default and a **Use default** button. Changes are marked, and a value that can't be saved is explained in red under the setting before anything is saved. | mbitar |
 | Beta 0.013 | 2026-11-22 23:57 | The laptop settings file now only holds what CurWork needs to sign in: the sign-in details, the Region, the FIPS switch and the use notice. Every other setting, now including the work folder and where preferences are saved, is kept in AWS Parameter Store, which CurWork always reads after sign-in (`/curwork/admin-settings` unless the file names another). CurWork refuses a laptop file that holds any other setting. After sign-in it switches to the work folder the admin set, and today's log moves with it. The admin settings app has fields for the work folder and the preferences location, and the self-test now also reads the settings kept in AWS. The setup scripts save the bucket in Parameter Store instead of the laptop file. | mbitar |
 | Beta 0.012 | 2026-11-22 23:33 | Plain wording: the window, Help, the admin settings app and the guides now say "save in S3" instead of "send" or "upload". For example, the main button is **Save all new or changed in S3** and a finished file shows **Saved in S3**. The program folder is now `CurWork-app`, with no version in its name. Since the last entry: there is a checklist for testing by hand on a Mac (`MAC_HAND_TEST.md`); a settings file named with `--config` that doesn't exist now stops CurWork with an error; new tests cover the use notice, an expired sign-in and the checksum S3 checks when a file is saved; option 3 also saves a new test bucket to the settings kept in AWS; and new tests check that the Parameter Store settings work, are easy to use, and can only be changed by an admin. | mbitar |
@@ -148,4 +150,4 @@ The app is built for Windows, but the code runs on a Mac for testing. The `mac-t
 | 1.0.0 (code) | 2026-11-22 11:33 | First release | mbitar |
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.014 · Updated 2026-11-23 00:16 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.015 · Updated 2026-11-23 00:55 UTC · Modified by: mbitar*
