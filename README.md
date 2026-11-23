@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:49 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -50,9 +50,9 @@ CurWork is a small desktop app for the billing team. It does four things:
 
 ## Watch the demo
 
-<a href="docs/demo/curwork-demo.html"><img src="docs/demo/curwork-demo.gif" width="800" alt="Animated demo: a biller signs in, downloads a month of files, runs the macros, saves the result in S3 and cleans up the laptop."></a>
+<a href="https://scriptbuzz.github.io/curworks/demo/curwork-demo.html"><img src="docs/demo/curwork-demo.gif" width="800" alt="Animated demo: a biller signs in, downloads a month of files, runs the macros, saves the result in S3 and cleans up the laptop."></a>
 
-This loop plays a whole biller session at 2.5 times normal speed. The full demo, with captions, chapters and pause buttons, is [docs/demo/curwork-demo.html](docs/demo/curwork-demo.html). GitHub shows that page's code instead of playing it, so download the file and open it in a web browser. The demo uses made-up sample data.
+This loop shows each step of a biller session with its caption. **[Open the full demo in your browser](https://scriptbuzz.github.io/curworks/demo/curwork-demo.html)** to watch it play, with chapters and pause buttons. The demo uses made-up sample data.
 
 ## How it works
 
@@ -114,7 +114,7 @@ sample-data/                   Made-up cost report workbooks (no real customer d
 curwork_test.env.example       Template for your private test settings
 .githooks/                     The checks that stop AWS details being uploaded
 docs/diagrams/                 The diagrams in this README
-docs/demo/                     The animated demo (web page and a short loop)
+docs/demo/                     The animated demo (web page and a short loop), published at scriptbuzz.github.io/curworks
 docs/brand/                    The banner and the GitHub social preview image
 ```
 
@@ -129,7 +129,7 @@ Some files are never uploaded to GitHub. The `.gitignore` file keeps them out:
 
 ## For billers
 
-The [animated demo](docs/demo/curwork-demo.html) plays these steps from start to finish. It uses made-up sample data.
+The [animated demo](https://scriptbuzz.github.io/curworks/demo/curwork-demo.html) plays these steps from start to finish. It uses made-up sample data.
 
 First, start CurWork and click **Sign in**. Then finish signing in in the browser window that opens. After that, each step has its own tab:
 
@@ -199,4 +199,4 @@ Your account number, sign-in address and profile names are only stored in `curwo
 This is Beta 0.017, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:49 UTC · Modified by: mbitar*
