@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -97,7 +97,7 @@ cd $HOME\curworks
 .\run_windows_tests.ps1 -Bucket curwork-test-REPLACE-WITH-YOUR-BUCKET
 ```
 
-The first time, this creates `CurWork-app\curwork_admin_settings.json` from the example file. It fills in the bucket, your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
+The first time, this creates `CurWork-app\curwork_admin_settings.json` from the example file. That file only holds the sign-in settings: it fills in your sign-in address and the biller test sign-in from `curwork_test.env`, and copies the file next to `CurWork.exe`. It saves the bucket in AWS Parameter Store with your admin profile, because CurWork reads every other setting from there after sign-in. Sign in with the admin profile first. Then it carries straight on with the tests in part 6. You only need `-Bucket` again if the test bucket changes.
 
 ## 6. Run the automated tests
 
@@ -136,7 +136,7 @@ Go through these and note anything that looks wrong:
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.012 (DRAFT - For Internal Use)" |
+| 1 | Look at the taskbar and the window title | CurWork's own icon. The title reads "CurWork – Beta 0.013 (DRAFT - For Internal Use)" |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green |
 | 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar, then the 116 MB file appears in **In** |
 | 4 | Click **Open** next to **In**, open the file in Excel and run your macros | Four sheets of made-up data. Save the results to **Out** (use **Copy path** next to **Out** in the macro's Save dialog) |
@@ -175,10 +175,10 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 | "aws is not recognized" | Install the AWS CLI (part 1), then open a new PowerShell window |
 | The build stops at "Check every installed package for known vulnerabilities" | A package has a known security hole. Don't skip the check; send the build output for review |
 | CurWork says "AWS said you don't have permission for that" | The message names the refused AWS call. Check that **About** shows the biller test role. If it shows a different role, run part 5 again |
-| CurWork warns that the work folder is inside OneDrive | Leave the work folder as `%LOCALAPPDATA%\CurWork` in the admin settings |
+| CurWork warns that the work folder is inside OneDrive | Set the work folder back to `%LOCALAPPDATA%\CurWork` in the CurWork Admin Settings app |
 | A test fails in part 6 | Send `windows_tests_results.txt` for review before you test by hand |
 
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.013 · Updated 2026-11-22 23:56 UTC · Modified by: mbitar*

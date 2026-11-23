@@ -1,4 +1,4 @@
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - updated 2026-11-22 23:56 UTC - modified by: mbitar
 # Builds dist\CurWork.exe on a Windows build machine (not on biller laptops).
 # Run from this folder in PowerShell:  .\build_exe.ps1
 #
@@ -54,6 +54,6 @@ if ($proc.ExitCode -ne 0 -or -not $result.passed) { throw "The built CurWork.exe
 
 Write-Host "Built dist\CurWork.exe with curwork_admin_settings.json and sbom-runtime.cdx.json. Self-test passed."
 if ($usingExample) {
-    Write-Warning "dist\curwork_admin_settings.json is only the EXAMPLE (CHANGE-ME values). Replace it with the real admin settings file before anyone uses this build."
+    Write-Warning "dist\curwork_admin_settings.json is only the EXAMPLE (no sign-in details). Replace it with the real admin settings file before anyone uses this build."
 }
 Write-Host "Sign CurWork.exe with the company code-signing certificate before handing it out."

@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - real AWS tests - modified by: mbitar
+CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - real AWS tests - modified by: mbitar
 
 Runs CurWork's own code (curwork_core) against the real test bucket with the sign-in CurWork uses,
 the way the window does, and reports PASS/FAIL for each step. No mocks.

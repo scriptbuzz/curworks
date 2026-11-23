@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - reset everything - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - reset everything - updated 2026-11-22 23:56 UTC - modified by: mbitar
 # Puts the Mac test back to a clean, ready-to-test state in one go:
 #   Part 1: deletes EVERY CurWork test item (same search as the cleanup script, all items picked).
 #   Part 2: creates a fresh test bucket with all sample files, including the large one, and biller test access.

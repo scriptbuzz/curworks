@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - biller test access - updated 2026-11-22 23:56 UTC - modified by: mbitar
 # Sets up the sign-in CurWork uses for testing: an IAM Identity Center permission set (CURWORK_ROLE, default CurWorkBillerTest),
 # built from CurWork's own least-privilege biller policy (iam/biller_permission_set_policy.json), limited to
 # test buckets (curwork-test-<account>-*), and assigned to you in the test account (CURWORK_ACCOUNT).
@@ -184,6 +184,10 @@ cfg_path = "CurWork-app/curwork_admin_settings.json"
 if not os.path.exists(cfg_path):   # fresh clone: start from the example (the real file is never in Git)
     shutil.copy("CurWork-app/curwork_admin_settings.example.json", cfg_path)
 cfg = json.load(open(cfg_path, encoding="utf-8-sig"))
+sys.path.insert(0, "CurWork-app"); import curwork_core as core
+# The laptop file only holds the sign-in settings (CurWork refuses anything else). Notes for them stay.
+cfg = {k: v for k, v in cfg.items() if k in core.LOCAL_KEYS or k in ("_version", "_help")
+       or (k.startswith("_") and k.endswith("_help") and k[1:-5] in core.LOCAL_KEYS)}
 cfg["aws_profile"] = E["CURWORK_PROFILE"]
 cfg.setdefault("sso", {}).update({"session_name": E["CURWORK_SSO_SESSION"], "start_url": E["CURWORK_SSO_START_URL"],
                                   "sso_region": SSO_REGION, "account_id": ACCOUNT, "role_name": NAME})

@@ -2,9 +2,9 @@
 CurWork Admin Settings: a small window for AWS admins to view and change CurWork's managed admin
 settings (bucket, folders, encryption, upload rules) in AWS Systems Manager Parameter Store.
 
-Version:     Beta 0.012
+Version:     Beta 0.013
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 23:32 UTC
+Updated:     2026-11-22 23:56 UTC
 Modified by: mbitar
 
 Who can change the settings is decided by AWS, not by this window: billers' permissions can only read
@@ -32,7 +32,7 @@ import botocore.exceptions as bexc
 import curwork_core as core
 
 APP_TITLE = "CurWork Admin Settings"
-DEFAULT_PARAMETER = "/curwork/admin-settings"
+DEFAULT_PARAMETER = core.DEFAULT_PARAMETER
 
 # The form: (key, label, kind). kind is text, list (comma-separated), stages (one "Name = folder/" per line) or int.
 FIELDS = (
@@ -45,6 +45,8 @@ FIELDS = (
     ("upload_extensions", "File types billers can save in S3 (separate them with commas)", "list"),
     ("large_download_warning_mb", "Ask before downloading more than (MB)", "int"),
     ("max_concurrency", "Files copied at the same time (1 to 32)", "int"),
+    ("work_dir", "Work folder on each laptop (In, Out and logs are kept here)", "text"),
+    ("user_settings_location", "Where each biller's preferences are saved (tool_folder or work_folder)", "text"),
     ("_version", "Version label (shown in CurWork's About window)", "text"),
 )
 
@@ -399,7 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", default=None, help=f"Local {core.CONFIG_FILE_NAME} to take defaults from")
     args = parser.parse_args(argv)
     try:
-        local = core.load_settings(args.config)
+        local = core.load_settings(args.config, strict=False)   # an older file can still be copied to AWS
     except core.CurWorkError:
         local = None
     parameter = args.parameter or (local.settings_parameter if local else "") or DEFAULT_PARAMETER

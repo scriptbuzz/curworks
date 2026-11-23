@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - test bucket setup - updated 2026-11-22 23:56 UTC - modified by: mbitar
 # Creates a NEW test bucket in the test account (CURWORK_ACCOUNT in curwork_test.env), set up the way the Admin and Security Guide describes,
 # uploads the made-up sample workbooks, and points CurWork's admin settings file at the bucket.
 # The admin profile (CURWORK_ADMIN_PROFILE) is used ONLY for this setup. CurWork itself signs in with the CurWorkBillerTest permission
@@ -70,30 +70,31 @@ bucket, region, setup_profile = sys.argv[1:4]
 cfg = configparser.RawConfigParser(); cfg.read(os.path.expanduser("~/.aws/config"))
 sec = cfg["profile " + setup_profile]
 sso_region = sec.get("sso_region") or (cfg["sso-session " + sec["sso_session"]].get("sso_region") if sec.get("sso_session") else None) or region
+sys.path.insert(0, "CurWork-app")
+import curwork_core as core, curwork_admin as admin
 p = "CurWork-app/curwork_admin_settings.json"
 if not os.path.exists(p):   # fresh clone: start from the example (the real file is never in Git)
     import shutil; shutil.copy("CurWork-app/curwork_admin_settings.example.json", p)
 d = json.load(open(p, encoding="utf-8-sig"))
+# The laptop file only holds the sign-in settings (CurWork refuses anything else). Notes for them stay.
+d = {k: v for k, v in d.items() if k in core.LOCAL_KEYS or k in ("_version", "_help")
+     or (k.startswith("_") and k.endswith("_help") and k[1:-5] in core.LOCAL_KEYS)}
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-d["_version"] = f"Admin settings for CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
+d["_version"] = f"Admin settings for CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - Mac TEST settings - updated {stamp} - modified by: mbitar"
 E = os.environ
-d["bucket"], d["region"], d["aws_profile"] = bucket, region, E["CURWORK_PROFILE"]
+d["region"], d["aws_profile"] = region, E["CURWORK_PROFILE"]
+d["settings_parameter"] = d.get("settings_parameter") or core.DEFAULT_PARAMETER
 d["sso"] = {"session_name": E["CURWORK_SSO_SESSION"], "start_url": E["CURWORK_SSO_START_URL"],
             "sso_region": sso_region, "account_id": E["CURWORK_ACCOUNT"], "role_name": E["CURWORK_ROLE"]}
 json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
-print(f"CurWork will use bucket {bucket} ({region}) and sign in as {E['CURWORK_ROLE']} (profile {E['CURWORK_PROFILE']}, SSO Region {sso_region}).")
-if d.get("settings_parameter"):
-    # CurWork ignores the local bucket when the settings come from Parameter Store, so save it there too,
-    # with the admin profile (billers can't change the parameter).
-    sys.path.insert(0, "CurWork-app")
-    import curwork_core as core, curwork_admin as admin
-    store = admin.AdminStore(d["settings_parameter"], region, profile=setup_profile)
-    managed, version = store.load()
-    if managed is None:
-        managed = {k: v for k, v in d.items() if k in core.MANAGED_KEYS}
-    managed["bucket"] = bucket
-    managed["_version"] = f"Mac TEST settings - updated {stamp}"
-    print(f"Saved the bucket to Parameter Store {d['settings_parameter']} (version {store.save(managed, version)}).")
+print(f"CurWork will sign in as {E['CURWORK_ROLE']} (profile {E['CURWORK_PROFILE']}, SSO Region {sso_region}).")
+# The bucket is kept in Parameter Store. Save it there with the admin profile (billers can't change it).
+store = admin.AdminStore(d["settings_parameter"], region, profile=setup_profile)
+managed, version = store.load()
+managed = dict(managed or {})
+managed["bucket"] = bucket
+managed["_version"] = f"Mac TEST settings - updated {stamp}"
+print(f"Saved bucket {bucket} in Parameter Store {d['settings_parameter']} (version {store.save(managed, version)}).")
 PY
 
 step "Check everything was created (re-reads AWS)" CurWork-app/.venv/bin/python - "$BUCKET" "$REGION" "$PROFILE" <<'PY'
@@ -144,10 +145,13 @@ for local, key in (("agency-a-cur-2026-09.xlsx", "converted/agency-a/2026-09/age
         want = os.path.getsize(os.path.join("sample-data", local)); got = s3.head_object(Bucket=bucket, Key=key)["ContentLength"]
         return want == got, f"{got} of {want} bytes"
     check(f"In S3: {key}", same_size)
-def settings_point_here():
-    d = json.load(open("CurWork-app/curwork_admin_settings.json", encoding="utf-8-sig")); return d.get("bucket") == bucket, d.get("bucket")
-check("CurWork's admin settings use this bucket", settings_point_here)
-param = json.load(open("CurWork-app/curwork_admin_settings.json", encoding="utf-8-sig")).get("settings_parameter")
+local = json.load(open("CurWork-app/curwork_admin_settings.json", encoding="utf-8-sig"))
+def laptop_file_is_sign_in_only():
+    sys.path.insert(0, "CurWork-app"); import curwork_core as core
+    extra = sorted(k for k in local if not k.startswith("_") and k not in core.LOCAL_KEYS)
+    return not extra, ", ".join(extra) or "sign-in settings only"
+check("The laptop settings file only holds the sign-in settings", laptop_file_is_sign_in_only)
+param = local.get("settings_parameter") or "/curwork/admin-settings"
 if param:
     def parameter_points_here():
         got = json.loads(boto3.Session(profile_name=profile, region_name=region).client("ssm")

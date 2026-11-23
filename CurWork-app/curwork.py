@@ -3,9 +3,9 @@ CurWork: a simple window for billers to get CUR workbooks from Amazon S3,
 run the existing VBA macros on local copies, send the results back to S3,
 and leave nothing behind on the laptop.
 
-Version:     Beta 0.012
+Version:     Beta 0.013
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 23:32 UTC
+Updated:     2026-11-22 23:56 UTC
 Modified by: mbitar
 
 Run:  python curwork.py            (or the packaged CurWork.exe)
@@ -615,7 +615,7 @@ class SettingsDialog(tk.Toplevel):
 
     @staticmethod
     def _short_version(text: str) -> str:
-        """'Admin settings for CurWork Beta 0.012 - DRAFT - ... - updated 2026-11-22 14:32 UTC - modified by: x' -> short form."""
+        """'Admin settings for CurWork Beta 0.013 - DRAFT - ... - updated 2026-11-22 14:32 UTC - modified by: x' -> short form."""
         if not text:
             return "not stated"
         ver = re.search(r"Beta [0-9.]+|\b\d+\.\d+(?:\.\d+)?\b", text)
@@ -860,24 +860,25 @@ class CurWorkApp:
         s2.columnconfigure(1, weight=1)
         ttk.Label(s2, text="In the macro menu, pick files from the In folder and save results to the Out folder.",
                   style="Hint.TLabel", wraplength=560).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 6))
-        for r, (label, path, key) in enumerate((("In (files from S3):", self.work.in_dir, "in"),
-                                                ("Out (your results):", self.work.out_dir, "out")), start=1):
+        self._path_entries: dict[str, ttk.Entry] = {}
+        for r, (label, key) in enumerate((("In (files from S3):", "in"), ("Out (your results):", "out")), start=1):
             ttk.Label(s2, text=label).grid(row=r, column=0, sticky="w", pady=2)
             e = ttk.Entry(s2)
-            e.insert(0, str(path))
-            e.configure(state="readonly")
+            self._path_entries[key] = e
             self.tips[f"{key}_path"] = Tooltip(e, helptext.TIPS[f"{key}_path"])
             e.grid(row=r, column=1, sticky="ew", padx=6)
-            b_open = ttk.Button(s2, text="Open", command=lambda p=path: open_folder(p))
+            # The work folder can change after sign-in, so look the folder up when the button is clicked.
+            b_open = ttk.Button(s2, text="Open", command=lambda k=key: open_folder(self._work_path(k)))
             b_open.grid(row=r, column=2, padx=(0, 4))
-            b_copy = ttk.Button(s2, text="Copy path", command=lambda p=path: self._copy(p))
+            b_copy = ttk.Button(s2, text="Copy path", command=lambda k=key: self._copy(self._work_path(k)))
             b_copy.grid(row=r, column=3)
             self.tips[f"open_{key}"] = Tooltip(b_open, helptext.TIPS["open"])
             self.tips[f"copy_path_{key}"] = Tooltip(b_copy, helptext.TIPS["copy_path"])
+        self._show_work_paths()
         self.in_count_lbl = tip(ttk.Label(s2, text="", style="Hint.TLabel"), "counts")
         self.in_count_lbl.grid(row=3, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
-        # Step 3: upload -------------------------------------------------
+        # Step 3: save in S3 -------------------------------------------------
         s3 = self._step_frame(right, "3. Save results in S3", "step3")
         s3.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         s3.columnconfigure(0, weight=1)
@@ -1149,6 +1150,11 @@ class CurWorkApp:
             log.warning(warn)
             messagebox.showwarning(APP_TITLE, warn, parent=self.root)
         self.refresh_out()
+        self._leftovers_prompt()
+        self.check_sign_in()
+
+    def _leftovers_prompt(self) -> None:
+        """Offer to keep or delete files left in the work folder by an earlier session."""
         n_in, n_out, n_out_all = self.work.leftovers()
         if n_in or n_out_all:
             parts = []
@@ -1169,7 +1175,6 @@ class CurWorkApp:
                     pass
                 else:
                     self._clean_now()
-        self.check_sign_in()
 
     def _clean_now(self) -> None:
         skipped = self.work.clean()
@@ -1198,12 +1203,65 @@ class CurWorkApp:
         """After sign-in: the managed settings from Parameter Store, or None when this install doesn't use them."""
         return self.svc.load_managed_settings() if self.s.settings_parameter else None
 
+    def _work_path(self, key: str) -> Path:
+        return self.work.in_dir if key == "in" else self.work.out_dir
+
+    def _show_work_paths(self) -> None:
+        for key, e in self._path_entries.items():
+            e.configure(state="normal")
+            e.delete(0, "end")
+            e.insert(0, str(self._work_path(key)))
+            e.configure(state="readonly")
+
+    def _switch_work_folder(self, folder: Path) -> None:
+        """Use the work folder the admin set in Parameter Store instead of the default one used before sign-in."""
+        old = self.work
+        new = core.WorkArea(folder)
+        new.ensure()
+        self.log_file = core.switch_file_logging(self.log_file, new)
+        self.work = new
+        self._show_work_paths()
+        log.info("Work folder set by your admin: %s (CurWork used %s before you signed in).", new.root, old.root)
+        if not self.folder_var.get():
+            self.folder_var.set(new.load_state().get("context", ""))
+        self.refresh_out()
+        if self.self_test:
+            return
+        warn = core.sync_folder_warning(new.root)
+        if warn:
+            log.warning(warn)
+            messagebox.showwarning(APP_TITLE, warn, parent=self.root)
+        n_in, _n_out, n_out_all = old.leftovers()
+        if n_in or n_out_all:
+            messagebox.showwarning(
+                APP_TITLE, f"Your admin moved CurWork's work folder to:\n{new.root}\n\n"
+                f"{n_in + n_out_all} file(s) are still in the folder CurWork used before you signed in:\n{old.root}\n\n"
+                "CurWork doesn't use that folder any more. Move any files you still need into the new folder.",
+                parent=self.root)
+        self._leftovers_prompt()
+
+    def _switch_prefs(self, new) -> None:
+        """Keep the biller's preferences where the admin's settings say, once those are read from AWS."""
+        store = core.UserSettingsStore(new)
+        if store.path == self.prefs_store.path:
+            return
+        if store.path.is_file():
+            self.prefs = store.load()
+            self.apply_prefs(reset_layout=False)
+        else:
+            store.save(self.prefs)
+        self.prefs_store = store
+        log.info("Your preferences are saved in %s", store.path)
+
     def _apply_settings(self, new) -> None:
         """Use the settings just read from Parameter Store everywhere in the window."""
         if new is None:
             return
         self.s = new
         self.svc.s = new
+        if Path(new.work_dir) != self.work.root:
+            self._switch_work_folder(new.work_dir)
+        self._switch_prefs(new)
         self.where_lbl.configure(text=self._where_text())
         self.stage_box.configure(values=list(new.output_stages))
         if self.stage_var.get() not in new.output_stages:
@@ -1735,8 +1793,8 @@ def _write_report(report: dict, report_file: str | None) -> None:
 def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = None) -> int:
     """
     --self-test: start the real window without showing dialogs, check what support usually asks about,
-    print one JSON report and exit (0 = all checks passed). Makes no changes in AWS. The only AWS call is
-    sts:GetCallerIdentity with the saved sign-in, to confirm which role CurWork would use.
+    print one JSON report and exit (0 = all checks passed). Makes no changes in AWS. It only reads: sts:GetCallerIdentity
+    with the saved sign-in, to confirm which role CurWork would use, then the settings kept in Parameter Store.
     """
     import json
     checks: list[dict] = []
@@ -1758,7 +1816,6 @@ def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = No
               core.candidate_config_paths() == [core.tool_folder() / core.CONFIG_FILE_NAME]
               and settings.source_path == core.tool_folder() / core.CONFIG_FILE_NAME,
               "ignored: " + (", ".join(settings.ignored_config_overrides) or "nothing"))
-    check("Work folder usable", app.work.root.is_dir() and os.access(app.work.root, os.W_OK), str(app.work.root))
     details = about_details(app)
     flat = " ".join(f"{k} {v}" for _, rows in details for k, v in rows).lower()
     check("About window details", all(w in flat for w in ("python", "boto3", "tcl/tk", "admin settings")), "")
@@ -1777,6 +1834,10 @@ def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = No
             who = app.svc.whoami()
             role = who.rsplit("(", 1)[-1].rstrip(")") if "(" in who else ""
             check(role_check, role == expected, f"signed in as {who}; admin settings expect {expected}")
+            if settings.settings_parameter:
+                app._apply_settings(app.svc.load_managed_settings())
+                check("Settings kept in AWS read after sign-in", bool(app.s.bucket),
+                      f"{settings.settings_parameter}: bucket {app.s.bucket}, work folder {app.work.root}")
         except Exception as e:  # noqa: BLE001 - report, don't crash
             kind, msg = core.classify_error(e)
             if kind in ("auth", "config"):      # no saved sign-in yet: can't check, so skip (not a failure)
@@ -1784,6 +1845,7 @@ def self_test(root: tk.Tk, settings: core.Settings, report_file: str | None = No
                                "detail": f"skipped: not signed in yet ({kind}). Sign in once, then run the self-test again."})
             else:
                 check(role_check, False, f"{kind}: {msg}")
+    check("Work folder usable", app.work.root.is_dir() and os.access(app.work.root, os.W_OK), str(app.work.root))
     report = {"app": f"{APP_NAME} {core.RELEASE_LABEL}", "status": core.STATUS, "built_app": frozen,
               "passed": all(c["ok"] for c in checks), "checks": checks}
     _write_report(report, report_file)

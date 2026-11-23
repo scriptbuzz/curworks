@@ -1,4 +1,4 @@
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - Windows test runner - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - Windows test runner - updated 2026-11-22 23:56 UTC - modified by: mbitar
 #
 # Runs CurWork's automated tests on a Windows 11 test machine and saves one PASS/FAIL report
 # (windows_tests_results.txt, which Git ignores). Run it from the top folder of the repository:
@@ -62,15 +62,17 @@ try {
     $admin = Join-Path $Tool "curwork_admin_settings.json"
     if ($Bucket -or -not (Test-Path $admin)) {
         if (-not $Bucket) { throw "There's no admin settings file yet. Run again with -Bucket <name of the test bucket>." }
-        $src = if (Test-Path $admin) { $admin } else { Join-Path $Tool "curwork_admin_settings.example.json" }
-        $cfg = Get-Content $src -Raw | ConvertFrom-Json
-        $cfg.bucket = $Bucket
+        # The laptop file only holds the sign-in settings. The bucket is kept in AWS Parameter Store.
+        $cfg = Get-Content (Join-Path $Tool "curwork_admin_settings.example.json") -Raw | ConvertFrom-Json
         $cfg.aws_profile = $env:CURWORK_PROFILE
         $cfg.sso = [pscustomobject]@{
             session_name = $env:CURWORK_SSO_SESSION; start_url = $env:CURWORK_SSO_START_URL
             sso_region = $env:CURWORK_SSO_REGION; account_id = $env:CURWORK_ACCOUNT; role_name = $env:CURWORK_ROLE }
         $cfg | ConvertTo-Json -Depth 5 | Set-Content -Path $admin -Encoding UTF8
-        Write-Host "Admin settings written for bucket $Bucket (sign-in: $($env:CURWORK_ROLE), profile $($env:CURWORK_PROFILE))."
+        Write-Host "Laptop settings written (sign-in: $($env:CURWORK_ROLE), profile $($env:CURWORK_PROFILE))."
+        # Save the bucket in Parameter Store with the admin profile. Billers can only read it.
+        & $Py -c "import sys; sys.path.insert(0, sys.argv[1]); import curwork_core as core, curwork_admin as admin; s = core.load_settings(sys.argv[2]); st = admin.AdminStore(s.settings_parameter, s.region, profile=sys.argv[3]); m, v = st.load(); m = dict(m or {}); m['bucket'] = sys.argv[4]; print('Saved the bucket in Parameter Store', s.settings_parameter, 'version', st.save(m, v))" $Tool $admin $env:CURWORK_ADMIN_PROFILE $Bucket
+        if ($LASTEXITCODE -ne 0) { throw "Couldn't save the bucket in Parameter Store with the admin profile. Sign in with it (aws sso login --profile $($env:CURWORK_ADMIN_PROFILE)) and run again." }
     }
     # CurWork.exe reads the admin settings file next to it, so keep the built copy in step with the test one.
     $distDir = Join-Path $Tool "dist"

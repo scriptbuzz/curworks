@@ -1,5 +1,5 @@
 """
-CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
+CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - window tests - modified by: mbitar
 
 Drives the real CurWork window (tkinter) against a mocked S3 (moto), the way a biller would:
 sign-in check, browse, download (small and multipart), upload, refused uploads, the AWS refusal message,
@@ -107,6 +107,8 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(core.S3Service, "_transfer_config", lambda self: core.TransferConfig(
         multipart_threshold=5 * 1024 * 1024, multipart_chunksize=5 * 1024 * 1024, max_concurrency=4))
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))      # the default work folder (~/CurWork) stays inside the test folder
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
     dialogs = Dialogs(monkeypatch)
     settings = core.settings_from_dict({"bucket": BUCKET, "aws_profile": "", "work_dir": str(tmp_path / "CurWork")})
     store = core.UserSettingsStore(settings, candidates=[tmp_path / "prefs.json"])
@@ -287,6 +289,25 @@ def test_sign_in_reads_managed_settings_from_parameter_store(world):
     assert list(a.stage_box.cget("values")) == ["Priced", "Special"]
     world.open_folder("converted/agency-a/")
     assert a.tree.exists("converted/agency-a/2026-10/"), "browsing works with the managed settings"
+
+
+def test_sign_in_switches_to_the_work_folder_set_in_parameter_store(world):
+    a = _use_parameter(world)
+    old_root, old_log = a.work.root, a.log_file
+    (a.work.in_dir / "left-behind.xlsx").write_bytes(b"x")
+    core.log.info("Line written before sign-in.")
+    new_root = world.tmp / "AdminChosen"
+    boto3.client("ssm", region_name="us-east-1").put_parameter(
+        Name="/curwork/admin-settings", Value=json.dumps({"bucket": BUCKET, "work_dir": str(new_root)}), Type="String")
+    a.check_sign_in()
+    world.idle()
+    assert a.signed_in and a.work.root == new_root and new_root.joinpath("In").is_dir()
+    assert a._path_entries["in"].get() == str(new_root / "In") and a._path_entries["out"].get() == str(new_root / "Out")
+    assert a.log_file.parent == new_root / "Logs" and not old_log.exists()
+    text = a.log_file.read_text(encoding="utf-8")
+    assert "Line written before sign-in." in text and "Work folder set by your admin" in text
+    warns = [m for k, m in world.dialogs.seen if k == "showwarning"]
+    assert any(str(old_root) in m and "1 file(s)" in m for m in warns), "the biller is told about files in the old folder"
 
 
 def test_sign_in_without_the_managed_settings_stops_with_a_message(world):
@@ -489,7 +510,7 @@ def test_about_and_settings_windows(world):
     dlg = curwork.AboutDialog(world.root, a)
     world.pump(0.3)
     text = dlg.text()
-    for word in ("Beta 0.012", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
+    for word in ("Beta 0.013", "boto3", "Python", "Tcl/Tk", BUCKET, "Admin settings"):
         assert word in text
     assert "secret" not in text.lower()
     dlg.copy()
@@ -547,7 +568,7 @@ def test_self_test_mode_reports_and_exits(tmp_path):
     """Runs 'curwork.py --self-test' in its own process, the way the build and the test runner do."""
     import subprocess
     cfg = tmp_path / core.CONFIG_FILE_NAME
-    cfg.write_text(json.dumps({"bucket": BUCKET, "aws_profile": "", "work_dir": str(tmp_path / "CurWork")}))
+    cfg.write_text(json.dumps({"aws_profile": ""}))      # the laptop file only holds sign-in settings
     env = {**os.environ, "HOME": str(tmp_path)}
     run = subprocess.run([sys.executable, str(Path(curwork.__file__)), "--config", str(cfg), "--self-test"],
                          capture_output=True, text=True, timeout=120, env=env)
@@ -684,7 +705,7 @@ def test_self_test_saves_report_file(tmp_path):
     """--report saves the self-test result to a file (how CurWork.exe on Windows reports it)."""
     import subprocess
     cfg = tmp_path / core.CONFIG_FILE_NAME
-    cfg.write_text(json.dumps({"bucket": BUCKET, "aws_profile": "", "work_dir": str(tmp_path / "CurWork")}))
+    cfg.write_text(json.dumps({"aws_profile": ""}))
     out = tmp_path / "report.json"
     env = {**os.environ, "HOME": str(tmp_path)}
     run = subprocess.run([sys.executable, str(Path(curwork.__file__)), "--config", str(cfg), "--self-test",

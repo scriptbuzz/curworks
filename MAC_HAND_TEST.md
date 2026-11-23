@@ -1,6 +1,6 @@
 # Testing CurWork by hand on a Mac
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
 
 This checklist tests CurWork's own steps on a Mac: signing in, downloading, saving results in S3 and cleaning up. It doesn't test the VBA macros, because Excel for Mac may run them differently. Test the macros on a Windows laptop (see [WINDOWS.md](WINDOWS.md), part 7).
 
@@ -17,7 +17,7 @@ Open `CurWork-app/CurWork.app` and note anything that looks wrong.
 
 | # | Try this | What should happen |
 |---|---|---|
-| 1 | Look at the Dock and the window title | The Dock shows CurWork's own icon, not the Python rocket. The title reads "CurWork – Beta 0.012 (DRAFT - For Internal Use)". |
+| 1 | Look at the Dock and the window title | The Dock shows CurWork's own icon, not the Python rocket. The title reads "CurWork – Beta 0.013 (DRAFT - For Internal Use)". |
 | 2 | Click **Sign in** | Your browser opens. After you approve, CurWork shows your name and the biller test role in green. |
 | 3 | Open `agency-b` > `2026-10` and click **Download selected** | A progress bar moves, then the 116 MB file appears in **In**. |
 | 4 | Click **Open** next to **In** and open the file in Excel | The file has four sheets of made-up data. |

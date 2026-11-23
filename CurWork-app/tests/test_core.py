@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.012 - DRAFT - For Internal Use - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork tests - Beta 0.013 - DRAFT - For Internal Use - updated 2026-11-22 23:56 UTC - modified by: mbitar
 """Tests for curwork_core using a mocked S3 (moto). Run: python -m pytest -q"""
 import os
 import sys
@@ -71,9 +71,41 @@ def test_config_normalizes(tmp_path):
 
 def test_load_settings_from_file(tmp_path):
     p = tmp_path / "curwork_admin_settings.json"
-    p.write_text('{"_comment": "x", "bucket": "my-bucket"}', encoding="utf-8")
+    p.write_text('{"_comment": "x", "region": "us-west-2", "sso": {"role_name": "Biller"}}', encoding="utf-8")
     s = core.load_settings(str(p))
-    assert s.bucket == "my-bucket" and s.source_path == p
+    assert s.region == "us-west-2" and s.sso["role_name"] == "Biller" and s.source_path == p
+    # Parameter Store is required: without a name in the file, CurWork reads the default parameter.
+    assert s.settings_parameter == core.DEFAULT_PARAMETER and s.needs_managed_settings and s.bucket == ""
+
+
+def test_laptop_file_with_settings_kept_in_aws_is_refused(tmp_path):
+    p = tmp_path / "curwork_admin_settings.json"
+    p.write_text('{"region": "us-east-1", "bucket": "old-bucket", "work_dir": "C:/CurWork"}', encoding="utf-8")
+    with pytest.raises(core.CurWorkError, match="can only hold the settings CurWork needs to sign in.*bucket, work_dir"):
+        core.load_settings(str(p))
+    # The admin settings app still opens an older file, so it can copy those settings to AWS.
+    s = core.load_settings(str(p), strict=False)
+    assert s.bucket == "" and s.local_data["bucket"] == "old-bucket"
+
+
+def test_only_sign_in_settings_stay_on_the_laptop():
+    assert set(core.LOCAL_KEYS) == {"aws_profile", "region", "use_fips_endpoint", "aws_cli_path", "login_banner",
+                                    "settings_parameter", "sso"}
+    assert {"bucket", "work_dir", "user_settings_location", "kms_key_id"} <= set(core.MANAGED_KEYS)
+
+
+def test_switch_file_logging_moves_todays_lines(tmp_path):
+    old = core.WorkArea(tmp_path / "old"); old.ensure()
+    new = core.WorkArea(tmp_path / "new"); new.ensure()
+    first = core.setup_file_logging(old)
+    core.log.info("before the switch")
+    moved = core.switch_file_logging(first, new)
+    core.log.info("after the switch")
+    for h in list(core.log.handlers):
+        if getattr(h, "baseFilename", "") == str(moved):
+            h.flush(); core.log.removeHandler(h); h.close()
+    text = moved.read_text(encoding="utf-8")
+    assert not first.exists() and text.index("before the switch") < text.index("after the switch")
 
 
 # ---- paths ----------------------------------------------------------------
@@ -378,15 +410,15 @@ def test_friendly_identity():
 
 def test_config_with_bom_and_bad_types(tmp_path):
     p = tmp_path / "curwork_admin_settings.json"
-    p.write_bytes(b"\xef\xbb\xbf" + b'{"bucket": "my-bucket"}')
-    assert core.load_settings(str(p)).bucket == "my-bucket"
-    p.write_text('{"bucket": "my-bucket", "max_concurrency": "lots"}')
+    p.write_bytes(b"\xef\xbb\xbf" + b'{"region": "us-west-2"}')
+    assert core.load_settings(str(p)).region == "us-west-2"
+    p.write_text('{"sso": "not an object"}')
     with pytest.raises(core.CurWorkError):
         core.load_settings(str(p))
-    p.write_text('{"bucket": "my-bucket", "work_dir": "C:\\CurWork"}')  # invalid escape \C
+    p.write_text('{"aws_cli_path": "C:\\aws"}')  # invalid escape \a
     with pytest.raises(core.CurWorkError, match="double backslashes"):
         core.load_settings(str(p))
-    p.write_text('{"bucket": "my-bucket", "work_dir": "C:\\new"}')  # valid JSON, but \n is a newline
+    p.write_text('{"aws_cli_path": "C:\\new"}')  # valid JSON, but \n is a newline
     with pytest.raises(core.CurWorkError, match="double backslashes"):
         core.load_settings(str(p))
 
@@ -576,8 +608,8 @@ def _frozen_app(monkeypatch, tmp_path):
     (tool / "CurWork.exe").write_bytes(b"")
     monkeypatch.setattr(core.sys, "frozen", True, raising=False)
     monkeypatch.setattr(core.sys, "executable", str(tool / "CurWork.exe"))
-    good = {"bucket": "installed-bucket", "output_stages": {"Priced": "priced/"}, "browse_roots": ["converted/"]}
-    own = dict(good, bucket="bypass-bucket")
+    good = {"region": "us-west-2", "settings_parameter": "/curwork/installed"}
+    own = dict(good, settings_parameter="/curwork/bypass")
     mine = tmp_path / "mine.json"; mine.write_text(__import__("json").dumps(own), encoding="utf-8")
     appdata = tmp_path / "appdata"; (appdata / "CurWork").mkdir(parents=True)
     (appdata / "CurWork" / core.CONFIG_FILE_NAME).write_text(__import__("json").dumps(own), encoding="utf-8")
@@ -590,7 +622,7 @@ def test_built_app_always_uses_installed_admin_settings(monkeypatch, tmp_path):
     tool, good, mine = _frozen_app(monkeypatch, tmp_path)
     (tool / core.CONFIG_FILE_NAME).write_text(__import__("json").dumps(good), encoding="utf-8")
     s = core.load_settings(str(mine))
-    assert s.bucket == "installed-bucket"
+    assert s.settings_parameter == "/curwork/installed"
     assert s.source_path == tool.resolve() / core.CONFIG_FILE_NAME
     assert s.ignored_config_overrides == [f"--config {mine}", f"CURWORK_CONFIG={mine}"]
     assert core.candidate_config_paths(str(mine)) == [tool.resolve() / core.CONFIG_FILE_NAME]
@@ -607,10 +639,10 @@ def test_built_app_without_installed_settings_refuses_other_files(monkeypatch, t
 def test_running_from_source_still_accepts_config_override(monkeypatch, tmp_path):
     monkeypatch.setattr(core.sys, "frozen", False, raising=False)
     mine = tmp_path / "mine.json"
-    mine.write_text('{"bucket": "dev-bucket", "output_stages": {"Priced": "priced/"}}', encoding="utf-8")
+    mine.write_text('{"settings_parameter": "/curwork/dev"}', encoding="utf-8")
     monkeypatch.delenv("CURWORK_CONFIG", raising=False)
     s = core.load_settings(str(mine))
-    assert s.bucket == "dev-bucket" and s.ignored_config_overrides == []
+    assert s.settings_parameter == "/curwork/dev" and s.ignored_config_overrides == []
 
 
 def test_running_from_source_refuses_a_named_settings_file_that_is_missing(monkeypatch, tmp_path):

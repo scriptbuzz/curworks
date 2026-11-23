@@ -1,5 +1,5 @@
 #!/bin/bash
-# CurWork Beta 0.012 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork Beta 0.013 - DRAFT - For Internal Use (FPT) - test cleanup - updated 2026-11-22 23:56 UTC - modified by: mbitar
 # Finds EVERYTHING the CurWork test created, even after a crash, lists it, and deletes only what you pick:
 #   S3:      buckets named curwork-test-* or tagged Purpose=CurWork-test, in any Region (with every file
 #            version and unfinished upload)
@@ -34,9 +34,10 @@ E = os.environ
 ACCOUNT = E["CURWORK_ACCOUNT"]
 
 def settings_bucket():
+    """The test bucket CurWork uses: setup saves it in Parameter Store and notes it in test_bucket.txt."""
     try:
-        return json.load(open(os.path.join(TOOL, "curwork_admin_settings.json"), encoding="utf-8-sig")).get("bucket", "")
-    except (OSError, ValueError):
+        return open(os.path.join(HERE, "test_bucket.txt"), encoding="utf-8").read().split()[0]
+    except (OSError, IndexError):
         return ""
 
 def count_files(path):

@@ -2,9 +2,9 @@
 CurWork core: moves CUR workbooks between Amazon S3 and a local work folder
 so the billing VBA macros can run on local files with no code changes.
 
-Version:     Beta 0.012
+Version:     Beta 0.013
 Status:      DRAFT - For Internal Use (FPT)
-Updated:     2026-11-22 23:32 UTC
+Updated:     2026-11-22 23:56 UTC
 Modified by: mbitar
 
 This module has no GUI code, so it can be tested on its own.
@@ -33,8 +33,8 @@ import botocore.exceptions as bexc
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config as BotoConfig
 
-VERSION = "0.012-beta"            # no spaces: used in the S3 user agent and metadata
-RELEASE_LABEL = "Beta 0.012"
+VERSION = "0.013-beta"            # no spaces: used in the S3 user agent and metadata
+RELEASE_LABEL = "Beta 0.013"
 STATUS = "DRAFT - For Internal Use"
 BUILD_DATE = "2026-11-22 18:04 UTC"
 MODIFIED_BY = "mbitar"
@@ -68,7 +68,7 @@ DEFAULT_CONFIG: dict = {
     "aws_cli_path": "",
     "login_banner": "",
     "user_settings_location": "tool_folder",  # "tool_folder" (falls back to the work folder if not writable) or "work_folder"
-    "settings_parameter": "",  # e.g. /curwork/admin-settings: read the managed settings from AWS Parameter Store
+    "settings_parameter": "",  # load_settings uses /curwork/admin-settings when the laptop file doesn't name one
     "sso": {
         "session_name": "",
         "start_url": "",
@@ -194,7 +194,10 @@ def ignored_config_overrides(explicit: str | None = None) -> list[str]:
     return ignored
 
 
-def load_settings(explicit: str | None = None) -> Settings:
+def load_settings(explicit: str | None = None, strict: bool = True) -> Settings:
+    """The laptop's admin settings. The file may only hold what CurWork needs to sign in (LOCAL_KEYS);
+    everything else comes from Parameter Store after sign-in. strict=False (the admin settings app only)
+    drops other settings instead of refusing the file, so an older file can still be copied to AWS."""
     if not getattr(sys, "frozen", False):
         # A settings file someone names on purpose must exist. Quietly falling back to a different
         # file would run CurWork against settings they didn't choose (NIST SP 800-53 CM-6).
@@ -223,13 +226,17 @@ def load_settings(explicit: str | None = None) -> Settings:
         raise CurWorkError(f"Can't read {path}: {e}") from e
     if not isinstance(data, dict):
         raise CurWorkError(f"{path} must contain a JSON object ({{ ... }}).")
+    local_managed = sorted(k for k in data if not k.startswith("_") and k in MANAGED_KEYS)
+    if local_managed and strict:
+        raise CurWorkError(
+            f"{path} can only hold the settings CurWork needs to sign in. These settings are kept in AWS "
+            f"Parameter Store instead, so they can't be in this file: {', '.join(local_managed)}. "
+            "Ask your admin to remove them. The CurWork admin settings app can copy them to AWS first.")
+    if not str(data.get("settings_parameter") or "").strip():
+        data = {**data, "settings_parameter": DEFAULT_PARAMETER}
     try:
         settings = settings_from_dict(data, source_path=path)
         settings.ignored_config_overrides = ignored_config_overrides(explicit)
-        local_managed = [k for k in data if k in MANAGED_KEYS]
-        if settings.settings_parameter and local_managed:
-            log.warning("Ignored %s in %s: these settings come from Parameter Store (%s).",
-                        ", ".join(local_managed), path.name, settings.settings_parameter)
         return settings
     except CurWorkError:
         raise
@@ -237,13 +244,15 @@ def load_settings(explicit: str | None = None) -> Settings:
         raise CurWorkError(f"A setting in {path} has the wrong type: {e}") from e
 
 
-# Managed settings (NIST SP 800-53 CM-5, CM-6, AU-12). When the local admin settings file names a
-# "settings_parameter", the settings below come only from that AWS Systems Manager Parameter Store
-# parameter. Billers' AWS permissions can read it but not change it, so only the AWS admin role can change
-# where data goes or how it is protected, and AWS keeps every version and records who changed it.
-# The local file keeps only what CurWork needs before sign-in (LOCAL_KEYS).
+# Managed settings (NIST SP 800-53 CM-5, CM-6, AU-12). Everything except the sign-in settings comes only
+# from an AWS Systems Manager Parameter Store parameter (/curwork/admin-settings unless the laptop file
+# names another). Billers' AWS permissions can read it but not change it, so only the AWS admin role can
+# change where data goes, where it is kept on the laptop, or how it is protected. AWS keeps every version
+# and records who changed it. The laptop file holds only what CurWork needs before sign-in (LOCAL_KEYS):
+# how to sign in, the Region, the FIPS switch and the use notice shown before sign-in.
+DEFAULT_PARAMETER = "/curwork/admin-settings"
 LOCAL_KEYS = ("aws_profile", "region", "use_fips_endpoint", "aws_cli_path", "login_banner",
-              "user_settings_location", "settings_parameter", "work_dir", "sso")
+              "settings_parameter", "sso")
 MANAGED_KEYS = tuple(k for k in DEFAULT_CONFIG if k not in LOCAL_KEYS)
 _PARAMETER_NAME = re.compile(r"^/[A-Za-z0-9_.\-/]{1,1000}$")
 MAX_PARAMETER_BYTES = 4096   # the Standard tier's limit for one parameter value
@@ -1374,6 +1383,25 @@ class S3Service:
 # --------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------
+
+def switch_file_logging(old_file: Path, work: WorkArea) -> Path:
+    """Move logging to a new work folder (after the admin's work folder is read from Parameter Store).
+    Today's earlier lines move with it, so one log file holds the whole session (NIST SP 800-53 AU-9)."""
+    for h in list(log.handlers):
+        if isinstance(h, logging.FileHandler) and Path(h.baseFilename) == Path(old_file):
+            log.removeHandler(h)
+            h.close()
+    work.log_dir.mkdir(parents=True, exist_ok=True)
+    new_file = work.log_dir / f"curwork-{_dt.date.today().isoformat()}.log"
+    if Path(old_file) != new_file and Path(old_file).is_file():
+        try:
+            with open(new_file, "a", encoding="utf-8") as out:
+                out.write(Path(old_file).read_text(encoding="utf-8"))
+            Path(old_file).unlink()
+        except OSError as e:
+            log.warning("Couldn't move today's earlier log lines from %s: %s", old_file, e)
+    return setup_file_logging(work)
+
 
 def setup_file_logging(work: WorkArea, keep_days: int = 14) -> Path:
     work.log_dir.mkdir(parents=True, exist_ok=True)

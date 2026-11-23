@@ -1,4 +1,4 @@
-# CurWork tests - Beta 0.012 - DRAFT - For Internal Use - updated 2026-11-22 23:32 UTC - modified by: mbitar
+# CurWork tests - Beta 0.013 - DRAFT - For Internal Use - updated 2026-11-22 23:56 UTC - modified by: mbitar
 """Tests for the managed admin settings in AWS Parameter Store (mocked with moto):
 how CurWork reads them, the admin app's form and saves, and the biller policy (read, never write)."""
 import json
@@ -217,10 +217,9 @@ def test_a_new_version_is_used_at_the_next_sign_in(tmp_path):
 def test_ignored_settings_are_written_to_the_log(tmp_path, caplog):
     cfg = tmp_path / core.CONFIG_FILE_NAME
     cfg.write_text(json.dumps({"aws_profile": "", "settings_parameter": PARAM, "bucket": "local", "work_dir": str(tmp_path)}))
-    with caplog.at_level("WARNING", logger="curwork"):
-        local = core.load_settings(str(cfg))
-    assert "Ignored bucket" in caplog.text and "come from Parameter Store" in caplog.text
-    caplog.clear()
+    with pytest.raises(core.CurWorkError, match="bucket, work_dir"):
+        core.load_settings(str(cfg))        # CurWork refuses a laptop file that holds settings kept in AWS
+    local = core.load_settings(str(cfg), strict=False)
     with mock_aws():
         boto3.client("ssm", region_name="us-east-1").put_parameter(
             Name=PARAM, Value=json.dumps({**MANAGED, "login_banner": "x"}), Type="String")

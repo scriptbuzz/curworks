@@ -4,7 +4,7 @@
 
 <!-- These badges are fixed images. Update the numbers here when they change. -->
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.012-0B2545?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-Beta%200.013-0B2545?style=flat-square">
   <img alt="Status" src="https://img.shields.io/badge/status-draft%2C%20internal%20use-B54708?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-proprietary%20(FPT)-5F6B7A?style=flat-square">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-1F4E89?logo=python&logoColor=white&style=flat-square">
@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.012** · Updated 2026-11-22 23:32 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.013** · Updated 2026-11-22 23:56 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -114,7 +114,7 @@ docs/brand/                    The banner and the GitHub social preview image
 
 Some files are never uploaded to GitHub. The `.gitignore` file keeps them out:
 
-- the admin settings file, because it names the real bucket and sign-in setup;
+- the laptop settings file, because it names the real sign-in setup;
 - your private test settings file (`curwork_test.env`);
 - each user's own preferences;
 - test results and logs;
@@ -189,7 +189,7 @@ Your account number, sign-in address and profile names are only stored in `curwo
 
 ## Where things stand
 
-This is Beta 0.012, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
+This is Beta 0.013, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.012 · Updated 2026-11-22 23:32 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.013 · Updated 2026-11-22 23:56 UTC · Modified by: mbitar*
