@@ -1,10 +1,10 @@
 # curworks on a Windows 11 Production PC
 
-_Last modified: 2026-11-25 12:01 EST_
+_Last modified: 2026-11-25 12:18 EST_
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 17:01 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 17:18 UTC · Modified by: mbitar
 
-**curworks** ([scriptbuzz/curworks](https://github.com/scriptbuzz/curworks)) is a PoC of CurWork, a desktop app for FPT's billing team. A biller signs in to AWS with their company account, and CurWork copies cost report workbooks from Amazon S3 to the PC. It saves the biller's results back to S3, checks them and empties its work folders. It stores no passwords or AWS keys. It has been tested on a Mac.
+**curworks** ([scriptbuzz/curworks](https://github.com/scriptbuzz/curworks)) is a PoC of CurWork, a Python desktop app for FPT's billing team. It runs from its Python code or as CurWork.exe, a single file built from that code. A biller signs in to AWS with their company account, and CurWork copies cost report workbooks from Amazon S3 to the PC. It saves the biller's results back to S3, checks them and empties its work folders. It stores no passwords or AWS keys. It has been tested on a Mac.
 
 This page answers two questions: can curworks run on a production Windows 11 PC, and what needs a Windows administrator password?
 
@@ -425,4 +425,4 @@ The [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the 
 
 ---
 
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 17:01 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 17:18 UTC · Modified by: mbitar*
