@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:22 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -20,18 +20,42 @@ Plan on about an hour the first time. After that, a rebuild and a full test run 
 
 > **Before you start:** the test bucket and the biller test sign-in are created from the Mac test kit (menu options 3 and 4). The Windows steps use them but don't create them. If they don't exist yet, set them up on the Mac first, or ask your admin.
 
+## Windows administrator rights
+
+You don't need a Windows administrator password to build, test or run CurWork, as long as you use the per-user installers in part 1. IT needs administrator rights for the real rollout in part 8.
+
+"Admin" in CurWork's own names (`CurWorkAdmin.exe`, the admin profile, the admin settings) means the **AWS** administrator. It has nothing to do with Windows administrator rights.
+
+Company policy can still block an unsigned app or a script without asking for a password. Run these read-only checks in an ordinary PowerShell window first:
+
+```powershell
+where.exe aws py git
+Get-ExecutionPolicy -List
+Get-AppLockerPolicy -Effective | Select-Object -ExpandProperty RuleCollections
+(Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy).VerifiedAndReputablePolicyState
+```
+
+| Check | What to look for |
+|---|---|
+| `where.exe` | It lists the tools that are already installed. "Could not find files" means that a tool is missing. |
+| `Get-ExecutionPolicy` | If `MachinePolicy` or `UserPolicy` is anything other than `Undefined`, Group Policy decides which scripts can run, and the command in part 4 can't change that. |
+| `Get-AppLockerPolicy` | If it lists rules, AppLocker may allow programs only from the Windows and Program Files folders. That would block `CurWork.exe`, Python and the AWS CLI in your user folder. Ask IT. |
+| The last line | It shows Smart App Control: 0 is off, 1 is on and 2 is evaluation. When it's on, it can block unsigned apps. |
+
+If you're testing on a production laptop, build CurWork on a non-production Windows PC instead. Then copy only `CurWork.exe` and `curwork_admin_settings.json` to the laptop. Don't put the AWS admin profile on a production laptop.
+
 ## 1. Install the tools
 
-You need admin rights on the PC to install these. Install each one with its default options unless the step says otherwise.
+Install each tool for your own user account only. If Windows asks for an administrator password, cancel and check the step again.
 
 | Tool | Where to get it | Notes |
 |---|---|---|
-| **Python 3.12 (64-bit)** | [python.org/downloads/windows](https://www.python.org/downloads/windows/) | Use the "Windows installer (64-bit)". Keep **"Use admin privileges when installing py.exe"** ticked: the build uses the `py` launcher it installs. |
-| **AWS CLI version 2** | [AWS CLI installer for Windows](https://awscli.amazonaws.com/AWSCLIV2.msi) ([install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)) | CurWork uses it to sign in. It installs to `C:\Program Files\Amazon\AWSCLIV2`, which is where CurWork looks for it. |
-| **Git for Windows** | [git-scm.com/download/win](https://git-scm.com/download/win) | Also installs the Bash and Perl that the repository's upload checks need. |
+| **Python 3.12 (64-bit)** | [python.org/downloads/windows](https://www.python.org/downloads/windows/) | Use the "Windows installer (64-bit)". **Clear "Use admin privileges when installing py.exe"**, then choose **Install Now**. Python and the `py` launcher, which the build uses, are then installed for you only. |
+| **AWS CLI version 2** | [AWS CLI installer for one user](https://awscli.amazonaws.com/AWSCLIV2-User.msi) ([install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)) | CurWork uses it to sign in. This installer needs no administrator rights and installs to `%LOCALAPPDATA%\Programs\Amazon\AWSCLIV2`. Skip it if IT has already installed the AWS CLI. The other installer, `AWSCLIV2.msi`, is for all users and needs administrator rights. CurWork looks in Program Files first, then on your PATH. |
+| **Git for Windows** (optional) | [git-scm.com/install/windows](https://git-scm.com/install/windows) | You only need it to change the code, because it includes the Bash and Perl that the upload checks use. The build and the tests don't use it. If the installer asks for an administrator password, use the portable version on the same page, or skip Git and download the ZIP file in part 2. |
 | **Microsoft Excel** | Your company's Microsoft 365 | Only needed for the hand tests in part 7. |
 
-When they're installed, open a **new** PowerShell window and check that all three answer with a version number:
+When they're installed, open a **new** PowerShell window and check that the tools you installed answer with a version number:
 
 ```powershell
 py -3.12 --version
@@ -41,7 +65,9 @@ git --version
 
 ## 2. Get the code
 
-If Git asks you to sign in, use a GitHub account that has access to the repository.
+**Without Git:** download [the ZIP file](https://github.com/scriptbuzz/curworks/archive/refs/heads/main.zip) and extract it. Rename the extracted `curworks-main` folder to `curworks` and move it to your user folder (`%USERPROFILE%`), then go to part 3. Don't upload changes from this copy, because it doesn't have the upload checks.
+
+**With Git:** run these commands. If Git asks you to sign in, use a GitHub account that has access to the repository.
 
 ```powershell
 cd $HOME
@@ -68,7 +94,7 @@ Git ignores `curwork_test.env`, and the upload checks block its values from appe
 
 ## 4. Build CurWork
 
-PowerShell blocks scripts by default. The first command below allows them in this PowerShell window only, which is safer than changing the setting for the whole PC.
+PowerShell blocks scripts by default. The first command below allows them in this PowerShell window only, which is safer than changing the setting for the whole PC and doesn't ask for administrator rights. If Group Policy sets the rule, the command can't change it; ask IT.
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -160,7 +186,8 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 - Sign `CurWork.exe` and `CurWorkAdmin.exe` with the company code-signing certificate.
 - Give billers `CurWork.exe` only. `CurWorkAdmin.exe` is for admins.
 - Put `CurWork.exe` and the real `curwork_admin_settings.json` together in a folder billers can read but not change, for example `C:\Program Files\CurWork`.
-- Make sure the AWS CLI is installed on each laptop. CurWork adds the billers' AWS sign-in profile itself the first time they click **Sign in**.
+- Installing to `C:\Program Files` and making the folder read-only needs Windows administrator rights, so IT does this step.
+- Make sure the AWS CLI is installed on each laptop. IT installs `AWSCLIV2.msi` for all users. CurWork adds the billers' AWS sign-in profile itself the first time they click **Sign in**.
 - Billers' files go to `%LOCALAPPDATA%\CurWork`. That folder isn't synced to OneDrive, which is why it's the default.
 
 ## 9. Cleaning up after testing
@@ -178,7 +205,10 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 |---|---|
 | "running scripts is disabled on this system" | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in the same PowerShell window, then try again |
 | "py is not recognized" or "No suitable Python runtime found" | Install Python 3.12 from python.org (part 1), then open a new PowerShell window |
+| Windows asks for an administrator password | Cancel. Check that you used the per-user installers in part 1. Building, testing and running CurWork shouldn't ask for one, so report what asked |
+| "This app has been blocked by your system administrator" | AppLocker or App Control (WDAC) blocks programs outside the allowed folders. Ask IT to allow a signed CurWork; don't try to work around it |
 | "aws is not recognized" | Install the AWS CLI (part 1), then open a new PowerShell window |
+| CurWork says the AWS CLI isn't installed, but you installed it | Put the full path of `aws.exe` in `aws_cli_path` in `CurWork-app\curwork_admin_settings.json`. Write each backslash twice, for example `C:\\Users\\you\\AppData\\Local\\Programs\\Amazon\\AWSCLIV2\\aws.exe`. Then run part 6 again, which copies the file next to `CurWork.exe` |
 | The build stops at "Check every installed package for known vulnerabilities" | A package has a known security hole. Don't skip the check; send the build output for review |
 | CurWork says "AWS said you don't have permission for that" | The message names the refused AWS call. Check that **About** shows the biller test role. If it shows a different role, run part 5 again |
 | CurWork warns that the work folder is inside OneDrive | Set the work folder back to `%LOCALAPPDATA%\CurWork` in the CurWork Admin Settings app |
@@ -187,4 +217,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:22 UTC · Modified by: mbitar*
