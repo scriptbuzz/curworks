@@ -1,8 +1,8 @@
 # curworks on a Windows 11 Production PC
 
-_Last modified: 2026-11-25 12:18 EST_
+_Last modified: 2026-11-25 12:35 EST_
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 17:18 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 17:35 UTC · Modified by: mbitar
 
 **curworks** ([scriptbuzz/curworks](https://github.com/scriptbuzz/curworks)) is a PoC of CurWork, a Python desktop app for FPT's billing team. It runs from its Python code or as CurWork.exe, a single file built from that code. A biller signs in to AWS with their company account, and CurWork copies cost report workbooks from Amazon S3 to the PC. It saves the biller's results back to S3, checks them and empties its work folders. It stores no passwords or AWS keys. It has been tested on a Mac.
 
@@ -41,15 +41,42 @@ With ways 1 and 2, users can edit the settings file, so use only the test bucket
 | Connection to AWS | No | The connection, through a firewall, proxy or HTTPS inspection |
 | Wrong clock | **Yes**, by default | |
 
+## Tell IT first
+
+These steps are part of a planned test, but security tools may report or block them, because attackers do similar things. Before you run anything, send this section to IT and the security team with the PC name, the user, the planned time and the link to the reviewed version of this page. Wait for their yes.
+
+**No step needs a security tool to be paused, or an exception to be added.** If a tool blocks a step or shows a warning, stop, do not try again, and tell IT.
+
+| Step | What it does | Why a security tool may react | Alert likely? |
+|---|---|---|---|
+| All blocks | A long block is pasted into PowerShell | Pasted scripts are a common way to attack a PC. PowerShell logs may keep the whole block. | **Yes** |
+| Check 1, step 1 | Runs `whoami /groups` | It shows the rights of the user | **Yes** |
+| Check 1, step 1 | Reads the AppLocker, App Control, Smart App Control and SmartScreen rules | It shows which security rules protect the PC | **Yes** |
+| Check 1, steps 2 and 3 | Looks for Python and the AWS CLI in the registry and on the PATH, and runs them | PowerShell starts other programs, and Python runs short code from the command line | Possibly |
+| Check 1, steps 4 and 5 | Uses `curl.exe` to contact seven AWS and Microsoft addresses | Many connections in a row can look like a network scan | Possibly |
+| Check 1, step 4 | Python connects to AWS without the proxy | It can look like an attempt to go around the proxy | Possibly |
+| Check 1, steps 3 and 4 | Reads the Windows Installer and proxy settings | It shows how the PC is set up | Less likely |
+| Check 2, steps 1 and 2 | Creates a Python program in the user folder, and downloads seven packages from pypi.org | New programs in a user folder and downloaded code are watched closely | **Yes** |
+| Check 2, step 3 | Runs CurWork's code, which is not signed, and calls AWS | Unsigned code connects to the internet | Possibly |
+| After Check 2, sign-in | The AWS CLI opens the browser and waits for an answer on 127.0.0.1 | A program waits for a network connection | Possibly |
+| After Check 2, save to S3 | Uploads a sample workbook to Amazon S3 | Data loss prevention watches uploads | **Yes** |
+| Clean-up, step 1 | Lists the running programs | It shows what runs on the PC | Less likely |
+| Clean-up, step 3 | Signs out of AWS | The AWS CLI deletes its saved sign-ins | Less likely |
+| Clean-up, step 4 | Opens the AWS config file | Attackers look for cloud settings there | Possibly |
+| Clean-up, steps 5 to 8 | Deletes work files, logs and settings | Deleting logs can look like hiding activity. Ask IT whether to keep them. | **Yes** |
+
+The last column is our estimate. It depends on the company's security tools, and nothing has been tested with them.
+
 ## Check 1: Run now
 
 This check installs, changes and saves nothing, and needs no password. It has not been run on Windows, so read it first and follow company rules on pasting commands.
 
-1. Sign in to Windows as the user who will run CurWork.
-2. Open **Windows PowerShell** as the normal user, not with **Run as administrator**.
-3. If your Region isn't us-east-1, change `$region` near the top of the block.
-4. Paste the whole block and press Enter. It takes up to about two minutes.
-5. Read the last three lines, check the table for anything private, and send it back. If PowerShell shows an error, send that too.
+1. Get IT's yes. See [Tell IT first](#tell-it-first).
+2. Sign in to Windows as the user who will run CurWork.
+3. Open **Windows PowerShell** as the normal user, not with **Run as administrator**.
+4. If your Region isn't us-east-1, change `$region` near the top of the block.
+5. Paste the whole block and press Enter. It takes up to about two minutes.
+6. Read the last three lines, check the table for anything private, and send it back. If PowerShell shows an error, send that too.
 
 ```powershell
 & {
@@ -281,7 +308,7 @@ The output shows no password and hides the user folder, but it can name security
 
 ## Check 2: Run after approval
 
-First, get approval for Windows testing and for the Python command. Then copy CurWork's code and the test settings file to a user folder ([how to fill in the settings](WINDOWS_BUILD_AND_TEST.md)), and install the AWS CLI if it is missing.
+First, get approval for Windows testing and for the Python command, and [tell IT](#tell-it-first). Then copy CurWork's code and the test settings file to a user folder ([how to fill in the settings](WINDOWS_BUILD_AND_TEST.md)), and install the AWS CLI if it is missing.
 
 This check installs the Python packages in CurWork's own folder and runs CurWork's self-test. In a normal **Windows PowerShell** window, set the first two values and paste the block.
 
@@ -292,7 +319,8 @@ This check installs the Python packages in CurWork's own folder and runs CurWork
 # Run it only after Windows testing and the Python command are approved.
 # It creates the folder .venv inside CurWork's folder, installs the seven packages there,
 # and runs CurWork's own self-test. The self-test changes nothing in AWS.
-# The .venv folder and CurWork's work folder are the only changes. To undo them, delete both.
+# It adds the .venv folder and CurWork's work folder. Signing in later adds an AWS profile and
+# temporary sign-in tokens. The clean-up block below removes or lists all of them.
 #
 # CHANGE THESE TWO LINES: the folder that holds CurWork's code and its settings file,
 # and the Python path that Check 1 showed.
@@ -308,7 +336,7 @@ $Python = 'python'
     'WORKS: the private Python folder is ready.'
     # STEP 2: install the packages. pip checks each one against its known fingerprint (hash).
     Write-Host '[2/3] Installing the seven packages. This can take a minute.'
-    & $venv -m pip install --quiet --require-hashes -r "$App\requirements-lock.txt"
+    & $venv -m pip install --quiet --no-cache-dir --require-hashes -r "$App\requirements-lock.txt"
     # LASTEXITCODE is 0 when the last program worked.
     if ($LASTEXITCODE -ne 0) { 'STOP: the packages were not installed.'; return }
     'WORKS: the packages are installed.'
@@ -341,7 +369,177 @@ Then start CurWork, choose **Sign in**, download a sample file, save a result to
 | Access denied | The user lacks the biller permission set | AWS administrator |
 | Any other error | Unknown | Record the message |
 
-Use **sample files only**. To undo this check, delete the `.venv` folder and CurWork's work folder.
+Use **sample files only**. To undo this check, use [the clean-up block](#clean-up-after-the-checks).
+
+## Clean up after the checks
+
+Check 1 leaves nothing to clean up. After Check 2, choose **4. Finish and clean up** in CurWork, close it, and ask IT whether to keep the logs. Then run this block in the same kind of window. It shows its progress, asks before each deletion, and reports the status of every step. It has not been run on Windows, so read it first.
+
+```powershell
+# ============================================================
+# CLEAN UP: remove what Check 2 and CurWork left on this PC
+# ============================================================
+# It asks before each deletion. Pressing Enter always keeps the item.
+# It shows its progress, checks each deletion, and ends with a table of what was removed and kept.
+# Deleted files do not go to the Recycle Bin. It needs no Windows administrator.
+#
+# CHANGE THESE TWO LINES if needed: the folder that holds CurWork's code, and the work folder
+# that CurWork's Settings tab shows.
+$App = "$HOME\curworks\CurWork-app"
+$Work = "$env:LOCALAPPDATA\CurWork"
+& {
+    $total = 9
+    $rows = @()
+    # Step shows the progress bar and the step number.
+    function Step($Number, $Text) {
+        Write-Progress -Activity 'CurWork clean-up' -Status "Step $Number of $total. $Text" -PercentComplete (100 * ($Number - 1) / $total)
+        Write-Host ''
+        Write-Host "[$Number/$total] $Text"
+    }
+    # Status shows the result of a step in color, and returns one line for the final table.
+    function Status($Item, $Result, $Detail) {
+        $color = @{ 'DONE' = 'Green'; 'NOT FOUND' = 'Green'; 'KEPT' = 'Yellow'; 'BY HAND' = 'Yellow'; 'FAILED' = 'Red' }[$Result]
+        Write-Host "      $Result - $Detail" -ForegroundColor $color
+        1 | Select-Object @{n='Result';e={$Result}}, @{n='Item';e={$Item}}, @{n='Detail';e={$Detail}}
+    }
+    # RemoveOne shows one file or folder, asks, deletes it, and checks that it is gone.
+    # It refuses a folder that contains a link, because a link can lead to files somewhere else.
+    # $Word is what the user must type.
+    function RemoveOne($Item, $Path, $Word) {
+        if (-not (Test-Path -LiteralPath $Path)) { return Status $Item 'NOT FOUND' 'Nothing to remove.' }
+        try {
+            $root = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+            $all = @(Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction Stop)
+            $links = @(@($root) + $all | Where-Object { "$($_.Attributes)" -match 'ReparsePoint' })
+            if ($links.Count) { return Status $Item 'BY HAND' 'It contains a link, so it was not touched.' }
+            $files = @($all | Where-Object { -not $_.PSIsContainer })
+            $mb = ($files | Measure-Object -Property Length -Sum).Sum / 1MB
+            Write-Host "      $Path"
+            Write-Host ('      {0} files, {1:N1} MB' -f $files.Count, $mb)
+            $answer = Read-Host "      Type $Word to delete it, or press Enter to keep it"
+            if ($answer -cne $Word) { return Status $Item 'KEPT' 'You kept it.' }
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            if (Test-Path -LiteralPath $Path) { return Status $Item 'FAILED' 'It is still there.' }
+            return Status $Item 'DONE' 'Deleted.'
+        } catch { return Status $Item 'FAILED' "$($_.Exception.Message)" }
+    }
+
+    Write-Host 'CurWork clean-up. Nothing is deleted without your answer.'
+    # The settings file holds the names of the AWS profile and the sign-in session.
+    # They are read first, because the file can be deleted in step 8.
+    $settings = $null
+    try { $settings = Get-Content -LiteralPath "$App\curwork_admin_settings.json" -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop } catch { }
+
+    # STEP 1: CurWork must be closed, so that no file is in use.
+    Step 1 'Checking that CurWork is closed'
+    $running = @()
+    $checked = $true
+    try { $running = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.Name -eq 'CurWork.exe' -or ($_.Name -like 'python*' -and $_.CommandLine -like '*curwork.py*') }) }
+    catch { $checked = $false }
+    if ($running.Count) { Write-Progress -Activity 'CurWork clean-up' -Completed; 'STOP: close CurWork, then run this block again. Nothing was deleted.'; return }
+    if ($checked) { $rows += Status 'CurWork closed' 'DONE' 'CurWork is not running.' }
+    else { $rows += Status 'CurWork closed' 'BY HAND' 'Windows did not show the running programs. Make sure that CurWork is closed.' }
+
+    # STEP 2: the user confirms that the results are safe in S3.
+    Step 2 'Checking that your results are saved'
+    $left = @(Get-ChildItem -LiteralPath "$Work\Out" -Recurse -File -ErrorAction SilentlyContinue).Count
+    Write-Host "      The Out folder holds $left files."
+    $answer = Read-Host '      Are all results that you need saved in S3? Type y to go on, or press Enter to stop'
+    if ($answer -ne 'y') { Write-Progress -Activity 'CurWork clean-up' -Completed; 'STOP: save your results in CurWork first. Nothing was deleted.'; return }
+    $rows += Status 'Results saved' 'DONE' 'You confirmed it.'
+
+    # STEP 3: sign out of AWS. The AWS CLI deletes its own temporary sign-in tokens.
+    # This block never opens the token files. It only checks whether the folder holds any file,
+    # and then relies on the result that the AWS CLI reports.
+    Step 3 'Signing out of AWS'
+    $aws = @("$env:ProgramFiles\Amazon\AWSCLIV2\aws.exe", "$env:LOCALAPPDATA\Programs\Amazon\AWSCLIV2\aws.exe") | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not (Test-Path "$HOME\.aws\sso\cache\*.json")) { $rows += Status 'AWS sign-in' 'NOT FOUND' 'There is no saved sign-in.' }
+    elseif (-not $aws) { $rows += Status 'AWS sign-in' 'BY HAND' 'The AWS CLI was not found in its usual folders. Run: aws sso logout' }
+    else {
+        Write-Host '      This ends ALL your AWS sign-ins through IAM Identity Center on this PC, not only the one for CurWork.'
+        $answer = Read-Host '      Type y to sign out, or press Enter to stay signed in'
+        if ($answer -ne 'y') { $rows += Status 'AWS sign-in' 'KEPT' 'You did not sign out.' }
+        else {
+            & $aws sso logout
+            if ($LASTEXITCODE -eq 0) { $rows += Status 'AWS sign-in' 'DONE' 'The AWS CLI reported that you are signed out.' }
+            else { $rows += Status 'AWS sign-in' 'FAILED' 'The AWS CLI reported an error. Run: aws sso logout' }
+        }
+    }
+
+    # STEP 4: the AWS profile. The user edits the file, because it can hold other profiles too.
+    # This block changes nothing in it. It only checks whether the sections are gone.
+    Step 4 'Checking the AWS profile'
+    $config = "$HOME\.aws\config"
+    if ($env:AWS_CONFIG_FILE) { $config = $env:AWS_CONFIG_FILE }
+    if (-not (Test-Path -LiteralPath $config)) { $rows += Status 'AWS profile' 'NOT FOUND' 'There is no AWS config file.' }
+    elseif (-not $settings -or -not $settings.aws_profile) { $rows += Status 'AWS profile' 'BY HAND' "The settings file could not be read. Look for CurWork's sections in $config." }
+    else {
+        $names = @("[profile $($settings.aws_profile)]", "[sso-session $($settings.sso.session_name)]")
+        $found = @(Get-Content -LiteralPath $config | ForEach-Object { $_.Trim() } | Where-Object { $names -contains $_ })
+        if (-not $found.Count) { $rows += Status 'AWS profile' 'NOT FOUND' 'Its sections are not in the file.' }
+        else {
+            Write-Host "      Found: $($found -join ' and ')"
+            Write-Host '      Keep a section if it was there before CurWork, or if another profile uses it.'
+            $answer = Read-Host '      Type y to open the file in Notepad, or press Enter to keep the sections'
+            if ($answer -eq 'y') {
+                & "$env:SystemRoot\System32\notepad.exe" $config
+                $null = Read-Host '      Delete each section with the lines under it, save the file, then press Enter here'
+                $found = @(Get-Content -LiteralPath $config | ForEach-Object { $_.Trim() } | Where-Object { $names -contains $_ })
+                if ($found.Count) { $rows += Status 'AWS profile' 'KEPT' "Still in the file: $($found -join ' and ')" }
+                else { $rows += Status 'AWS profile' 'DONE' 'The sections are gone.' }
+            } else { $rows += Status 'AWS profile' 'KEPT' 'You kept the sections.' }
+        }
+    }
+
+    # STEP 5: the work folder, with its In, Out and Logs folders.
+    # The folder must look like a CurWork work folder, so that a wrong path in $Work deletes nothing.
+    Step 5 'Work folder'
+    if ((Test-Path -LiteralPath $Work) -and -not ((Test-Path -LiteralPath "$Work\In") -and (Test-Path -LiteralPath "$Work\Out") -and (Test-Path -LiteralPath "$Work\Logs"))) { $rows += Status 'Work folder' 'BY HAND' 'It does not look like a CurWork work folder, so it was not touched.' }
+    else { $rows += RemoveOne 'Work folder' $Work 'DELETE' }
+
+    # STEP 6: the file that CurWork writes if it cannot start.
+    Step 6 'Crash log'
+    $rows += RemoveOne 'Crash log' "$env:LOCALAPPDATA\CurWork-crash.log" 'y'
+
+    # STEP 7: the private Python folder, and the files that Python made from the code.
+    Step 7 'Python files'
+    $rows += RemoveOne 'Private Python folder' "$App\.venv" 'y'
+    $rows += RemoveOne 'Python cache' "$App\__pycache__" 'y'
+
+    # STEP 8: the settings files. The first one holds the account number and the sign-in address.
+    Step 8 'Settings files'
+    $rows += RemoveOne 'Settings file' "$App\curwork_admin_settings.json" 'y'
+    $rows += RemoveOne 'Your preferences' "$App\curwork_user_settings.json" 'y'
+
+    # STEP 9: proxy and certificate settings of this user. The company may have set them, so this
+    # block only reports them.
+    Step 9 'Proxy and certificate settings'
+    $user = Get-ItemProperty -Path 'HKCU:\Environment' -ErrorAction SilentlyContinue
+    $set = @('HTTPS_PROXY', 'AWS_CA_BUNDLE' | Where-Object { $user.$_ })
+    if ($set.Count) { $rows += Status 'User settings' 'BY HAND' "Set: $($set -join ', '). Remove only what you added for CurWork." }
+    else { $rows += Status 'User settings' 'NOT FOUND' 'None is set.' }
+
+    # Show the table and one final line.
+    Write-Progress -Activity 'CurWork clean-up' -Completed
+    $rows | Format-Table Result, Item, Detail -AutoSize -Wrap | Out-String -Width 120
+    $open = @($rows | Where-Object { $_.Result -eq 'KEPT' -or $_.Result -eq 'BY HAND' -or $_.Result -eq 'FAILED' })
+    if ($open.Count) { "NOT FINISHED: $($open.Count) items are left. See the table." } else { 'FINISHED: every item in the table is removed.' }
+}
+```
+
+| Result | Meaning |
+|---|---|
+| `DONE` | The step worked. |
+| `NOT FOUND` | There was nothing to remove. |
+| `KEPT` | You chose to keep it. |
+| `BY HAND` | You have to look at it and decide. |
+| `FAILED` | It could not be removed. Close other programs and run the block again. |
+
+You can run the block again at any time. It does not remove these:
+
+- **CurWork's code:** delete its folder in File Explorer.
+- **AWS CLI:** if you installed it for this test, remove it in **Settings**, **Apps**, **Installed apps**.
+- **Results in S3:** billers cannot delete them, so ask the AWS administrator.
 
 ## Ask IT
 
@@ -425,4 +623,4 @@ The [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the 
 
 ---
 
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 17:18 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 17:35 UTC · Modified by: mbitar*
