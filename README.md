@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 02:25 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:51 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -107,6 +107,7 @@ CurWork-app/            The app itself
   README.md                    The full app guide
   ADMIN_AND_SECURITY_GUIDE.md  Setup and security guide for admins
 WINDOWS.md                     How to set up, test and run CurWork on Windows 11
+WINDOWS11_PROD_PC.md           Whether the PoC can run on a production Windows 11 PC, with a check to paste in
 MAC_HAND_TEST.md               The checklist for testing CurWork by hand on a Mac
 SECURITY.md                    How to report a security problem
 THIRD_PARTY_NOTICES.md         The licences of the software CurWork uses
@@ -203,4 +204,4 @@ Your account number, sign-in address and profile names are only stored in `curwo
 This is Beta 0.017, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 02:25 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:51 UTC · Modified by: mbitar*

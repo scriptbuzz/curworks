@@ -1,6 +1,6 @@
 # Setting up, testing and running CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:22 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:51 UTC · Modified by: mbitar
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -42,7 +42,7 @@ Get-AppLockerPolicy -Effective | Select-Object -ExpandProperty RuleCollections
 | `Get-AppLockerPolicy` | If it lists rules, AppLocker may allow programs only from the Windows and Program Files folders. That would block `CurWork.exe`, Python and the AWS CLI in your user folder. Ask IT. |
 | The last line | It shows Smart App Control: 0 is off, 1 is on and 2 is evaluation. When it's on, it can block unsigned apps. |
 
-If you're testing on a production laptop, build CurWork on a non-production Windows PC instead. Then copy only `CurWork.exe` and `curwork_admin_settings.json` to the laptop. Don't put the AWS admin profile on a production laptop.
+For a production PC, use the check in [WINDOWS11_PROD_PC.md](WINDOWS11_PROD_PC.md), and build CurWork on a non-production Windows PC. Then copy only `CurWork.exe` and `curwork_admin_settings.json` to the laptop. Don't put the AWS admin profile on a production laptop.
 
 ## 1. Install the tools
 
@@ -217,4 +217,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:22 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:51 UTC · Modified by: mbitar*
