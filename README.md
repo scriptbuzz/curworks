@@ -18,7 +18,7 @@
 
 <p align="center">
   <a href="#watch-the-demo"><b>Watch the demo</b></a> &nbsp;·&nbsp;
-  <a href="WINDOWS.md"><b>Windows 11 guide</b></a> &nbsp;·&nbsp;
+  <a href="WINDOWS_BUILD_AND_TEST.md"><b>Windows 11 guide</b></a> &nbsp;·&nbsp;
   <a href="CurWork-app/ADMIN_AND_SECURITY_GUIDE.md"><b>Admin and security guide</b></a> &nbsp;·&nbsp;
   <a href="SECURITY.md"><b>Report a security problem</b></a> &nbsp;·&nbsp;
   <a href="LICENSE"><b>License</b></a>
@@ -28,7 +28,7 @@
 
 > **This is FPT's private software. Copyright (c) 2026 FPT. All rights reserved.** Only people FPT has approved may use it. It comes with no warranty. The [LICENSE](LICENSE) file has the full terms.
 >
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:51 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:57 UTC · Modified by: mbitar
 
 CurWork is a small desktop app for the billing team. It does four things:
 
@@ -56,7 +56,7 @@ This loop shows each step of a biller session with its caption. **[Open the full
 
 ## How it works
 
-To set CurWork up, test it and run it on Windows 11, follow [WINDOWS.md](WINDOWS.md).
+To build and test CurWork on Windows 11, follow [WINDOWS_BUILD_AND_TEST.md](WINDOWS_BUILD_AND_TEST.md). To see whether it can run on a production PC, use [WINDOWS11_PROD_PC.md](WINDOWS11_PROD_PC.md).
 
 ![Exhibit 1: How CurWork moves files. Files go from the converted folder in S3 to the In folder on the laptop, the biller's Excel macros save results to the Out folder, CurWork saves them in the results folders in S3, and Finish and clean up uploads the log and empties both folders.](docs/diagrams/exhibit1-workflow.svg)
 
@@ -106,7 +106,7 @@ CurWork-app/            The app itself
   build_exe.ps1                Builds CurWork.exe and CurWorkAdmin.exe on a Windows machine
   README.md                    The full app guide
   ADMIN_AND_SECURITY_GUIDE.md  Setup and security guide for admins
-WINDOWS.md                     How to set up, test and run CurWork on Windows 11
+WINDOWS_BUILD_AND_TEST.md      How to build and test CurWork on a non-production Windows 11 PC
 WINDOWS11_PROD_PC.md           Whether the PoC can run on a production Windows 11 PC, with a check to paste in
 MAC_HAND_TEST.md               The checklist for testing CurWork by hand on a Mac
 SECURITY.md                    How to report a security problem
@@ -180,7 +180,7 @@ Every script that creates or deletes anything in AWS asks you to type **confirm*
 
 ## Testing on Windows 11
 
-[WINDOWS.md](WINDOWS.md) takes you from a fresh Windows 11 PC to a tested `CurWork.exe`: the tools to install, your private test settings, the build, the automated tests (`run_windows_tests.ps1`) and a checklist for testing by hand. It uses the test bucket and biller test sign-in made by the Mac test kit.
+[WINDOWS_BUILD_AND_TEST.md](WINDOWS_BUILD_AND_TEST.md) takes you from a fresh Windows 11 PC to a tested `CurWork.exe`: the tools to install, your private test settings, the build, the automated tests (`run_windows_tests.ps1`) and a checklist for testing by hand. It uses the test bucket and biller test sign-in made by the Mac test kit.
 
 **Windows testing hasn't been done yet. It's waiting for approval.**
 
@@ -204,4 +204,4 @@ Your account number, sign-in address and profile names are only stored in `curwo
 This is Beta 0.017, a draft. We've tested it on a Mac against real AWS, signed in with the limited biller access, and all automated tests pass. We haven't tested it yet with the real Excel macros. Windows testing hasn't been done yet either. It's waiting for approval. The Windows scripts and steps are written and ready for when it's approved. The Admin and Security Guide lists the decisions that are still open.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:51 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:57 UTC · Modified by: mbitar*

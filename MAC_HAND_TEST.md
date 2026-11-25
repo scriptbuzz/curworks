@@ -1,8 +1,8 @@
 # Testing CurWork by hand on a Mac
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-23 01:38 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:57 UTC · Modified by: mbitar
 
-This checklist tests CurWork's own steps on a Mac: signing in, downloading, saving results in S3 and cleaning up. It doesn't test the VBA macros, because Excel for Mac may run them differently. Test the macros on a Windows laptop (see [WINDOWS.md](WINDOWS.md), part 7).
+This checklist tests CurWork's own steps on a Mac: signing in, downloading, saving results in S3 and cleaning up. It doesn't test the VBA macros, because Excel for Mac may run them differently. Test the macros on a Windows laptop (see [WINDOWS_BUILD_AND_TEST.md](WINDOWS_BUILD_AND_TEST.md), part 7).
 
 ## Before you start
 
@@ -43,4 +43,4 @@ Open `CurWork-app/CurWork.app` and note anything that looks wrong.
 Use option 10, **Clean up when finished**, so no test items are left in AWS or on this Mac.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-23 01:38 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:57 UTC · Modified by: mbitar*

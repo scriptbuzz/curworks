@@ -1,6 +1,8 @@
-# Setting up, testing and running CurWork on Windows 11
+# Building and testing CurWork on Windows 11
 
-> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:51 UTC · Modified by: mbitar
+> **DRAFT - For Internal Use (FPT)** · Version **Beta 0.017** · Updated 2026-11-25 16:57 UTC · Modified by: mbitar
+
+> **Use this guide on a non-production Windows PC.** For a production PC, see [WINDOWS11_PROD_PC.md](WINDOWS11_PROD_PC.md).
 
 > **Status: Windows testing hasn't been done yet. It's waiting for approval.** Nothing in this guide has been run on a Windows 11 PC so far. Don't give `CurWork.exe` to billers until the Windows tests have been approved, run and passed.
 
@@ -22,27 +24,11 @@ Plan on about an hour the first time. After that, a rebuild and a full test run 
 
 ## Windows administrator rights
 
-You don't need a Windows administrator password to build, test or run CurWork, as long as you use the per-user installers in part 1. IT needs administrator rights for the real rollout in part 8.
+You don't need a Windows administrator password to build, test or run CurWork, as long as you use the per-user installers in part 1. IT needs administrator rights for the real rollout.
 
 "Admin" in CurWork's own names (`CurWorkAdmin.exe`, the admin profile, the admin settings) means the **AWS** administrator. It has nothing to do with Windows administrator rights.
 
-Company policy can still block an unsigned app or a script without asking for a password. Run these read-only checks in an ordinary PowerShell window first:
-
-```powershell
-where.exe aws py git
-Get-ExecutionPolicy -List
-Get-AppLockerPolicy -Effective | Select-Object -ExpandProperty RuleCollections
-(Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy).VerifiedAndReputablePolicyState
-```
-
-| Check | What to look for |
-|---|---|
-| `where.exe` | It lists the tools that are already installed. "Could not find files" means that a tool is missing. |
-| `Get-ExecutionPolicy` | If `MachinePolicy` or `UserPolicy` is anything other than `Undefined`, Group Policy decides which scripts can run, and the command in part 4 can't change that. |
-| `Get-AppLockerPolicy` | If it lists rules, AppLocker may allow programs only from the Windows and Program Files folders. That would block `CurWork.exe`, Python and the AWS CLI in your user folder. Ask IT. |
-| The last line | It shows Smart App Control: 0 is off, 1 is on and 2 is evaluation. When it's on, it can block unsigned apps. |
-
-For a production PC, use the check in [WINDOWS11_PROD_PC.md](WINDOWS11_PROD_PC.md), and build CurWork on a non-production Windows PC. Then copy only `CurWork.exe` and `curwork_admin_settings.json` to the laptop. Don't put the AWS admin profile on a production laptop.
+Company policy can still block an unsigned app or a script without asking for a password. The read-only check in [WINDOWS11_PROD_PC.md](WINDOWS11_PROD_PC.md#check-1-run-now) also works on this PC.
 
 ## 1. Install the tools
 
@@ -94,7 +80,7 @@ Git ignores `curwork_test.env`, and the upload checks block its values from appe
 
 ## 4. Build CurWork
 
-PowerShell blocks scripts by default. The first command below allows them in this PowerShell window only, which is safer than changing the setting for the whole PC and doesn't ask for administrator rights. If Group Policy sets the rule, the command can't change it; ask IT.
+PowerShell blocks scripts by default. The first command below allows them in this PowerShell window only, which is safer than changing the setting for the whole PC and doesn't ask for administrator rights. If Group Policy sets the rule, the command can't change it; ask IT. To see the rules, run `Get-ExecutionPolicy -List`: Group Policy decides if `MachinePolicy` or `UserPolicy` isn't `Undefined`.
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -178,17 +164,9 @@ Go through these and note anything that looks wrong:
 | 12 | Start `dist\CurWorkAdmin.exe` | The admin app opens with its own name. Close it without signing in |
 | 13 | Click **4. Finish and clean up** | In and Out are emptied and the log is saved in S3 |
 
-## 8. Getting CurWork onto biller laptops
+## 8. Getting CurWork onto production PCs
 
-This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AND_SECURITY_GUIDE.md) has the full details. In short:
-
-- Build on a clean build PC, not a biller laptop.
-- Sign `CurWork.exe` and `CurWorkAdmin.exe` with the company code-signing certificate.
-- Give billers `CurWork.exe` only. `CurWorkAdmin.exe` is for admins.
-- Put `CurWork.exe` and the real `curwork_admin_settings.json` together in a folder billers can read but not change, for example `C:\Program Files\CurWork`.
-- Installing to `C:\Program Files` and making the folder read-only needs Windows administrator rights, so IT does this step.
-- Make sure the AWS CLI is installed on each laptop. IT installs `AWSCLIV2.msi` for all users. CurWork adds the billers' AWS sign-in profile itself the first time they click **Sign in**.
-- Billers' files go to `%LOCALAPPDATA%\CurWork`. That folder isn't synced to OneDrive, which is why it's the default.
+See [Real rollout by IT](WINDOWS11_PROD_PC.md#real-rollout-by-it).
 
 ## 9. Cleaning up after testing
 
@@ -217,4 +195,4 @@ This is the admin's job, and the [Admin and Security Guide](CurWork-app/ADMIN_AN
 These Windows steps were checked against the code, but Windows testing hasn't been done yet. It's waiting for approval. If a step doesn't match what you see, note what you saw and report it.
 
 ---
-*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:51 UTC · Modified by: mbitar*
+*DRAFT - For Internal Use (FPT) · Beta 0.017 · Updated 2026-11-25 16:57 UTC · Modified by: mbitar*
